@@ -25,6 +25,7 @@ Initial options requirements:
 - use stdout for output instead of a file or kafka (no default)
 - "report all" options meaning show result values for all input and all rules, even if they do not meet match thresholds. For testing only so that it is possible to see the numeric or other "result" data for individual rules as applied to input, even if they do not meet the minimum criteria for a match. (default: false)
 - logfile location (default: /var/log/stringsimile)
+- debug level(s)
 
 
 All command line options except for config file name should have configuration file options to match (YAML?).
