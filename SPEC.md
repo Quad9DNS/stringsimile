@@ -60,43 +60,43 @@ The process should expose metrics, that can be exported to prometheus:
 Preliminary methods for matching:
 
 - Levenshtein Distance
-> Best for: General string similarity, typo detection
+> Best for: General string similarity, typo detection  
 > Example: "example.com" vs "exampl.com"
 
 - IDN Confusables
-> Best for: Detecting homograph attacks using Unicode
+> Best for: Detecting homograph attacks using Unicode  
 > Example: "example.com" vs "еxample.com" (with Cyrillic 'e')
 
 - Soundex
-> Best for: Phonetic matching of names
+> Best for: Phonetic matching of names  
 > Example: "example" vs "eggsample"
 
 Damerau-Levenshtein
-> Best for: Detecting keyboard typos with transposed characters
+> Best for: Detecting keyboard typos with transposed characters  
 > Example: "example.com" vs "exmaple.com"
 
 - Jaro
-> Best for: Short string comparisons, name matching
+> Best for: Short string comparisons, name matching  
 > Example: "example.com" vs "exemple.com"
 
 - Jaro-Winkler
-> Best for: Strings that match from the beginning
+> Best for: Strings that match from the beginning  
 > Example: "example.com" vs "examp1e.com"
 
 - Hamming Distance
-> Best for: Equal-length string comparison
+> Best for: Equal-length string comparison  
 > Example: "example.com" vs "exampl3.com"
 
 - Metaphone
-> Best for: Improved phonetic matching
+> Best for: Improved phonetic matching  
 > Example: "example" vs "eksampel"
 
 - NYSIIS
-> Best for: Name matching with better accuracy than Soundex
+> Best for: Name matching with better accuracy than Soundex  
 > Example: "example" vs "egzample"
 
 - Match Rating
-> Best for: Name comparison and coding
+> Best for: Name comparison and coding  
 > Example: "example" vs "xample"
 
 ## Performance and libraries
