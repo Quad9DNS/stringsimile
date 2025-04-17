@@ -6,3 +6,6 @@ repository.workspace = true
 
 [dependencies]
 stringsimile-matcher.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tokio = { workspace = true, features = ["full"] }
