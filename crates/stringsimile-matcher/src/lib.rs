@@ -10,5 +10,5 @@
 #![deny(unused_comparisons)]
 #![deny(warnings)]
 #![deny(missing_docs)]
+pub mod rule;
 pub mod rules;
-
