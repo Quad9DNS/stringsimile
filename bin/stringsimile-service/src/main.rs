@@ -1,16 +1,14 @@
-use tokio::io::{self, AsyncBufReadExt, BufReader};
+mod cli;
+mod service;
+mod signal;
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let reader_task = tokio::spawn(async move {
-        let stdin = io::stdin();
-        let reader = BufReader::new(stdin);
-        let mut lines = reader.lines();
+use std::process::ExitCode;
 
-        while let Some(line) = lines.next_line().await.expect("reading failed") {
-            println!("length = {}", line.len())
-        }
-    });
-    reader_task.await.map_err(Box::new)?;
-    Ok(())
+use service::Service;
+
+fn main() -> ExitCode {
+    (Service::init_and_run()
+        .code()
+        .unwrap_or(exitcode::UNAVAILABLE) as u8)
+        .into()
 }
