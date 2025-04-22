@@ -1,4 +1,4 @@
-//! Levenhstein rule implementation
+//! Levenshtein rule implementation
 
 use std::num::NonZeroU32;
 
@@ -9,20 +9,20 @@ use crate::rule::{MatcherResult, MatcherResultExt, MatcherRule};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 /// Rule
-pub struct LevenhsteinRule {
+pub struct LevenshteinRule {
     /// Maximum distance allowed for this rule to be considered matched
     pub maximum_distance: NonZeroU32,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 /// metadata
-pub struct LevenhsteinMetadata {
+pub struct LevenshteinMetadata {
     #[allow(unused)]
     distance: NonZeroU32,
 }
 
-impl MatcherRule for LevenhsteinRule {
-    type OutputMetadata = LevenhsteinMetadata;
+impl MatcherRule for LevenshteinRule {
+    type OutputMetadata = LevenshteinMetadata;
     type Error = ();
 
     fn match_rule(
@@ -32,7 +32,7 @@ impl MatcherRule for LevenhsteinRule {
     ) -> MatcherResult<Self::OutputMetadata, Self::Error> {
         let res = levenshtein_exp(input_str.as_bytes(), target_str.as_bytes());
         if res <= self.maximum_distance.get() {
-            MatcherResult::new_match(LevenhsteinMetadata {
+            MatcherResult::new_match(LevenshteinMetadata {
                 distance: NonZeroU32::try_from(res).map_err(|_| ())?,
             })
         } else {
@@ -47,7 +47,7 @@ mod tests {
 
     #[test]
     fn simple_example() {
-        let rule = LevenhsteinRule {
+        let rule = LevenshteinRule {
             maximum_distance: 2.try_into().unwrap(),
         };
 

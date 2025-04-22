@@ -6,10 +6,12 @@ repository.workspace = true
 
 [features]
 default = ["all"]
-all = ["rules-levenshtein"]
+all = ["rules-levenshtein", "rules-jaro"]
 rules-levenshtein = ["dep:triple_accel"]
+rules-jaro = ["dep:strsim"]
 
 [dependencies]
 serde.workspace = true
 serde_json.workspace = true
 triple_accel = { workspace = true, optional = true }
+strsim = { workspace = true, optional = true }
