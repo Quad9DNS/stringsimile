@@ -1,16 +1,22 @@
+//! Levenhstein rule implementation
+
 use std::num::NonZeroU32;
 
+use serde::{Deserialize, Serialize};
 use triple_accel::levenshtein_exp;
 
 use crate::rule::{MatcherResult, MatcherResultExt, MatcherRule};
 
-#[derive(Debug)]
-struct LevenhsteinRule {
-    maximum_distance: NonZeroU32,
+#[derive(Debug, Clone, Serialize, Deserialize)]
+/// Rule
+pub struct LevenhsteinRule {
+    /// Maximum distance allowed for this rule to be considered matched
+    pub maximum_distance: NonZeroU32,
 }
 
-#[derive(Debug)]
-struct LevenhsteinMetadata {
+#[derive(Debug, Clone, Serialize, Deserialize)]
+/// metadata
+pub struct LevenhsteinMetadata {
     #[allow(unused)]
     distance: NonZeroU32,
 }

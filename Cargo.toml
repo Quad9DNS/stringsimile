@@ -1,5 +1,5 @@
 [workspace]
-members = [ "bin/stringsimile-service","crates/stringsimile-matcher"]
+members = [ "bin/stringsimile-service", "crates/stringsimile-config","crates/stringsimile-matcher"]
 resolver = "2"
 
 [workspace.package]

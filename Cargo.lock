@@ -534,6 +534,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "stringsimile-config"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "stringsimile-matcher",
+]
+
+[[package]]
 name = "stringsimile-matcher"
 version = "0.1.0"
 dependencies = [
