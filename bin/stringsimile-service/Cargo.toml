@@ -6,6 +6,7 @@ repository.workspace = true
 
 [dependencies]
 stringsimile-matcher.workspace = true
+stringsimile-config.workspace = true
 
 async-stream.workspace = true
 clap = { workspace = true, features = ["derive"] }

@@ -1,4 +1,5 @@
 mod cli;
+mod processor;
 mod service;
 mod signal;
 

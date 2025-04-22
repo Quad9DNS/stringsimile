@@ -561,6 +561,7 @@ dependencies = [
  "futures",
  "serde",
  "serde_json",
+ "stringsimile-config",
  "stringsimile-matcher",
  "tokio",
  "tokio-stream",

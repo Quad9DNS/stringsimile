@@ -3,15 +3,13 @@ use std::{process::ExitStatus, time::Duration};
 
 use clap::Parser;
 use exitcode::ExitCode;
+use tokio::runtime::Runtime;
 use tokio::sync::broadcast::Receiver;
 use tokio::time::sleep;
-use tokio::{
-    io::{self, AsyncBufReadExt, BufReader},
-    runtime::Runtime,
-};
 use tracing::{info, warn};
 
 use crate::cli::CliArgs;
+use crate::processor::StringProcessor;
 use crate::signal::{ServiceOsSignals, ServiceSignal};
 
 use std::os::unix::process::ExitStatusExt;
@@ -27,6 +25,7 @@ pub struct Service<T> {
 
 pub struct InitState {
     pub signals: ServiceOsSignals,
+    pub processor: StringProcessor,
 }
 
 impl Service<()> {
@@ -56,7 +55,7 @@ impl Service<InitState> {
         Self::prepare_from_opts(args)
     }
 
-    pub fn prepare_from_opts(_args: CliArgs) -> Result<(Runtime, Self), ExitCode> {
+    pub fn prepare_from_opts(args: CliArgs) -> Result<(Runtime, Self), ExitCode> {
         let runtime = tokio::runtime::Builder::new_multi_thread()
             .enable_all()
             .build()
@@ -66,11 +65,12 @@ impl Service<InitState> {
 
         let signals = ServiceOsSignals::new(&runtime);
         let config = GlobalConfig {};
+        let processor = StringProcessor::from_args(args);
         Ok((
             runtime,
             Self {
                 config,
-                state: InitState { signals },
+                state: InitState { signals, processor },
             },
         ))
     }
@@ -78,29 +78,10 @@ impl Service<InitState> {
     pub fn start(self, handle: &Handle) -> Result<Service<StartedState>, ExitCode> {
         let Self {
             config,
-            state: InitState { signals },
+            state: InitState { signals, processor },
         } = self;
 
-        let mut signal_receiver = signals.handler.subscribe();
-
-        // TODO: remove testing echo task
-        handle.spawn(async move {
-            // This does not properly handle cancellation - requires enter press after completion
-            let stdin = io::stdin();
-            let reader = BufReader::new(stdin);
-            let mut lines = reader.lines();
-
-            loop {
-                tokio::select! {
-                    line = lines.next_line() => if let Some(line) = line.expect("reading failed") {
-                        println!("length = {}", line.len())
-                    },
-                    _ = signal_receiver.recv() => {
-                        break
-                    }
-                }
-            }
-        });
+        handle.spawn(processor.run(signals.handler.subscribe()));
 
         Ok(Service {
             config,
