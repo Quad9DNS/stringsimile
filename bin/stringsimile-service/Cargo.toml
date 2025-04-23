@@ -1,8 +1,23 @@
 [package]
 name = "stringsimile-service"
+authors.workspace = true
+description.workspace = true
+homepage.workspace = true
+readme.workspace = true
+license.workspace = true
+license-file.workspace = true
 version = "0.1.0"
 edition.workspace = true
 repository.workspace = true
+
+[package.metadata.deb]
+name = "stringsimile"
+maintainer = "Ensar Sarajčić <dev@ensarsarajcic.com>"
+assets = [
+    ["target/release/stringsimile", "usr/bin/", "755"],
+    ["../../README.md", "usr/share/doc/stringsimile/README", "644"],
+    ["../../LICENSE", "usr/share/licenses/stringsimile/LICENSE", "644"],
+]
 
 [dependencies]
 stringsimile-matcher.workspace = true
@@ -18,3 +33,7 @@ tokio = { workspace = true, features = ["full"] }
 tokio-stream.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
+
+[[bin]]
+name = "stringsimile"
+path = "src/main.rs"

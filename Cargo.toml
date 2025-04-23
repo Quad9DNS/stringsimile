@@ -3,8 +3,14 @@ members = [ "bin/stringsimile-service", "crates/stringsimile-config","crates/str
 resolver = "2"
 
 [workspace.package]
+authors = ["John Todd <jtodd@quad9.net>", "Ensar Sarajčić <dev@ensarsarajcic.com>"]
+description = "Take a target string in JSON-structured stream (kafka) or file form and compare it against a large set of other strings using rules such as Levenshtein, Jaro, Soundex, IDN Confusables and more."
 edition = "2024"
 repository = "https://github.com/Quad9DNS/stringsimile"
+license = "AGPL-3.0-or-later"
+license-file = "LICENSE"
+readme = "README.md"
+homepage = "https://github.com/Quad9DNS/stringsimile"
 
 [workspace.dependencies]
 stringsimile-matcher = { path = "./crates/stringsimile-matcher" }
