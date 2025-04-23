@@ -1,29 +1,31 @@
 //! Levenshtein rule implementation
 
-use std::num::NonZeroU32;
+use std::num::{NonZeroU32, TryFromIntError};
 
 use serde::{Deserialize, Serialize};
+use tracing::debug;
 use triple_accel::levenshtein_exp;
 
 use crate::rule::{MatcherResult, MatcherResultExt, MatcherRule};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
 /// Rule
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LevenshteinRule {
     /// Maximum distance allowed for this rule to be considered matched
     pub maximum_distance: NonZeroU32,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
 /// metadata
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LevenshteinMetadata {
     #[allow(unused)]
     distance: NonZeroU32,
 }
 
+// TODO: replace with custom errors
 impl MatcherRule for LevenshteinRule {
     type OutputMetadata = LevenshteinMetadata;
-    type Error = ();
+    type Error = TryFromIntError;
 
     fn match_rule(
         &self,
@@ -31,9 +33,15 @@ impl MatcherRule for LevenshteinRule {
         target_str: &str,
     ) -> MatcherResult<Self::OutputMetadata, Self::Error> {
         let res = levenshtein_exp(input_str.as_bytes(), target_str.as_bytes());
+        debug!(
+            message = "LevenshteinRule match",
+            input = input_str,
+            target = target_str,
+            result = res
+        );
         if res <= self.maximum_distance.get() {
             MatcherResult::new_match(LevenshteinMetadata {
-                distance: NonZeroU32::try_from(res).map_err(|_| ())?,
+                distance: NonZeroU32::try_from(res)?,
             })
         } else {
             MatcherResult::new_no_match()

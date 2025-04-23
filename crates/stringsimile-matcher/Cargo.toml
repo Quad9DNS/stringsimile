@@ -11,7 +11,8 @@ rules-levenshtein = ["dep:triple_accel"]
 rules-jaro = ["dep:strsim"]
 
 [dependencies]
-serde.workspace = true
+serde = { workspace = true, features = ["derive"] }
 serde_json.workspace = true
-triple_accel = { workspace = true, optional = true }
 strsim = { workspace = true, optional = true }
+tracing.workspace = true
+triple_accel = { workspace = true, optional = true }

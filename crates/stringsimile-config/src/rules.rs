@@ -2,7 +2,10 @@
 use std::num::NonZeroU32;
 
 use serde::{Deserialize, Serialize};
-use stringsimile_matcher::rules::levenshtein::LevenshteinRule;
+use stringsimile_matcher::{
+    rule::{GenericMatcherRule, IntoGenericMatcherRule},
+    rules::{jaro::JaroRule, levenshtein::LevenshteinRule},
+};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "rule_type", rename_all = "snake_case", content = "values")]
@@ -14,6 +17,18 @@ pub enum RuleConfig {
     Jaro(JaroConfig),
 }
 
+impl RuleConfig {
+    /// Generates a rule implementation from this config
+    pub fn build(&self) -> Box<dyn GenericMatcherRule + 'static + Send> {
+        match self {
+            RuleConfig::Levenshtein(levenshtein_config) => {
+                Box::new(levenshtein_config.build().into_generic_matcher())
+            }
+            RuleConfig::Jaro(jaro_config) => Box::new(jaro_config.build().into_generic_matcher()),
+        }
+    }
+}
+
 /// Configuration for Levenshtein rule
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LevenshteinConfig {
@@ -21,18 +36,25 @@ pub struct LevenshteinConfig {
     pub maximum_distance: NonZeroU32,
 }
 
+impl LevenshteinConfig {
+    fn build(&self) -> LevenshteinRule {
+        LevenshteinRule {
+            maximum_distance: self.maximum_distance,
+        }
+    }
+}
+
 /// Configuration for Jaro rule
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct JaroConfig {
     /// Maximum distance
-    pub match_percent_threshold: NonZeroU32,
+    pub match_percent_threshold: f64,
 }
 
-impl LevenshteinConfig {
-    #[allow(unused)]
-    fn build(&self) -> LevenshteinRule {
-        LevenshteinRule {
-            maximum_distance: self.maximum_distance,
+impl JaroConfig {
+    fn build(&self) -> JaroRule {
+        JaroRule {
+            match_percent: self.match_percent_threshold,
         }
     }
 }

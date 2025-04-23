@@ -6,7 +6,7 @@ use exitcode::ExitCode;
 use tokio::runtime::Runtime;
 use tokio::sync::broadcast::Receiver;
 use tokio::time::sleep;
-use tracing::{info, warn};
+use tracing::{Level, info, warn};
 
 use crate::cli::CliArgs;
 use crate::processor::StringProcessor;
@@ -61,7 +61,13 @@ impl Service<InitState> {
             .build()
             .expect("Building async runtime failed!");
 
-        tracing_subscriber::fmt::init();
+        tracing_subscriber::fmt()
+            .with_max_level(if args.verbose {
+                Level::DEBUG
+            } else {
+                Level::INFO
+            })
+            .init();
 
         let signals = ServiceOsSignals::new(&runtime);
         let config = GlobalConfig {};

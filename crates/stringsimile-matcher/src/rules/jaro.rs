@@ -1,27 +1,30 @@
 //! Jaro rule implementation
 
+use std::io::Error;
+
 use serde::{Deserialize, Serialize};
 use strsim::jaro;
 
 use crate::rule::{MatcherResult, MatcherResultExt, MatcherRule};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
 /// Rule
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct JaroRule {
     /// Minimum match percentage for this rule to be considered a match
     pub match_percent: f64,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
 /// metadata
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct JaroMetadata {
     #[allow(unused)]
     match_percent: f64,
 }
 
+// TODO replace with custom error
 impl MatcherRule for JaroRule {
     type OutputMetadata = JaroMetadata;
-    type Error = ();
+    type Error = Error;
 
     fn match_rule(
         &self,

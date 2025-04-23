@@ -1,21 +1,51 @@
 //! Rulesets configuration
+
 use serde::{Deserialize, Serialize};
+use stringsimile_matcher::{
+    rule::Error,
+    ruleset::{RuleSet, StringGroup},
+};
 
 use crate::rules::RuleConfig;
 
 /// Configuration for a rule set
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct RuleSet {
+pub struct RuleSetConfig {
     name: String,
     string_match: String,
     match_rules: Vec<RuleConfig>,
 }
 
+impl RuleSetConfig {
+    /// Convert into RuleSet that can be used for matching
+    pub fn into_rule_set(self) -> Result<RuleSet, Error> {
+        Ok(RuleSet {
+            name: self.name,
+            string_match: self.string_match,
+            rules: self.match_rules.iter().map(RuleConfig::build).collect(),
+        })
+    }
+}
+
 /// Configuration for a string group
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct StringGroup {
+pub struct StringGroupConfig {
     name: String,
-    rule_sets: Vec<RuleSet>,
+    rule_sets: Vec<RuleSetConfig>,
+}
+
+impl StringGroupConfig {
+    /// Convert into StringGroup that can be used for matching
+    pub fn into_string_group(self) -> Result<StringGroup, Error> {
+        Ok(StringGroup {
+            name: self.name,
+            rule_sets: self
+                .rule_sets
+                .into_iter()
+                .map(RuleSetConfig::into_rule_set)
+                .collect::<Result<Vec<_>, _>>()?,
+        })
+    }
 }
 
 #[cfg(test)]
@@ -63,12 +93,12 @@ mod tests {
                                 }
                             }
                         ]
-                    },
+                    }
                 ]
             }
             "#;
 
-        let wikimedia_group: StringGroup = serde_json::from_str(json).unwrap();
+        let wikimedia_group: StringGroupConfig = serde_json::from_str(json).unwrap();
 
         assert_eq!("Wikimedia", &wikimedia_group.name);
         assert_eq!(2, wikimedia_group.rule_sets.len());
