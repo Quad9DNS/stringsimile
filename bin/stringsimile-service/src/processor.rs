@@ -4,14 +4,14 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use serde_json::Value;
+use serde_json::{Map, Value};
 use stringsimile_config::rulesets::StringGroupConfig;
 use stringsimile_matcher::ruleset::StringGroup;
 use tokio::{
-    io::{self, AsyncBufReadExt, BufReader},
+    io::{self, AsyncBufReadExt, AsyncWriteExt, BufReader},
     sync::broadcast::Receiver,
 };
-// use tracing::trace;
+use tracing::{error, info, warn};
 
 use crate::{cli::CliArgs, signal::ServiceSignal};
 
@@ -48,28 +48,56 @@ impl StringProcessor {
         let reader = BufReader::new(stdin);
         let mut lines = reader.lines();
 
-        // let stdout = io::stdout();
+        let mut stdout = io::stdout();
 
+        // TODO: abstract away inputs, pre-processors, transformers and outpus
+        // Also, don't let any errors stop the processing!
         loop {
             tokio::select! {
-                line = lines.next_line() => if let Some(line) = line.expect("reading failed") {
-                    println!("length = {}", line.len());
-                    let parsed: Value = serde_json::from_str(&line).expect("Parsing input failed");
-                    println!("parsed = {}", parsed);
-                    let mut matches = Vec::default();
-                    let rules = self.rules.lock().expect("mutex poisoned");
-                    for rule in rules.iter() {
-                        if let Some(rule_match) = rule.generate_matches(&parsed) {
-                            matches.push(rule_match);
+                line = lines.next_line() => match line {
+                    Ok(Some(line)) => {
+                        let Ok(parsed) = serde_json::from_str(&line) else {
+                            warn!("Parsing input line failed.");
+                            break;
+                        };
+                        let mut matches = Vec::default();
+                        {
+                            let rules = self.rules.lock().expect("mutex poisoned");
+                            for rule in rules.iter() {
+                                if let Some(rule_match) = rule.generate_matches(&parsed) {
+                                    matches.push(rule_match);
+                                }
+                            }
                         }
-                    }
-                    println!("matches = {:?}", matches);
+                        if matches.is_empty() {
+                            stdout.write_all(line.as_bytes()).await.expect("Write failed");
+                        } else if let Value::Object(mut map) = parsed {
+                            let mut inner_data = Map::default();
+                            inner_data.insert("matches".to_string(), Value::Array(matches.into_iter().map(Value::Object).collect()));
+                            map.insert("stringsimile".to_string(), Value::Object(inner_data));
+                            stdout.write_all(&serde_json::to_vec(&Value::Object(map)).expect("Serialization failed")).await.expect("Write failed");
+                        } else {
+                            warn!("Input data was not a JSON object!");
+                            stdout.write_all(line.as_bytes()).await.expect("Write failed");
+                        }
+                        stdout.write_all(b"\n").await.expect("Write failed");
+                    },
+                    Ok(None) => {
+                        info!("EOF reached.");
+                        break;
+                    },
+                    Err(error) => {
+                        error!(message = "Reading failed", error = %error);
+                    },
                 },
                 Ok(signal) = signals.recv() => match signal {
                     ServiceSignal::ReloadConfig => {
                         self.reload_rules().await;
                     },
-                    ServiceSignal::Shutdown | ServiceSignal::Quit => break,
+                    ServiceSignal::Shutdown | ServiceSignal::Quit => {
+                        info!("Stopping strinsimile processor...");
+                        break;
+                    }
                 }
             }
         }
