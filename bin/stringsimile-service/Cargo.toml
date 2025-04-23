@@ -16,10 +16,11 @@ assets = [
     { source = "target/release/stringsimile", dest = "usr/bin/", mode = "755" },
     { source = "../../README.md", dest = "usr/share/doc/stringsimile/README", mode = "644" },
     { source = "../../LICENSE", dest = "usr/share/licenses/stringsimile/LICENSE", mode = "644" },
+    { source = "../../distribution/config.yaml", dest = "etc/stringsimile/config.yaml", mode = "644" },
 ]
 
 [package.metadata.deb.systemd-units]
-unit-scripts = "distribution/systemd/"
+unit-scripts = "../../distribution/systemd/"
 enable = false
 start = false
 
@@ -30,7 +31,8 @@ assets = [
     { source = "target/release/stringsimile", dest = "/usr/bin/stringsimile", mode = "755" },
     { source = "../../README.md", dest = "/usr/share/doc/stringsimile/README", mode = "644", doc = true },
     { source = "../../LICENSE", dest = "/usr/share/licenses/stringsimile/LICENSE", mode = "644" },
-    { source = "distribution/systemd/stringsimile.service", dest = "/lib/systemd/system/stringsimile.service", mode = "644" }
+    { source = "../../distribution/systemd/stringsimile.service", dest = "/lib/systemd/system/stringsimile.service", mode = "644" },
+    { source = "../../distribution/config.yaml", dest = "/etc/stringsimile/config.yaml", mode = "644" },
 ]
 
 [dependencies]
