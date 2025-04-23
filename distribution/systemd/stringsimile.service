@@ -1,0 +1,13 @@
+[Unit]
+Description=Stringsimile
+Documentation=https://github.com/Quad9DNS/stringsimile
+After=network-online.target
+Requires=network-online.target
+
+[Service]
+ExecStart=/usr/bin/stringsimile
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
