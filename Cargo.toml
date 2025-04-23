@@ -8,7 +8,6 @@ description = "Take a target string in JSON-structured stream (kafka) or file fo
 edition = "2024"
 repository = "https://github.com/Quad9DNS/stringsimile"
 license = "AGPL-3.0-or-later"
-license-file = "LICENSE"
 readme = "README.md"
 homepage = "https://github.com/Quad9DNS/stringsimile"
 

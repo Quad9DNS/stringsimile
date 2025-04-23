@@ -5,7 +5,6 @@ description.workspace = true
 homepage.workspace = true
 readme.workspace = true
 license.workspace = true
-license-file.workspace = true
 version = "0.1.0"
 edition.workspace = true
 repository.workspace = true
@@ -14,9 +13,18 @@ repository.workspace = true
 name = "stringsimile"
 maintainer = "Ensar Sarajčić <dev@ensarsarajcic.com>"
 assets = [
-    ["target/release/stringsimile", "usr/bin/", "755"],
-    ["../../README.md", "usr/share/doc/stringsimile/README", "644"],
-    ["../../LICENSE", "usr/share/licenses/stringsimile/LICENSE", "644"],
+    { source = "target/release/stringsimile", dest = "usr/bin/", mode = "755" },
+    { source = "../../README.md", dest = "usr/share/doc/stringsimile/README", mode = "644" },
+    { source = "../../LICENSE", dest = "usr/share/licenses/stringsimile/LICENSE", mode = "644" },
+]
+
+[package.metadata.generate-rpm]
+name = "stringsimile"
+maintainer = "Ensar Sarajčić <dev@ensarsarajcic.com>"
+assets = [
+    { source = "target/release/stringsimile", dest = "/usr/bin/stringsimile", mode = "755" },
+    { source = "../../README.md", dest = "/usr/share/doc/stringsimile/README", mode = "644", doc = true },
+    { source = "../../LICENSE", dest = "/usr/share/licenses/stringsimile/LICENSE", mode = "644" },
 ]
 
 [dependencies]
