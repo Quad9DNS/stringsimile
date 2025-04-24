@@ -6,7 +6,7 @@ use exitcode::ExitCode;
 use tokio::runtime::Runtime;
 use tokio::sync::broadcast::Receiver;
 use tokio::time::sleep;
-use tracing::{error, info, warn};
+use tracing::{Level, error, info, warn};
 
 use crate::cli::CliArgs;
 use crate::config::ServiceConfig;
@@ -51,6 +51,8 @@ impl Service<InitState> {
         })?;
 
         Self::prepare_from_config(args.build().map_err(|err| {
+            // The tracing subscriber is never initialized before this
+            tracing_subscriber::fmt().with_max_level(Level::INFO).init();
             error!(message = "Configuration error.", error = %err);
             exitcode::USAGE
         })?)
