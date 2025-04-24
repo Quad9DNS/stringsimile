@@ -1,13 +1,13 @@
 use std::{path::PathBuf, pin::Pin};
 
-use async_stream::stream;
+use file::FileStream;
 use futures::Stream;
 use serde_json::Value;
-use tokio::{
-    fs::File,
-    io::{self, AsyncBufReadExt, BufReader},
-};
-use tracing::{error, info, warn};
+use stdin::StdinStream;
+
+mod bufreader;
+mod file;
+mod stdin;
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub enum Input {
@@ -15,8 +15,19 @@ pub enum Input {
     File(PathBuf),
 }
 
-impl Input {
-    pub fn name(&self) -> String {
+impl InputStreamBuilder for Input {
+    async fn into_stream(
+        self,
+    ) -> crate::Result<Pin<Box<dyn Stream<Item = (String, Option<Value>)> + Send>>> {
+        match self {
+            Input::Stdin => StdinStream.into_stream().await,
+            Input::File(path_buf) => FileStream(path_buf).into_stream().await,
+        }
+    }
+}
+
+impl InputBuilder for Input {
+    fn name(&self) -> String {
         match self {
             Input::Stdin => "stdin".to_string(),
             Input::File(path_buf) => {
@@ -25,67 +36,14 @@ impl Input {
             }
         }
     }
+}
 
-    pub fn into_stream(self) -> Pin<Box<dyn Stream<Item = (String, Value)> + Send>> {
-        match self {
-            Input::Stdin => Box::pin(stream! {
-                let stdin = io::stdin();
-                let reader = BufReader::new(stdin);
-                let mut lines = reader.lines();
+pub trait InputStreamBuilder {
+    async fn into_stream(
+        self,
+    ) -> crate::Result<Pin<Box<dyn Stream<Item = (String, Option<Value>)> + Send>>>;
+}
 
-                loop {
-                    tokio::select! {
-                        line = lines.next_line() => match line {
-                            Ok(Some(line)) => {
-                                let Ok(parsed) = serde_json::from_str(&line) else {
-                                    warn!("Parsing input line failed.");
-                                    break;
-                                };
-                                yield (line, parsed);
-                            },
-                            Ok(None) => {
-                                info!("EOF reached.");
-                                break;
-                            },
-                            Err(error) => {
-                                error!(message = "Reading failed", error = %error);
-                            },
-                        }
-                    }
-                }
-            }),
-            Input::File(path_buf) => Box::pin(stream! {
-                let file = match File::open(path_buf).await {
-                    Ok(file) => file,
-                    Err(error) => {
-                        error!(message = "Opening input file failed!", error = %error);
-                        return;
-                    }
-                };
-                let reader = BufReader::new(file);
-                let mut lines = reader.lines();
-
-                loop {
-                    tokio::select! {
-                        line = lines.next_line() => match line {
-                            Ok(Some(line)) => {
-                                let Ok(parsed) = serde_json::from_str(&line) else {
-                                    warn!("Parsing input line failed.");
-                                    break;
-                                };
-                                yield parsed;
-                            },
-                            Ok(None) => {
-                                info!("EOF reached.");
-                                break;
-                            },
-                            Err(error) => {
-                                error!(message = "Reading failed", error = %error);
-                            },
-                        }
-                    }
-                }
-            }),
-        }
-    }
+pub trait InputBuilder: InputStreamBuilder {
+    fn name(&self) -> String;
 }

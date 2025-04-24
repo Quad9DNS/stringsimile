@@ -13,7 +13,11 @@ use tokio::{
 use tokio_stream::{StreamExt, StreamMap};
 use tracing::{debug, info, warn};
 
-use crate::{config::ServiceConfig, signal::ServiceSignal};
+use crate::{
+    config::ServiceConfig,
+    inputs::{InputBuilder, InputStreamBuilder},
+    signal::ServiceSignal,
+};
 
 pub struct StringProcessor {
     config: ServiceConfig,
@@ -45,7 +49,13 @@ impl StringProcessor {
         let mut input_streams = StreamMap::with_capacity(self.config.inputs.len());
 
         for input in self.config.inputs.clone() {
-            input_streams.insert(input.name(), input.into_stream());
+            input_streams.insert(
+                input.name(),
+                input
+                    .into_stream()
+                    .await
+                    .expect("Building input into stream has failed!"),
+            );
         }
 
         let mut stdout = io::stdout();
@@ -55,6 +65,12 @@ impl StringProcessor {
         loop {
             tokio::select! {
                 Some((input_name, (original_input, message))) = input_streams.next() => {
+                    let Some(message) = message else {
+                        warn!("Input data was not a JSON object!");
+                        stdout.write_all(original_input.as_bytes()).await.expect("Write failed");
+                        continue;
+                    };
+
                     debug!(message = "Processing input from {}", input_name);
                     let mut matches = Vec::default();
                     {
