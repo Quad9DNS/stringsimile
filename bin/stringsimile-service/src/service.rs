@@ -50,7 +50,7 @@ impl Service<InitState> {
             exitcode::USAGE
         })?;
 
-        Self::prepare_from_config(args.build().map_err(|err| {
+        Self::prepare_from_config(args.try_into().map_err(|err| {
             // The tracing subscriber is never initialized before this
             tracing_subscriber::fmt().with_max_level(Level::INFO).init();
             error!(message = "Configuration error.", error = %err);

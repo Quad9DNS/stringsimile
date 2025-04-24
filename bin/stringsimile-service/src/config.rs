@@ -1,9 +1,10 @@
-use std::{collections::HashSet, path::PathBuf};
+use std::{collections::HashSet, fs::File, path::PathBuf};
 
 use serde::{Deserialize, Serialize};
+use stringsimile_matcher::rule::Error;
 use tracing::Level;
 
-use crate::{inputs::Input, outputs::Output};
+use crate::{cli::CliArgs, inputs::Input, outputs::Output};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FileBasedConfig {
@@ -125,16 +126,8 @@ pub struct ServiceConfig {
 impl ServiceConfig {
     pub fn merge(self, other: Self) -> Self {
         Self {
-            inputs: self
-                .inputs
-                .into_iter()
-                .chain(other.inputs.into_iter())
-                .collect(),
-            outputs: self
-                .outputs
-                .into_iter()
-                .chain(other.outputs.into_iter())
-                .collect(),
+            inputs: self.inputs.into_iter().chain(other.inputs).collect(),
+            outputs: self.outputs.into_iter().chain(other.outputs).collect(),
             matcher: self.matcher.merge(other.matcher),
             log_level: self.log_level.max(other.log_level),
         }
@@ -165,5 +158,63 @@ impl LevelInt for Level {
             4 => Level::DEBUG,
             _ => Level::TRACE,
         }
+    }
+}
+
+impl TryFrom<CliArgs> for ServiceConfig {
+    type Error = Error;
+
+    fn try_from(value: CliArgs) -> crate::Result<ServiceConfig> {
+        let file_config: FileBasedConfig =
+            serde_yaml::from_reader(File::open(value.config.clone())?)?;
+        let mut base_config = file_config.build()?;
+
+        let log_level_increase = value.verbose - value.quiet;
+        let current_log_level = base_config.log_level.into_u8();
+        let new_log_level = Level::from_u8(current_log_level.saturating_add(log_level_increase));
+
+        let matcher_config = MatcherConfig {
+            rules_path: value.rules_path.clone(),
+            input_field: value.input_field.clone(),
+        };
+
+        let mut new_inputs = HashSet::default();
+
+        if value.input_from_stdin {
+            new_inputs.insert(Input::Stdin);
+        }
+
+        if let Some(input_file) = &value.input_file {
+            new_inputs.insert(Input::File(input_file.clone()));
+            // TODO: For now allow just one file config, maybe it would be okay to have multiple?
+            base_config.inputs.retain(|i| !matches!(i, Input::File(_)));
+        }
+
+        let mut new_outputs = HashSet::default();
+
+        if value.output_to_stdout {
+            new_outputs.insert(Output::Stdout);
+        }
+
+        if let Some(output_file) = &value.output_file {
+            new_outputs.insert(Output::File(output_file.clone()));
+            // TODO: For now allow just one file config, maybe it would be okay to have multiple?
+            base_config
+                .outputs
+                .retain(|i| !matches!(i, Output::File(_)));
+        }
+
+        let cli_config = ServiceConfig {
+            inputs: new_inputs,
+            outputs: new_outputs,
+            matcher: matcher_config,
+            // Any default for now, will be replaced with the calculated level
+            log_level: Level::INFO,
+        };
+
+        let mut config = base_config.merge(cli_config);
+        config.log_level = new_log_level;
+
+        Ok(config)
     }
 }
