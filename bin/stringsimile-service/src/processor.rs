@@ -13,7 +13,7 @@ use tokio::{
 };
 use tracing::{error, info, warn};
 
-use crate::{cli::CliArgs, signal::ServiceSignal};
+use crate::{config::ServiceConfig, signal::ServiceSignal};
 
 pub struct StringProcessor {
     rules_path: PathBuf,
@@ -21,10 +21,9 @@ pub struct StringProcessor {
 }
 
 impl StringProcessor {
-    pub fn from_args(args: CliArgs) -> Self {
+    pub fn from_config(config: ServiceConfig) -> Self {
         Self {
-            // TODO: validate elsewhere
-            rules_path: args.rules_path.expect("missing rule path"),
+            rules_path: config.matcher.rules_path,
             rules: Arc::default(),
         }
     }

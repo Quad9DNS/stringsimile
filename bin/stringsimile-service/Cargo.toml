@@ -16,7 +16,7 @@ assets = [
     { source = "target/release/stringsimile", dest = "usr/bin/", mode = "755" },
     { source = "../../README.md", dest = "usr/share/doc/stringsimile/README", mode = "644" },
     { source = "../../LICENSE", dest = "usr/share/licenses/stringsimile/LICENSE", mode = "644" },
-    { source = "../../distribution/config.yaml", dest = "etc/stringsimile/config.yaml", mode = "644" },
+    { source = "../../distribution/config.yaml", dest = "etc/stringsimile/stringsimile.yaml", mode = "644" },
 ]
 
 [package.metadata.deb.systemd-units]
@@ -32,7 +32,7 @@ assets = [
     { source = "../../README.md", dest = "/usr/share/doc/stringsimile/README", mode = "644", doc = true },
     { source = "../../LICENSE", dest = "/usr/share/licenses/stringsimile/LICENSE", mode = "644" },
     { source = "../../distribution/systemd/stringsimile.service", dest = "/lib/systemd/system/stringsimile.service", mode = "644" },
-    { source = "../../distribution/config.yaml", dest = "/etc/stringsimile/config.yaml", mode = "644" },
+    { source = "../../distribution/config.yaml", dest = "/etc/stringsimile/stringsimile.yaml", mode = "644" },
 ]
 
 [dependencies]
@@ -45,6 +45,7 @@ exitcode.workspace = true
 futures.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+serde_yaml.workspace = true
 tokio = { workspace = true, features = ["full"] }
 tokio-stream.workspace = true
 tracing.workspace = true

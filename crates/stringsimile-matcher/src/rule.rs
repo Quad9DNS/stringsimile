@@ -6,7 +6,7 @@ use serde::Serialize;
 use serde_json::{Map, Value};
 
 /// Type alias for rule matchers results.
-pub type MatcherResult<T, E> = Result<Option<T>, E>;
+pub type MatcherResult<T, E> = std::result::Result<Option<T>, E>;
 /// Type alias for generic errors.
 pub type Error = Box<dyn std::error::Error>;
 

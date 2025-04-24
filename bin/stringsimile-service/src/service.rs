@@ -6,20 +6,18 @@ use exitcode::ExitCode;
 use tokio::runtime::Runtime;
 use tokio::sync::broadcast::Receiver;
 use tokio::time::sleep;
-use tracing::{Level, info, warn};
+use tracing::{error, info, warn};
 
 use crate::cli::CliArgs;
+use crate::config::ServiceConfig;
 use crate::processor::StringProcessor;
 use crate::signal::{ServiceOsSignals, ServiceSignal};
 
 use std::os::unix::process::ExitStatusExt;
 use tokio::runtime::Handle;
 
-// TODO: add configuration options
-pub struct GlobalConfig {}
-
 pub struct Service<T> {
-    pub config: GlobalConfig,
+    pub config: ServiceConfig,
     pub state: T,
 }
 
@@ -52,26 +50,24 @@ impl Service<InitState> {
             exitcode::USAGE
         })?;
 
-        Self::prepare_from_opts(args)
+        Self::prepare_from_config(args.build().map_err(|err| {
+            error!(message = "Configuration error.", error = %err);
+            exitcode::USAGE
+        })?)
     }
 
-    pub fn prepare_from_opts(args: CliArgs) -> Result<(Runtime, Self), ExitCode> {
+    pub fn prepare_from_config(config: ServiceConfig) -> Result<(Runtime, Self), ExitCode> {
         let runtime = tokio::runtime::Builder::new_multi_thread()
             .enable_all()
             .build()
             .expect("Building async runtime failed!");
 
         tracing_subscriber::fmt()
-            .with_max_level(if args.verbose {
-                Level::DEBUG
-            } else {
-                Level::INFO
-            })
+            .with_max_level(config.log_level)
             .init();
 
         let signals = ServiceOsSignals::new(&runtime);
-        let config = GlobalConfig {};
-        let processor = StringProcessor::from_args(args);
+        let processor = StringProcessor::from_config(config.clone());
         Ok((
             runtime,
             Self {

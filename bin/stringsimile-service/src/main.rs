@@ -1,11 +1,6 @@
-mod cli;
-mod processor;
-mod service;
-mod signal;
-
 use std::process::ExitCode;
 
-use service::Service;
+use stringsimile_service::service::Service;
 
 fn main() -> ExitCode {
     (Service::init_and_run()
