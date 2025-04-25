@@ -1,5 +1,5 @@
 use snafu::Snafu;
-use stringsimile_matcher::rule::Error;
+use stringsimile_matcher::Error;
 
 #[derive(Debug, Snafu)]
 #[snafu(visibility(pub))]

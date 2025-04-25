@@ -1,4 +1,4 @@
-use stringsimile_matcher::rule::Error;
+use stringsimile_matcher::Error;
 
 mod cli;
 mod config;

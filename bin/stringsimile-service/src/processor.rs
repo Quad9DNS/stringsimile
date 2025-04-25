@@ -8,7 +8,7 @@ use futures::TryFutureExt;
 use serde_json::{Map, Value};
 use snafu::ResultExt;
 use stringsimile_config::rulesets::StringGroupConfig;
-use stringsimile_matcher::ruleset::StringGroup;
+use stringsimile_matcher::ruleset::{StringGroup, StringGroupMatchResult};
 use tokio::{
     sync::broadcast::{self, Receiver},
     task::JoinSet,
@@ -78,6 +78,7 @@ impl StringProcessor {
 
         let input_field = self.config.matcher.input_field.clone();
         let rules = Arc::clone(&self.rules);
+        let report_all = self.config.matcher.report_all;
 
         let mut transformed_stream =
             input_streams.map(|(input_name, (original_input, message))| {
@@ -86,7 +87,7 @@ impl StringProcessor {
                     return (original_input, None);
                 };
 
-                let Value::Object(ref map) = message else {
+                let Value::Object(mut map) = message else {
                     warn!("Expected JSON object, but found: {message}");
                     return (original_input, None);
                 };
@@ -106,24 +107,40 @@ impl StringProcessor {
                 {
                     let rules = rules.lock().expect("mutex poisoned");
                     for rule in rules.iter() {
-                        if let Some(rule_match) = rule.generate_matches(name) {
-                            matches.push(rule_match);
-                        }
+                        let match_results = rule.generate_matches(name);
+                        matches.push((rule.name.clone(), match_results));
                     }
                 }
-                if matches.is_empty() {
+                if !report_all
+                    && !matches
+                        .iter()
+                        .map(|(_name, results)| results)
+                        .any(StringGroupMatchResult::has_matches)
+                {
                     (original_input, None)
-                } else if let Value::Object(mut map) = message {
+                } else {
                     let mut inner_data = Map::default();
                     inner_data.insert(
-                        "matches".to_string(),
-                        Value::Array(matches.into_iter().map(Value::Object).collect()),
+                        "groups".to_string(),
+                        Value::Array(
+                            matches
+                                .into_iter()
+                                .filter(|(_name, results)| report_all || results.has_matches())
+                                .map(|(name, result)| {
+                                    let mut json = result.to_json();
+                                    if let Some(obj) = json.as_object_mut() {
+                                        obj.insert(
+                                            "string_group_name".to_string(),
+                                            Value::String(name),
+                                        );
+                                    }
+                                    json
+                                })
+                                .collect(),
+                        ),
                     );
                     map.insert("stringsimile".to_string(), Value::Object(inner_data));
                     (original_input, Some(Value::Object(map)))
-                } else {
-                    warn!("Input data was not a JSON object!");
-                    (original_input, None)
                 }
             });
 

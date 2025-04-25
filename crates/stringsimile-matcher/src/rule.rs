@@ -3,19 +3,11 @@
 use std::fmt::Debug;
 
 use serde::Serialize;
-use serde_json::{Map, Value};
 
-/// Type alias for rule matchers results.
-pub type MatcherResult<T, E> = std::result::Result<Option<T>, E>;
-/// Type alias for generic errors.
-pub type Error = Box<dyn std::error::Error>;
+use crate::{GenericMatcherResult, MatchResult, MatcherResult};
 
 /// Helper functions for rule matchers results
 pub trait MatcherResultExt<T: Debug, E: Debug> {
-    /// Creates a new successful match result
-    fn new_match(metadata: T) -> Self;
-    /// Creates a new successful no match result
-    fn new_no_match() -> Self;
     /// Creates a new error
     fn new_error(err: E) -> Self;
 
@@ -28,25 +20,38 @@ pub trait MatcherResultExt<T: Debug, E: Debug> {
     fn into_metadata(self) -> T;
 }
 
+/// Helper functions for creating rule matchers results
+pub trait MatcherResultRuleMetadataExt<T: RuleMetadata, E> {
+    /// Creates a new successful match result
+    fn new_match(metadata: T) -> Self;
+    /// Creates a new successful no match result
+    fn new_no_match(metadata: T) -> Self;
+}
+
 impl<T: Debug, E: Debug> MatcherResultExt<T, E> for MatcherResult<T, E> {
-    fn new_match(metadata: T) -> Self {
-        Self::Ok(Some(metadata))
-    }
-
-    fn new_no_match() -> Self {
-        Self::Ok(None)
-    }
-
     fn new_error(err: E) -> Self {
         Self::Err(err)
     }
 
     fn is_match(&self) -> bool {
-        matches!(self, Ok(Some(_)))
+        matches!(self, Ok(MatchResult { matched: true, .. }))
     }
 
     fn into_metadata(self) -> T {
-        self.unwrap().unwrap()
+        self.unwrap().metadata
+    }
+}
+
+impl<T: RuleMetadata, E: Debug> MatcherResultRuleMetadataExt<T, E> for MatcherResult<T, E> {
+    fn new_match(metadata: T) -> Self {
+        Self::Ok(MatchResult::new_match(T::RULE_NAME.to_string(), metadata))
+    }
+
+    fn new_no_match(metadata: T) -> Self {
+        Self::Ok(MatchResult::new_no_match(
+            T::RULE_NAME.to_string(),
+            metadata,
+        ))
     }
 }
 
@@ -55,7 +60,7 @@ impl<T: Debug, E: Debug> MatcherResultExt<T, E> for MatcherResult<T, E> {
 /// produce different metadata, to give additional information on the match.
 pub trait MatcherRule {
     /// Additional data for positive matches.
-    type OutputMetadata: Debug + Serialize;
+    type OutputMetadata: RuleMetadata;
     /// Error type for matcher (negative matches should not be treated as errors).
     type Error: std::error::Error + 'static;
 
@@ -65,6 +70,12 @@ pub trait MatcherRule {
         input_str: &str,
         target_str: &str,
     ) -> MatcherResult<Self::OutputMetadata, Self::Error>;
+}
+
+/// Trait for all metadata objects for MatcherRules
+pub trait RuleMetadata: Debug + Serialize {
+    /// Name of the rule
+    const RULE_NAME: &str;
 }
 
 /// Conversion trait for turning matcher into generic matchers, to make it easier to use them in
@@ -79,33 +90,17 @@ pub trait IntoGenericMatcherRule {
 pub trait GenericMatcherRule {
     /// Tries to match input string to target string using this rule, turning result into a generic
     /// value.
-    fn match_rule_generic(
-        &self,
-        input_str: &str,
-        target_str: &str,
-    ) -> MatcherResult<Map<String, Value>, Box<dyn std::error::Error>>;
+    fn match_rule_generic(&self, input_str: &str, target_str: &str) -> GenericMatcherResult;
 }
 
 impl<T> GenericMatcherRule for T
 where
     T: MatcherRule,
 {
-    fn match_rule_generic(
-        &self,
-        input_str: &str,
-        target_str: &str,
-    ) -> MatcherResult<Map<String, Value>, Box<dyn std::error::Error>> {
+    fn match_rule_generic(&self, input_str: &str, target_str: &str) -> GenericMatcherResult {
         self.match_rule(input_str, target_str)
             .map_err(Box::new)?
-            .map(|metadata| {
-                serde_json::to_value(metadata).map(|v| match v {
-                    Value::Object(map) => map,
-                    Value::Null | Value::Bool(_) => Map::default(),
-                    _ => panic!("Expected rule metadata to serialize into object"),
-                })
-            })
-            .transpose()
-            .map_err(Into::into)
+            .try_into_generic_result()
     }
 }
 
@@ -136,9 +131,14 @@ impl MatcherRule for ExampleRule {
         if input_str.contains(target_str) {
             MatcherResult::new_match(())
         } else {
-            MatcherResult::new_no_match()
+            MatcherResult::new_no_match(())
         }
     }
+}
+
+#[cfg(test)]
+impl RuleMetadata for () {
+    const RULE_NAME: &str = "example";
 }
 
 #[cfg(test)]

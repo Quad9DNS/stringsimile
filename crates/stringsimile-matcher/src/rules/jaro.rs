@@ -5,7 +5,10 @@ use std::io::Error;
 use serde::{Deserialize, Serialize};
 use strsim::jaro;
 
-use crate::rule::{MatcherResult, MatcherResultExt, MatcherRule};
+use crate::{
+    MatcherResult,
+    rule::{MatcherResultRuleMetadataExt, MatcherRule, RuleMetadata},
+};
 
 /// Rule
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -32,16 +35,23 @@ impl MatcherRule for JaroRule {
         target_str: &str,
     ) -> MatcherResult<Self::OutputMetadata, Self::Error> {
         let res = jaro(input_str, target_str);
+        let metadata = JaroMetadata { match_percent: res };
         if res >= self.match_percent {
-            MatcherResult::new_match(JaroMetadata { match_percent: res })
+            MatcherResult::new_match(metadata)
         } else {
-            MatcherResult::new_no_match()
+            MatcherResult::new_no_match(metadata)
         }
     }
 }
 
+impl RuleMetadata for JaroMetadata {
+    const RULE_NAME: &str = "jaro";
+}
+
 #[cfg(test)]
 mod tests {
+    use crate::rule::MatcherResultExt;
+
     use super::*;
 
     #[test]

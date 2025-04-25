@@ -2,7 +2,7 @@ use std::{collections::HashSet, fs::File, path::PathBuf};
 
 use serde::{Deserialize, Serialize};
 use snafu::ResultExt;
-use stringsimile_matcher::rule::Error;
+use stringsimile_matcher::Error;
 use tracing::Level;
 
 use crate::{
@@ -83,6 +83,8 @@ pub struct MatcherConfig {
     pub rules_path: PathBuf,
     #[serde(default = "default_field_name")]
     pub input_field: String,
+    #[serde(default)]
+    pub report_all: bool,
 }
 
 impl Default for MatcherConfig {
@@ -90,6 +92,7 @@ impl Default for MatcherConfig {
         Self {
             rules_path: default_rules_path(),
             input_field: default_field_name(),
+            report_all: false,
         }
     }
 }
@@ -107,6 +110,7 @@ impl MatcherConfig {
             } else {
                 other.input_field
             },
+            report_all: self.report_all || other.report_all,
         }
     }
 }
@@ -194,6 +198,7 @@ impl TryFrom<CliArgs> for ServiceConfig {
         let matcher_config = MatcherConfig {
             rules_path: value.rules_path.clone(),
             input_field: value.input_field.clone(),
+            report_all: value.report_all,
         };
 
         let mut new_inputs = HashSet::default();

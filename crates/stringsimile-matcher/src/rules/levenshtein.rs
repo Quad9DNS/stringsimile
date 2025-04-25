@@ -6,7 +6,10 @@ use serde::{Deserialize, Serialize};
 use tracing::debug;
 use triple_accel::levenshtein_exp;
 
-use crate::rule::{MatcherResult, MatcherResultExt, MatcherRule};
+use crate::{
+    MatcherResult,
+    rule::{MatcherResultRuleMetadataExt, MatcherRule, RuleMetadata},
+};
 
 /// Rule
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -39,18 +42,25 @@ impl MatcherRule for LevenshteinRule {
             target = target_str,
             result = res
         );
+        let metadata = LevenshteinMetadata {
+            distance: NonZeroU32::try_from(res)?,
+        };
         if res <= self.maximum_distance.get() {
-            MatcherResult::new_match(LevenshteinMetadata {
-                distance: NonZeroU32::try_from(res)?,
-            })
+            MatcherResult::new_match(metadata)
         } else {
-            MatcherResult::new_no_match()
+            MatcherResult::new_no_match(metadata)
         }
     }
 }
 
+impl RuleMetadata for LevenshteinMetadata {
+    const RULE_NAME: &str = "levenshtein";
+}
+
 #[cfg(test)]
 mod tests {
+    use crate::rule::MatcherResultExt;
+
     use super::*;
 
     #[test]

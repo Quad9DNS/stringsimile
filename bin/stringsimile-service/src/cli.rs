@@ -40,4 +40,8 @@ pub struct CliArgs {
     /// Field to take from input JSON object, to match against rules.
     #[clap(long, default_value = ".domain_name")]
     pub input_field: String,
+
+    /// Set to true to always write match metadata in output, even for failed matches.
+    #[clap(long, default_value_t = false)]
+    pub report_all: bool,
 }

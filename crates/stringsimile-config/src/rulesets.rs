@@ -2,7 +2,7 @@
 
 use serde::{Deserialize, Serialize};
 use stringsimile_matcher::{
-    rule::Error,
+    Error,
     ruleset::{RuleSet, StringGroup},
 };
 
@@ -13,6 +13,11 @@ use crate::rules::RuleConfig;
 pub struct RuleSetConfig {
     name: String,
     string_match: String,
+    // TODO: extract this into something more generic, like a pre-processor
+    #[serde(default)]
+    split_target: bool,
+    #[serde(default)]
+    ignore_tld: bool,
     match_rules: Vec<RuleConfig>,
 }
 
@@ -22,6 +27,8 @@ impl RuleSetConfig {
         Ok(RuleSet {
             name: self.name,
             string_match: self.string_match,
+            split_target: self.split_target,
+            ignore_tld: self.ignore_tld,
             rules: self.match_rules.iter().map(RuleConfig::build).collect(),
         })
     }
