@@ -6,7 +6,7 @@ use exitcode::ExitCode;
 use tokio::runtime::Runtime;
 use tokio::sync::broadcast::Receiver;
 use tokio::time::sleep;
-use tracing::{Level, error, info, warn};
+use tracing::{Level, error, info};
 
 use crate::cli::CliArgs;
 use crate::config::ServiceConfig;
@@ -115,9 +115,12 @@ impl Service<StartedState> {
             tokio::select! {
                 signal = signal_rx.recv() => {
                     info!(message = "Handling signal", signal = ?signal);
-                    match signal.expect("Receiving OS signal failed") {
-                        ServiceSignal::ReloadConfig => warn!(message = "SIHGUP handler is not implemented"),
-                        signal @ ServiceSignal::Shutdown | signal @ ServiceSignal::Quit => break signal,
+                    match signal{
+                        Ok(ServiceSignal::ReloadConfig) => (),
+                        Ok(signal @ ServiceSignal::Shutdown | signal @ ServiceSignal::Quit) => break signal,
+                        Err(err) => {
+                            error!(message = "Receiving OS signal failed!", error = %err);
+                        }
                     }
                 }
                 else => unreachable!("Signal streams never end"),

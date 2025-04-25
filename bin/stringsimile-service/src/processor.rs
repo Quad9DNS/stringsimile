@@ -4,6 +4,7 @@ use std::{
 };
 
 use serde_json::{Map, Value};
+use snafu::ResultExt;
 use stringsimile_config::rulesets::StringGroupConfig;
 use stringsimile_matcher::ruleset::StringGroup;
 use tokio::{
@@ -11,10 +12,11 @@ use tokio::{
     sync::broadcast::Receiver,
 };
 use tokio_stream::{StreamExt, StreamMap};
-use tracing::{debug, info, warn};
+use tracing::{debug, error, info, warn};
 
 use crate::{
     config::ServiceConfig,
+    error::{FileNotFoundSnafu, RuleJsonParsingSnafu, RuleParsingSnafu, StringsimileServiceError},
     inputs::{InputBuilder, InputStreamBuilder},
     signal::ServiceSignal,
 };
@@ -33,29 +35,43 @@ impl StringProcessor {
     }
 
     // TODO: turn into result and log errors
-    pub async fn reload_rules(&mut self) {
-        let file = File::open(self.config.matcher.rules_path.clone()).expect("reading failed");
+    pub async fn reload_rules(&mut self) -> crate::Result<()> {
+        let file = File::open(self.config.matcher.rules_path.clone()).context(FileNotFoundSnafu)?;
         *self.rules.lock().expect("mutex poisoned") = serde_json::Deserializer::from_reader(file)
             .into_iter::<StringGroupConfig>()
-            .map(|c| c.map(|c| c.into_string_group().expect("Failed converting group")))
-            .collect::<Result<Vec<StringGroup>, _>>()
-            .expect("Failed parsing rules");
+            .map(|c| c.map(|c| c.into_string_group()))
+            .collect::<Result<Result<Vec<StringGroup>, _>, _>>()
+            .context(RuleJsonParsingSnafu)?
+            .context(RuleParsingSnafu)?;
+        Ok(())
     }
 
     pub async fn run(mut self, mut signals: Receiver<ServiceSignal>) {
         // Initialize rules
-        self.reload_rules().await;
+        if let Err(err) = self.reload_rules().await {
+            error!(message = "Loading rules has failed. Aborting...", error = %err);
+            return;
+        }
 
         let mut input_streams = StreamMap::with_capacity(self.config.inputs.len());
 
         for input in self.config.inputs.clone() {
-            input_streams.insert(
-                input.name(),
-                input
+            let input_name = input.name();
+            let input_stream =
+                match input
                     .into_stream()
                     .await
-                    .expect("Building input into stream has failed!"),
-            );
+                    .map_err(|err| StringsimileServiceError::InputFail {
+                        input_name: input_name.clone(),
+                        source: err,
+                    }) {
+                    Ok(stream) => stream,
+                    Err(err) => {
+                        error!(message = "Input preparation failed!", error = %err);
+                        return;
+                    }
+                };
+            input_streams.insert(input_name, input_stream);
         }
 
         let mut stdout = io::stdout();
@@ -96,7 +112,9 @@ impl StringProcessor {
                 },
                 Ok(signal) = signals.recv() => match signal {
                     ServiceSignal::ReloadConfig => {
-                        self.reload_rules().await;
+                        if let Err(err) = self.reload_rules().await {
+                            error!(message = "Reloading rules has failed! Keeping previous rules.", error = %err);
+                        }
                     },
                     ServiceSignal::Shutdown | ServiceSignal::Quit => {
                         info!("Stopping strinsimile processor...");

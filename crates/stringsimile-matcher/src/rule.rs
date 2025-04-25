@@ -24,6 +24,7 @@ pub trait MatcherResultExt<T: Debug, E: Debug> {
     /// Returns internal metadata of the match result.
     ///
     /// Panics if the result is not successful or not a match
+    #[must_use]
     fn into_metadata(self) -> T;
 }
 
@@ -70,6 +71,7 @@ pub trait MatcherRule {
 /// collections.
 pub trait IntoGenericMatcherRule {
     /// Converts this object into an implementation of GenericMatcherRule.
+    #[must_use]
     fn into_generic_matcher(self) -> impl GenericMatcherRule;
 }
 

@@ -1,10 +1,16 @@
 use std::{collections::HashSet, fs::File, path::PathBuf};
 
 use serde::{Deserialize, Serialize};
+use snafu::ResultExt;
 use stringsimile_matcher::rule::Error;
 use tracing::Level;
 
-use crate::{cli::CliArgs, inputs::Input, outputs::Output};
+use crate::{
+    cli::CliArgs,
+    error::{ConfigYamlParsingSnafu, FileNotFoundSnafu},
+    inputs::Input,
+    outputs::Output,
+};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FileBasedConfig {
@@ -135,7 +141,9 @@ impl ServiceConfig {
 }
 
 pub trait LevelInt {
+    #[must_use]
     fn into_u8(self) -> u8;
+    #[must_use]
     fn from_u8(level: u8) -> Self;
 }
 
@@ -166,7 +174,8 @@ impl TryFrom<CliArgs> for ServiceConfig {
 
     fn try_from(value: CliArgs) -> crate::Result<ServiceConfig> {
         let file_config: FileBasedConfig =
-            serde_yaml::from_reader(File::open(value.config.clone())?)?;
+            serde_yaml::from_reader(File::open(value.config.clone()).context(FileNotFoundSnafu)?)
+                .context(ConfigYamlParsingSnafu)?;
         let mut base_config = file_config.build()?;
 
         let log_level_increase = value.verbose - value.quiet;

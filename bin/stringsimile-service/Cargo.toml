@@ -46,6 +46,7 @@ futures.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 serde_yaml.workspace = true
+snafu.workspace = true
 tokio = { workspace = true, features = ["full"] }
 tokio-stream = { workspace = true, features = ["io-util"] }
 tracing.workspace = true

@@ -2,6 +2,7 @@ use stringsimile_matcher::rule::Error;
 
 mod cli;
 mod config;
+mod error;
 mod inputs;
 mod outputs;
 mod processor;
