@@ -77,12 +77,21 @@ impl OutputConfig {
     }
 }
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MatcherConfig {
     #[serde(default = "default_rules_path")]
     pub rules_path: PathBuf,
     #[serde(default = "default_field_name")]
     pub input_field: String,
+}
+
+impl Default for MatcherConfig {
+    fn default() -> Self {
+        Self {
+            rules_path: default_rules_path(),
+            input_field: default_field_name(),
+        }
+    }
 }
 
 impl MatcherConfig {
@@ -109,7 +118,7 @@ fn default_rules_path() -> PathBuf {
 }
 
 fn default_field_name() -> String {
-    "domain_name".to_string()
+    ".domain_name".to_string()
 }
 
 fn default_log_level() -> String {

@@ -10,7 +10,6 @@ impl InputStreamBuilder for StdinStream {
     ) -> crate::Result<
         std::pin::Pin<Box<dyn futures::Stream<Item = (String, Option<serde_json::Value>)> + Send>>,
     > {
-        let stdin = io::stdin();
-        BufReader::new(stdin).into_stream().await
+        BufReader::new(io::stdin()).into_stream().await
     }
 }

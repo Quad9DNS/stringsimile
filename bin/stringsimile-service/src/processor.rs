@@ -1,23 +1,26 @@
 use std::{
     fs::File,
+    panic,
     sync::{Arc, Mutex},
 };
 
+use futures::TryFutureExt;
 use serde_json::{Map, Value};
 use snafu::ResultExt;
 use stringsimile_config::rulesets::StringGroupConfig;
 use stringsimile_matcher::ruleset::StringGroup;
 use tokio::{
-    io::{self, AsyncWriteExt},
-    sync::broadcast::Receiver,
+    sync::broadcast::{self, Receiver},
+    task::JoinSet,
 };
-use tokio_stream::{StreamExt, StreamMap};
+use tokio_stream::{StreamExt, StreamMap, wrappers::BroadcastStream};
 use tracing::{debug, error, info, warn};
 
 use crate::{
     config::ServiceConfig,
     error::{FileNotFoundSnafu, RuleJsonParsingSnafu, RuleParsingSnafu, StringsimileServiceError},
     inputs::{InputBuilder, InputStreamBuilder},
+    outputs::OutputStreamBuilder,
     signal::ServiceSignal,
 };
 
@@ -73,59 +76,91 @@ impl StringProcessor {
             input_streams.insert(input_name, input_stream);
         }
 
-        let mut stdout = io::stdout();
+        let input_field = self.config.matcher.input_field.clone();
+        let rules = Arc::clone(&self.rules);
+
+        let mut transformed_stream =
+            input_streams.map(|(input_name, (original_input, message))| {
+                let Some(message) = message else {
+                    warn!("Input data was not a JSON object!");
+                    return (original_input, None);
+                };
+
+                let Value::Object(ref map) = message else {
+                    warn!("Expected JSON object, but found: {message}");
+                    return (original_input, None);
+                };
+
+                let Some(field) = map.get(&input_field) else {
+                    warn!("Specified key field ({}) not found in input.", input_field);
+                    return (original_input, None);
+                };
+
+                let Value::String(name) = field else {
+                    warn!("Expected string value in key field, but found: {:?}", field);
+                    return (original_input, None);
+                };
+
+                debug!(message = "Processing input from {}", input_name);
+                let mut matches = Vec::default();
+                {
+                    let rules = rules.lock().expect("mutex poisoned");
+                    for rule in rules.iter() {
+                        if let Some(rule_match) = rule.generate_matches(name) {
+                            matches.push(rule_match);
+                        }
+                    }
+                }
+                if matches.is_empty() {
+                    (original_input, None)
+                } else if let Value::Object(mut map) = message {
+                    let mut inner_data = Map::default();
+                    inner_data.insert(
+                        "matches".to_string(),
+                        Value::Array(matches.into_iter().map(Value::Object).collect()),
+                    );
+                    map.insert("stringsimile".to_string(), Value::Object(inner_data));
+                    (original_input, Some(Value::Object(map)))
+                } else {
+                    warn!("Input data was not a JSON object!");
+                    (original_input, None)
+                }
+            });
+
+        let (tx, _rx) = broadcast::channel(128);
+
+        let mut output_tasks = JoinSet::new();
+
+        for output in self.config.outputs.clone() {
+            output_tasks.spawn(
+                output
+                    .consume_stream(Box::pin(
+                        BroadcastStream::new(tx.subscribe()).map_while(|res| res.ok()),
+                    ))
+                    // TODO: do something with the error here
+                    .map_err(|_err| ()),
+            );
+        }
 
         // TODO: abstract away inputs, pre-processors, transformers and outpus
         // Also, don't let any errors stop the processing!
         loop {
             tokio::select! {
-                Some((input_name, (original_input, message))) = input_streams.next() => {
-                    let Some(message) = message else {
-                        warn!("Input data was not a JSON object!");
-                        stdout.write_all(original_input.as_bytes()).await.expect("Write failed");
-                        continue;
-                    };
-
-                    let Value::Object(ref map) = message else {
-                        warn!("Expected JSON object, but found: {message}");
-                        stdout.write_all(original_input.as_bytes()).await.expect("Write failed");
-                        continue;
-                    };
-
-                    let Some(field) = map.get(&self.config.matcher.input_field) else {
-                        warn!(message = "Specified key field ({}) not found in input.", self.config.matcher.input_field);
-                        stdout.write_all(original_input.as_bytes()).await.expect("Write failed");
-                        continue;
-                    };
-
-                    let Value::String(name) = field else {
-                        warn!("Expected string value in key field, but found: {:?}", field);
-                        stdout.write_all(original_input.as_bytes()).await.expect("Write failed");
-                        continue;
-                    };
-
-                    debug!(message = "Processing input from {}", input_name);
-                    let mut matches = Vec::default();
-                    {
-                        let rules = self.rules.lock().expect("mutex poisoned");
-                        for rule in rules.iter() {
-                            if let Some(rule_match) = rule.generate_matches(name) {
-                                matches.push(rule_match);
-                            }
+                Some(task) = output_tasks.join_next() => {
+                    match task {
+                        Ok(_t) => {
+                            info!("Output task completed successfully.");
+                        }
+                        Err(err) if err.is_panic() => panic::resume_unwind(err.into_panic()),
+                        Err(err) => {
+                            error!(message = "Output task failed!", error = %err);
                         }
                     }
-                    if matches.is_empty() {
-                        stdout.write_all(original_input.as_bytes()).await.expect("Write failed");
-                    } else if let Value::Object(mut map) = message {
-                        let mut inner_data = Map::default();
-                        inner_data.insert("matches".to_string(), Value::Array(matches.into_iter().map(Value::Object).collect()));
-                        map.insert("stringsimile".to_string(), Value::Object(inner_data));
-                        stdout.write_all(&serde_json::to_vec(&Value::Object(map)).expect("Serialization failed")).await.expect("Write failed");
-                    } else {
-                        warn!("Input data was not a JSON object!");
-                        stdout.write_all(original_input.as_bytes()).await.expect("Write failed");
+                },
+                Some(val) = transformed_stream.next() => {
+                    if let Err(err) = tx.send(val) {
+                        warn!(message = "Passing message to outputs failed.", error = %err);
                     }
-                    stdout.write_all(b"\n").await.expect("Write failed");
                 },
                 Ok(signal) = signals.recv() => match signal {
                     ServiceSignal::ReloadConfig => {

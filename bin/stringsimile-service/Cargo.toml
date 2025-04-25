@@ -48,7 +48,7 @@ serde_json.workspace = true
 serde_yaml.workspace = true
 snafu.workspace = true
 tokio = { workspace = true, features = ["full"] }
-tokio-stream = { workspace = true, features = ["io-util"] }
+tokio-stream = { workspace = true, features = ["io-util", "sync"] }
 tracing.workspace = true
 tracing-subscriber.workspace = true
 
