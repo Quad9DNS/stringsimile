@@ -1,7 +1,7 @@
 //! Group of related rules
 
 use serde_json::{Map, Value};
-use tracing::{debug, error, warn};
+use tracing::{debug, error};
 
 use crate::rule::GenericMatcherRule;
 
@@ -59,36 +59,18 @@ impl RuleSet {
 
 impl StringGroup {
     /// Matches the value to this string group and generates matches with metadata
-    pub fn generate_matches(&self, object: &Value) -> Option<Map<String, Value>> {
-        debug!(message = "Generating matches for string group: {}", self.name, input = ?object);
+    pub fn generate_matches(&self, input: &str) -> Option<Map<String, Value>> {
+        debug!(message = "Generating matches for string group: {}", self.name, input = ?input);
         let mut matches: Map<String, Value> = Map::default();
 
-        if let Value::Object(map) = object {
-            // TODO: make key configurable
-            let field = map.get("domain_name");
-            match field {
-                Some(Value::String(name)) => {
-                    for rule_set in &self.rule_sets {
-                        if let Some(rule_set_matches) = rule_set.generate_matches(name) {
-                            matches.insert(
-                                rule_set.name.clone(),
-                                Value::Array(
-                                    rule_set_matches.into_iter().map(Value::Object).collect(),
-                                ),
-                            );
-                        }
-                    }
-                }
-                Some(other) => {
-                    warn!("Expected string value in key field, but found: {other}");
-                }
-                None => {
-                    warn!("Specified key field (domain_name) not found in input.");
-                }
+        for rule_set in &self.rule_sets {
+            if let Some(rule_set_matches) = rule_set.generate_matches(input) {
+                matches.insert(
+                    rule_set.name.clone(),
+                    Value::Array(rule_set_matches.into_iter().map(Value::Object).collect()),
+                );
             }
-        } else {
-            warn!("Expected JSON object, but found: {object}");
-        };
+        }
 
         if !matches.is_empty() {
             Some(matches)

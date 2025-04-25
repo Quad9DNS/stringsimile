@@ -34,7 +34,6 @@ impl StringProcessor {
         }
     }
 
-    // TODO: turn into result and log errors
     pub async fn reload_rules(&mut self) -> crate::Result<()> {
         let file = File::open(self.config.matcher.rules_path.clone()).context(FileNotFoundSnafu)?;
         *self.rules.lock().expect("mutex poisoned") = serde_json::Deserializer::from_reader(file)
@@ -87,12 +86,30 @@ impl StringProcessor {
                         continue;
                     };
 
+                    let Value::Object(ref map) = message else {
+                        warn!("Expected JSON object, but found: {message}");
+                        stdout.write_all(original_input.as_bytes()).await.expect("Write failed");
+                        continue;
+                    };
+
+                    let Some(field) = map.get(&self.config.matcher.input_field) else {
+                        warn!(message = "Specified key field ({}) not found in input.", self.config.matcher.input_field);
+                        stdout.write_all(original_input.as_bytes()).await.expect("Write failed");
+                        continue;
+                    };
+
+                    let Value::String(name) = field else {
+                        warn!("Expected string value in key field, but found: {:?}", field);
+                        stdout.write_all(original_input.as_bytes()).await.expect("Write failed");
+                        continue;
+                    };
+
                     debug!(message = "Processing input from {}", input_name);
                     let mut matches = Vec::default();
                     {
                         let rules = self.rules.lock().expect("mutex poisoned");
                         for rule in rules.iter() {
-                            if let Some(rule_match) = rule.generate_matches(&message) {
+                            if let Some(rule_match) = rule.generate_matches(name) {
                                 matches.push(rule_match);
                             }
                         }
