@@ -1,6 +1,5 @@
 use tokio::io::{AsyncWrite, AsyncWriteExt, BufWriter};
 use tokio_stream::StreamExt;
-use tracing::warn;
 
 use super::OutputStreamBuilder;
 
@@ -18,7 +17,6 @@ impl<W: AsyncWrite> OutputStreamBuilder for BufWriter<W> {
                     .await
                     .expect("Write failed");
             } else {
-                warn!("Input data was not a JSON object!");
                 this.write_all(original_input.as_bytes())
                     .await
                     .expect("Write failed");
