@@ -41,13 +41,33 @@ impl RuleSet {
         );
         let mut matches: Vec<GenericMatchResult> = Vec::default();
 
+        let mut parts = Vec::default();
+        if self.split_target {
+            parts.extend(name.split(".").map(|s| s.to_string()));
+            if self.ignore_tld {
+                parts.remove(parts.len() - 1);
+            }
+        } else {
+            parts.push(name.to_string());
+        }
+
         for rule in &self.rules {
-            match rule.match_rule_generic(name, &self.string_match) {
-                Ok(result) => {
-                    matches.push(result.into_full_metadata());
-                }
-                Err(err) => {
-                    error!(message = "Matcher failed", error = ?err);
+            for (index, part) in parts.iter().enumerate() {
+                match rule.match_rule_generic(part, &self.string_match) {
+                    Ok(mut result) => {
+                        if self.split_target {
+                            result
+                                .metadata
+                                .insert("split_string".to_string(), Value::String(part.clone()));
+                            result
+                                .metadata
+                                .insert("split_position".to_string(), Value::Number(index.into()));
+                        }
+                        matches.push(result.into_full_metadata());
+                    }
+                    Err(err) => {
+                        error!(message = "Matcher failed", error = ?err);
+                    }
                 }
             }
         }
