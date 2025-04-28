@@ -57,7 +57,7 @@ mod tests {
     #[test]
     fn simple_example() {
         let rule = DamerauLevenshteinRule {
-            maximum_distance: 2.try_into().unwrap(),
+            maximum_distance: 2,
         };
 
         let result = rule.match_rule("test", "tset");
