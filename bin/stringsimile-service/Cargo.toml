@@ -18,6 +18,9 @@ assets = [
     { source = "../../LICENSE", dest = "usr/share/licenses/stringsimile/LICENSE", mode = "644" },
     { source = "../../distribution/config.yaml", dest = "etc/stringsimile/stringsimile.yaml", mode = "644" },
     { source = "../../distribution/rules/*", dest = "var/lib/stringsimile", mode = "644" },
+    { source = "../../target/man/stringsimile.1", dest = "usr/share/man/man1/stringsimile.1", mode = "644" },
+    { source = "../../target/man/stringsimile-config.5", dest = "usr/share/man/man5/stringsimile-config.5", mode = "644" },
+    { source = "../../target/man/stringsimile-rule-config.5", dest = "usr/share/man/man5/stringsimile-rule-config.5", mode = "644" },
 ]
 
 [package.metadata.deb.systemd-units]
@@ -35,6 +38,9 @@ assets = [
     { source = "../../distribution/systemd/stringsimile.service", dest = "/lib/systemd/system/stringsimile.service", mode = "644" },
     { source = "../../distribution/config.yaml", dest = "/etc/stringsimile/stringsimile.yaml", mode = "644" },
     { source = "../../distribution/rules/*", dest = "/var/lib/stringsimile", mode = "644" },
+    { source = "../../target/man/stringsimile.1", dest = "/usr/share/man/man1/stringsimile.1", mode = "644" },
+    { source = "../../target/man/stringsimile-config.5", dest = "/usr/share/man/man5/stringsimile-config.5", mode = "644" },
+    { source = "../../target/man/stringsimile-rule-config.5", dest = "/usr/share/man/man5/stringsimile-rule-config.5", mode = "644" },
 ]
 
 [dependencies]

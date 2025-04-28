@@ -1,18 +1,19 @@
+## This example files displays default values
 ## Different inputs can be configured here (file input, stdin, kafka)
 # input:
   ## To enable file input, define path to read from
-  # file_path: "/tmp/test_file"
+  # file_path: null
 
   ## To enable stdin input, just set the stdin flag to true
-  # stdin: true
+  # stdin: false
 
 ## Different outputs can be configured here (file output, stdout, kafka)
 # output:
   ## To enable file output, define path to write to
-  # file_path: "/tmp/test_file"
+  # file_path: null
 
   ## To enable stdout output, just set the stdout flag to true
-  # stdout: true
+  # stdout: false
 
 ## Rule matcher can be configured here
 # matcher:
@@ -30,7 +31,7 @@
   ## `report_all` flag can be set to true to put matching metadata in all objects,
   ## even in cases when there was no successful match. This can be useful for debugging
   ## the rules.
-  # report_all: true
+  # report_all: false
 
 ## Log level can be configured
 ## Valid levels are: "error", "warn", "info", "debug", "trace"
