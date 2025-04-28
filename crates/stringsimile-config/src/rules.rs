@@ -92,6 +92,7 @@ pub struct JaroConfig {
 
 impl JaroConfig {
     fn build(&self) -> JaroRule {
+        // TODO: add a way to warn about invalid value - require float 0-1
         JaroRule {
             match_percent: self.match_percent_threshold,
         }
@@ -107,6 +108,7 @@ pub struct JaroWinklerConfig {
 
 impl JaroWinklerConfig {
     fn build(&self) -> JaroWinklerRule {
+        // TODO: add a way to warn about invalid value - require float 0-1
         JaroWinklerRule {
             match_percent: self.match_percent_threshold,
         }
