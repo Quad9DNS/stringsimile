@@ -4,7 +4,6 @@ use std::io::Error;
 
 use confusables::Confusable;
 use serde::{Deserialize, Serialize};
-use tracing::debug;
 
 use crate::{
     MatcherResult,
@@ -31,13 +30,6 @@ impl MatcherRule for ConfusablesRule {
     ) -> MatcherResult<Self::OutputMetadata, Self::Error> {
         let metadata = ConfusablesMetadata;
         let confusable = input_str.is_confusable_with(target_str);
-        // TODO: extract debug log for all rules
-        debug!(
-            message = "ConfusableRule match",
-            input = input_str,
-            target = target_str,
-            result = confusable
-        );
         if confusable && target_str != input_str {
             MatcherResult::new_match(metadata)
         } else {

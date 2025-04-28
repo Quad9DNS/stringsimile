@@ -3,7 +3,7 @@
 use std::collections::BTreeMap;
 
 use serde_json::{Map, Value};
-use tracing::{debug, error};
+use tracing::{debug, error, error_span};
 
 use crate::{GenericMatchResult, rule::GenericMatcherRule};
 
@@ -33,9 +33,9 @@ pub struct StringGroup {
 impl RuleSet {
     /// Matches the value to this rule set and generates matches with metadata
     pub fn generate_matches(&self, name: &str) -> Vec<GenericMatchResult> {
+        let _ = error_span!("ruleset", input = name, ruleset = self.name).enter();
         debug!(
-            message = "Generating matches for rule set: {}",
-            self.name,
+            message = format!("Generating matches for rule set: {}", self.name),
             input = name,
             target = self.string_match
         );
@@ -79,7 +79,8 @@ impl RuleSet {
 impl StringGroup {
     /// Matches the value to this string group and generates matches with metadata
     pub fn generate_matches(&self, input: &str) -> BTreeMap<String, Vec<GenericMatchResult>> {
-        debug!(message = "Generating matches for string group: {}", self.name, input = ?input);
+        let _ = error_span!("string group", input = input, group = self.name).enter();
+        debug!(message = format!("Generating matches for string group: {}", self.name), input = ?input);
         let mut matches: BTreeMap<String, Vec<GenericMatchResult>> = BTreeMap::default();
 
         for rule_set in &self.rule_sets {

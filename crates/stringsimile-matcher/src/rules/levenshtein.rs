@@ -3,7 +3,6 @@
 use std::io::Error;
 
 use serde::{Deserialize, Serialize};
-use tracing::debug;
 use triple_accel::levenshtein_exp;
 
 use crate::{
@@ -36,12 +35,6 @@ impl MatcherRule for LevenshteinRule {
         target_str: &str,
     ) -> MatcherResult<Self::OutputMetadata, Self::Error> {
         let res = levenshtein_exp(input_str.as_bytes(), target_str.as_bytes());
-        debug!(
-            message = "LevenshteinRule match",
-            input = input_str,
-            target = target_str,
-            result = res
-        );
         let metadata = LevenshteinMetadata { distance: res };
         if res <= self.maximum_distance {
             MatcherResult::new_match(metadata)

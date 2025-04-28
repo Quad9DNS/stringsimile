@@ -3,6 +3,7 @@
 use std::fmt::Debug;
 
 use serde::Serialize;
+use tracing::{debug, error_span};
 
 use crate::{GenericMatcherResult, MatchResult, MatcherResult};
 
@@ -98,6 +99,19 @@ where
     T: MatcherRule,
 {
     fn match_rule_generic(&self, input_str: &str, target_str: &str) -> GenericMatcherResult {
+        let _ = error_span!(
+            "rule",
+            input = input_str,
+            target = target_str,
+            rule = T::OutputMetadata::RULE_NAME
+        )
+        .enter();
+        debug!(
+            message = "Matching rule",
+            input = input_str,
+            target = target_str,
+            rule = T::OutputMetadata::RULE_NAME
+        );
         self.match_rule(input_str, target_str)
             .map_err(Box::new)?
             .try_into_generic_result()
