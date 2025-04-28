@@ -1,6 +1,4 @@
 //! Configuration for rules
-use std::num::NonZeroU32;
-
 use serde::{Deserialize, Serialize};
 use stringsimile_matcher::{
     rule::{GenericMatcherRule, IntoGenericMatcherRule},
@@ -36,7 +34,7 @@ impl RuleConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LevenshteinConfig {
     /// Maximum distance
-    pub maximum_distance: NonZeroU32,
+    pub maximum_distance: u32,
 }
 
 impl LevenshteinConfig {
@@ -90,7 +88,7 @@ mod tests {
         let RuleConfig::Levenshtein(config) = serde_json::from_str(json).unwrap() else {
             panic!("Expected Levenshtein config");
         };
-        assert_eq!(3, config.maximum_distance.get());
+        assert_eq!(3, config.maximum_distance);
     }
 
     #[test]
