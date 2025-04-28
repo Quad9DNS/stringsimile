@@ -54,14 +54,21 @@ mod tests {
 
     use super::*;
 
+    fn round_assert_eq(left: f64, right: f64) {
+        assert_eq!(
+            (left * 100.0).round() / 100.0,
+            (right * 100.0).round() / 100.0
+        );
+    }
+
     #[test]
     fn simple_example() {
         let rule = JaroRule {
             match_percent: 0.85,
         };
 
-        let result = rule.match_rule("test", "tset");
+        let result = rule.match_rule("example", "exemple");
         assert!(result.is_match());
-        assert_eq!(result.into_metadata().match_percent, 2.0);
+        round_assert_eq(result.into_metadata().match_percent, 0.9);
     }
 }

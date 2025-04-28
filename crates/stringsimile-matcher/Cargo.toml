@@ -6,10 +6,11 @@ repository.workspace = true
 
 [features]
 default = ["all"]
-all = ["rules-levenshtein", "rules-jaro", "rules-confusables"]
+all = ["rules-levenshtein", "rules-jaro", "rules-confusables", "rules-damerau-levenshtein"]
 rules-levenshtein = ["dep:triple_accel"]
 rules-jaro = ["dep:strsim"]
 rules-confusables = ["dep:confusables"]
+rules-damerau-levenshtein = ["dep:triple_accel"]
 
 [dependencies]
 confusables = { workspace = true, optional = true }

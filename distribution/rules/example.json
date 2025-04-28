@@ -22,7 +22,13 @@
 					},
 					{
 						"rule_type": "confusables"
-					}
+					},
+					{
+						"rule_type": "damerau_levenshtein",
+						"values": {
+							"maximum_distance": 3
+						}
+					},
 				]
 			},
 			{

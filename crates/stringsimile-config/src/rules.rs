@@ -2,7 +2,10 @@
 use serde::{Deserialize, Serialize};
 use stringsimile_matcher::{
     rule::{GenericMatcherRule, IntoGenericMatcherRule},
-    rules::{confusables::ConfusablesRule, jaro::JaroRule, levenshtein::LevenshteinRule},
+    rules::{
+        confusables::ConfusablesRule, damerau_levenshtein::DamerauLevenshteinRule, jaro::JaroRule,
+        levenshtein::LevenshteinRule,
+    },
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -13,6 +16,8 @@ pub enum RuleConfig {
     Levenshtein(LevenshteinConfig),
     /// Configuration for Confusables rule
     Confusables,
+    /// Configuration for Damerau Levenshtein rule
+    DamerauLevenshtein(DamerauLevenshteinConfig),
     /// Configuration for Jaro rule
     Jaro(JaroConfig),
 }
@@ -26,6 +31,9 @@ impl RuleConfig {
             }
             RuleConfig::Confusables => Box::new(ConfusablesConfig.build().into_generic_matcher()),
             RuleConfig::Jaro(jaro_config) => Box::new(jaro_config.build().into_generic_matcher()),
+            RuleConfig::DamerauLevenshtein(damerau_levenshtein_config) => {
+                Box::new(damerau_levenshtein_config.build().into_generic_matcher())
+            }
         }
     }
 }
@@ -55,6 +63,21 @@ impl ConfusablesConfig {
     }
 }
 
+/// Configuration for Damerau Levenshtein rule
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DamerauLevenshteinConfig {
+    /// Maximum distance
+    pub maximum_distance: u32,
+}
+
+impl DamerauLevenshteinConfig {
+    fn build(&self) -> DamerauLevenshteinRule {
+        DamerauLevenshteinRule {
+            maximum_distance: self.maximum_distance,
+        }
+    }
+}
+
 /// Configuration for Jaro rule
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct JaroConfig {
@@ -75,7 +98,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_parse() {
+    fn test_parse_levenshtein() {
         let json = r#"
         {
             "rule_type": "levenshtein",
@@ -119,5 +142,22 @@ mod tests {
         let RuleConfig::Confusables = serde_json::from_str(json).unwrap() else {
             panic!("Expected Confusables config");
         };
+    }
+
+    #[test]
+    fn test_parse_damerau_levenshtein() {
+        let json = r#"
+        {
+            "rule_type": "damerau_levenshtein",
+            "values": {
+                "maximum_distance": 3
+            }
+        }
+            "#;
+
+        let RuleConfig::DamerauLevenshtein(config) = serde_json::from_str(json).unwrap() else {
+            panic!("Expected Damera Levenshtein config");
+        };
+        assert_eq!(3, config.maximum_distance);
     }
 }

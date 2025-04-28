@@ -118,7 +118,7 @@ mod tests {
         let RuleConfig::Levenshtein(set_1_rule_1) = &set_1.match_rules[0] else {
             panic!("Expected levenshtein rule");
         };
-        assert_eq!(3, set_1_rule_1.maximum_distance.get());
+        assert_eq!(3, set_1_rule_1.maximum_distance);
 
         // let set_2 = wikimedia_group.rule_sets[1];
     }
