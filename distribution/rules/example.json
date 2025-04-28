@@ -15,6 +15,12 @@
 						}
 					},
 					{
+						"rule_type": "hamming",
+						"values": {
+							"maximum_distance": 3
+						}
+					},
+					{
 						"rule_type": "jaro",
 						"values": {
 							"match_percent_threshold": 0.85

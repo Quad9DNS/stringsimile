@@ -25,6 +25,7 @@ Currently the following rules are supported:
 - Jaro-Winkler
 - IDN Confusables
 - Damerau-Levenshtein
+- Hamming
 
 Each of the rules has specific values that can be used to configure it:
 - Levenshtein
@@ -36,6 +37,8 @@ Each of the rules has specific values that can be used to configure it:
 - IDN Confusables - no additional values (values field may be skipped)
 - Damerau-Levenshtein
   - maximum_distance - maximum Damerau Levenshtein distance to allow to consider this rule matched
+- Hamming
+  - maximum_distance - maximum Hamming distance to allow to consider this rule matched
 
 
 Single string group object has the following keys:
@@ -62,7 +65,7 @@ Each rule set has the following keys:
 
 Each rule has the following keys:
 - rule_type
-  One of "levenshtein", "jaro", "jaro_winkler", "confusables", "damerau_levenshtein"
+  One of "levenshtein", "jaro", "jaro_winkler", "confusables", "damerau_levenshtein", "hamming"
 - values
   Object dependent on the rule_type used. Some rules don't have additional
   values and this field can be skipped for them.

@@ -3,8 +3,9 @@ use serde::{Deserialize, Serialize};
 use stringsimile_matcher::{
     rule::{GenericMatcherRule, IntoGenericMatcherRule},
     rules::{
-        confusables::ConfusablesRule, damerau_levenshtein::DamerauLevenshteinRule, jaro::JaroRule,
-        jaro_winkler::JaroWinklerRule, levenshtein::LevenshteinRule,
+        confusables::ConfusablesRule, damerau_levenshtein::DamerauLevenshteinRule,
+        hamming::HammingRule, jaro::JaroRule, jaro_winkler::JaroWinklerRule,
+        levenshtein::LevenshteinRule,
     },
 };
 
@@ -14,6 +15,8 @@ use stringsimile_matcher::{
 pub enum RuleConfig {
     /// Configuration for Levenshtein rule
     Levenshtein(LevenshteinConfig),
+    /// Configuration for Hamming rule
+    Hamming(HammingConfig),
     /// Configuration for Confusables rule
     Confusables,
     /// Configuration for Damerau Levenshtein rule
@@ -30,6 +33,9 @@ impl RuleConfig {
         match self {
             RuleConfig::Levenshtein(levenshtein_config) => {
                 Box::new(levenshtein_config.build().into_generic_matcher())
+            }
+            RuleConfig::Hamming(hamming_config) => {
+                Box::new(hamming_config.build().into_generic_matcher())
             }
             RuleConfig::Confusables => Box::new(ConfusablesConfig.build().into_generic_matcher()),
             RuleConfig::Jaro(jaro_config) => Box::new(jaro_config.build().into_generic_matcher()),
@@ -53,6 +59,21 @@ pub struct LevenshteinConfig {
 impl LevenshteinConfig {
     fn build(&self) -> LevenshteinRule {
         LevenshteinRule {
+            maximum_distance: self.maximum_distance,
+        }
+    }
+}
+
+/// Configuration for Levenshtein rule
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HammingConfig {
+    /// Maximum distance
+    pub maximum_distance: u32,
+}
+
+impl HammingConfig {
+    fn build(&self) -> HammingRule {
+        HammingRule {
             maximum_distance: self.maximum_distance,
         }
     }
@@ -198,5 +219,22 @@ mod tests {
             panic!("Expected Jaro-Winkler config");
         };
         assert_eq!(0.4, config.match_percent_threshold);
+    }
+
+    #[test]
+    fn test_parse_hamming() {
+        let json = r#"
+        {
+            "rule_type": "hamming",
+            "values": {
+                "maximum_distance": 3
+            }
+        }
+            "#;
+
+        let RuleConfig::Hamming(config) = serde_json::from_str(json).unwrap() else {
+            panic!("Expected Hamming config");
+        };
+        assert_eq!(3, config.maximum_distance);
     }
 }
