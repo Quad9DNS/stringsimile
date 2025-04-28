@@ -43,6 +43,10 @@ fmt:
 lint:
 	cargo clippy
 
+.PHONY: check
+check: lint test
+	cargo deny check
+
 .PHONY: test
 test:
 	cargo test
