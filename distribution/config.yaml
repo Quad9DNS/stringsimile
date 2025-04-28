@@ -1,0 +1,37 @@
+## Different inputs can be configured here (file input, stdin, kafka)
+# input:
+  ## To enable file input, define path to read from
+  # file_path: "/tmp/test_file"
+
+  ## To enable stdin input, just set the stdin flag to true
+  # stdin: true
+
+## Different outputs can be configured here (file output, stdout, kafka)
+# output:
+  ## To enable file output, define path to write to
+  # file_path: "/tmp/test_file"
+
+  ## To enable stdout output, just set the stdout flag to true
+  # stdout: true
+
+## Rule matcher can be configured here
+# matcher:
+  ## Path for reading rules can be defined using `rule_path`
+  ## It can either be a single file or a directory containing JSONL files
+  # rule_path: "/var/lib/stringsimile"
+
+  ## Field to apply rules to from input objects. This field supports simple syntax for accessing nested objects
+  ## e.g. ".domain_name" will look for "domain_name" key in root object.
+  ## ".value.domain_name" will look for "value" in root object
+  ## and then for "domain_name" in the "value" object.
+  ## Any failures in matching will just pass through the object unmodified.
+  # input_field: ".domain_name"
+
+  ## `report_all` flag can be set to true to put matching metadata in all objects,
+  ## even in cases when there was no successful match. This can be useful for debugging
+  ## the rules.
+  # report_all: true
+
+## Log level can be configured
+## Valid levels are: "error", "warn", "info", "debug", "trace"
+# log_level: "INFO"
