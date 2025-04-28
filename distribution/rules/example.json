@@ -19,6 +19,9 @@
 						"values": {
 							"match_percent_threshold": 85
 						}
+					},
+					{
+						"rule_type": "confusables"
 					}
 				]
 			},

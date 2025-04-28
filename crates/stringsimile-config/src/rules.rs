@@ -4,7 +4,7 @@ use std::num::NonZeroU32;
 use serde::{Deserialize, Serialize};
 use stringsimile_matcher::{
     rule::{GenericMatcherRule, IntoGenericMatcherRule},
-    rules::{jaro::JaroRule, levenshtein::LevenshteinRule},
+    rules::{confusables::ConfusablesRule, jaro::JaroRule, levenshtein::LevenshteinRule},
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -13,6 +13,8 @@ use stringsimile_matcher::{
 pub enum RuleConfig {
     /// Configuration for Levenshtein rule
     Levenshtein(LevenshteinConfig),
+    /// Configuration for Confusables rule
+    Confusables,
     /// Configuration for Jaro rule
     Jaro(JaroConfig),
 }
@@ -24,6 +26,7 @@ impl RuleConfig {
             RuleConfig::Levenshtein(levenshtein_config) => {
                 Box::new(levenshtein_config.build().into_generic_matcher())
             }
+            RuleConfig::Confusables => Box::new(ConfusablesConfig.build().into_generic_matcher()),
             RuleConfig::Jaro(jaro_config) => Box::new(jaro_config.build().into_generic_matcher()),
         }
     }
@@ -41,6 +44,16 @@ impl LevenshteinConfig {
         LevenshteinRule {
             maximum_distance: self.maximum_distance,
         }
+    }
+}
+
+/// Configuration for Confusables rule
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ConfusablesConfig;
+
+impl ConfusablesConfig {
+    fn build(&self) -> ConfusablesRule {
+        ConfusablesRule
     }
 }
 
@@ -78,5 +91,35 @@ mod tests {
             panic!("Expected Levenshtein config");
         };
         assert_eq!(3, config.maximum_distance.get());
+    }
+
+    #[test]
+    fn test_parse_jaro() {
+        let json = r#"
+        {
+            "rule_type": "jaro",
+            "values": {
+                "match_percent_threshold": 0.4
+            }
+        }
+            "#;
+
+        let RuleConfig::Jaro(config) = serde_json::from_str(json).unwrap() else {
+            panic!("Expected Jaro config");
+        };
+        assert_eq!(0.4, config.match_percent_threshold);
+    }
+
+    #[test]
+    fn test_parse_confusables() {
+        let json = r#"
+        {
+            "rule_type": "confusables"
+        }
+            "#;
+
+        let RuleConfig::Confusables = serde_json::from_str(json).unwrap() else {
+            panic!("Expected Confusables config");
+        };
     }
 }

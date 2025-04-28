@@ -6,11 +6,13 @@ repository.workspace = true
 
 [features]
 default = ["all"]
-all = ["rules-levenshtein", "rules-jaro"]
+all = ["rules-levenshtein", "rules-jaro", "rules-confusables"]
 rules-levenshtein = ["dep:triple_accel"]
 rules-jaro = ["dep:strsim"]
+rules-confusables = ["dep:confusables"]
 
 [dependencies]
+confusables = { workspace = true, optional = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json.workspace = true
 strsim = { workspace = true, optional = true }

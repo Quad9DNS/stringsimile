@@ -1,5 +1,7 @@
 //! Collection of rule implementations
 
+#[cfg(feature = "rules-confusables")]
+pub mod confusables;
 #[cfg(feature = "rules-jaro")]
 pub mod jaro;
 #[cfg(feature = "rules-levenshtein")]
