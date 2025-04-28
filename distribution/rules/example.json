@@ -17,7 +17,13 @@
 					{
 						"rule_type": "jaro",
 						"values": {
-							"match_percent_threshold": 85
+							"match_percent_threshold": 0.85
+						}
+					},
+					{
+						"rule_type": "jaro_winkler",
+						"values": {
+							"match_percent_threshold": 0.85
 						}
 					},
 					{
@@ -46,7 +52,7 @@
 					{
 						"rule_type": "jaro",
 						"values": {
-							"match_percent_threshold": 85
+							"match_percent_threshold": 0.85
 						}
 					}
 				]

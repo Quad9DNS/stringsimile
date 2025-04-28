@@ -6,5 +6,7 @@ pub mod confusables;
 pub mod damerau_levenshtein;
 #[cfg(feature = "rules-jaro")]
 pub mod jaro;
+#[cfg(feature = "rules-jaro-winkler")]
+pub mod jaro_winkler;
 #[cfg(feature = "rules-levenshtein")]
 pub mod levenshtein;

@@ -4,7 +4,7 @@ use stringsimile_matcher::{
     rule::{GenericMatcherRule, IntoGenericMatcherRule},
     rules::{
         confusables::ConfusablesRule, damerau_levenshtein::DamerauLevenshteinRule, jaro::JaroRule,
-        levenshtein::LevenshteinRule,
+        jaro_winkler::JaroWinklerRule, levenshtein::LevenshteinRule,
     },
 };
 
@@ -20,6 +20,8 @@ pub enum RuleConfig {
     DamerauLevenshtein(DamerauLevenshteinConfig),
     /// Configuration for Jaro rule
     Jaro(JaroConfig),
+    /// Configuration for Jaro-Winkler rule
+    JaroWinkler(JaroWinklerConfig),
 }
 
 impl RuleConfig {
@@ -31,6 +33,9 @@ impl RuleConfig {
             }
             RuleConfig::Confusables => Box::new(ConfusablesConfig.build().into_generic_matcher()),
             RuleConfig::Jaro(jaro_config) => Box::new(jaro_config.build().into_generic_matcher()),
+            RuleConfig::JaroWinkler(jaro_winkler_config) => {
+                Box::new(jaro_winkler_config.build().into_generic_matcher())
+            }
             RuleConfig::DamerauLevenshtein(damerau_levenshtein_config) => {
                 Box::new(damerau_levenshtein_config.build().into_generic_matcher())
             }
@@ -88,6 +93,21 @@ pub struct JaroConfig {
 impl JaroConfig {
     fn build(&self) -> JaroRule {
         JaroRule {
+            match_percent: self.match_percent_threshold,
+        }
+    }
+}
+
+/// Configuration for Jaro-Winkler rule
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct JaroWinklerConfig {
+    /// Maximum distance
+    pub match_percent_threshold: f64,
+}
+
+impl JaroWinklerConfig {
+    fn build(&self) -> JaroWinklerRule {
+        JaroWinklerRule {
             match_percent: self.match_percent_threshold,
         }
     }
@@ -159,5 +179,22 @@ mod tests {
             panic!("Expected Damera Levenshtein config");
         };
         assert_eq!(3, config.maximum_distance);
+    }
+
+    #[test]
+    fn test_parse_jaro_winkler() {
+        let json = r#"
+        {
+            "rule_type": "jaro_winkler",
+            "values": {
+                "match_percent_threshold": 0.4
+            }
+        }
+            "#;
+
+        let RuleConfig::JaroWinkler(config) = serde_json::from_str(json).unwrap() else {
+            panic!("Expected Jaro-Winkler config");
+        };
+        assert_eq!(0.4, config.match_percent_threshold);
     }
 }

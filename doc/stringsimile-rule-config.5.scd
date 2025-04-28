@@ -22,6 +22,7 @@ matching against.
 Currently the following rules are supported:
 - Levenshtein
 - Jaro
+- Jaro-Winkler
 - IDN Confusables
 - Damerau-Levenshtein
 
@@ -29,7 +30,9 @@ Each of the rules has specific values that can be used to configure it:
 - Levenshtein
   - maximum_distance - maximum Levenshtein distance to allow to consider this rule matched
 - Jaro
-  - match_percent_threshold - minimum Jaro match percentage to consider the rule matched
+  - match_percent_threshold - minimum Jaro match percentage to consider the rule matched (float between 0 and 1)
+- Jaro-Winkler
+  - match_percent_threshold - minimum Jaro-Winkler match percentage to consider the rule matched (float between 0 and 1)
 - IDN Confusables - no additional values (values field may be skipped)
 - Damerau-Levenshtein
   - maximum_distance - maximum Damerau Levenshtein distance to allow to consider this rule matched
@@ -59,7 +62,7 @@ Each rule set has the following keys:
 
 Each rule has the following keys:
 - rule_type
-  One of "levenshtein", "jaro", "confusables", "damerau_levenshtein"
+  One of "levenshtein", "jaro", "jaro_winkler", "confusables", "damerau_levenshtein"
 - values
   Object dependent on the rule_type used. Some rules don't have additional
   values and this field can be skipped for them.
