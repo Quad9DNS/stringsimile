@@ -1,0 +1,47 @@
+[
+	{
+		"name": "Example string group",
+		"rule_sets": [
+			{
+				"name": "Test rule set",
+				"string_match": "test",
+				"split_target": true,
+				"ignore_tld": true,
+				"match_rules": [
+					{
+						"rule_type": "levenshtein",
+						"values": {
+							"maximum_distance": 3
+						}
+					},
+					{
+						"rule_type": "jaro",
+						"values": {
+							"match_percent_threshold": 85
+						}
+					}
+				]
+			},
+			{
+				"name": "Example rule set",
+				"split_target": true,
+				"ignore_tld": true,
+				"string_match": "example",
+				"match_rules": [
+					{
+						"rule_type": "levenshtein",
+						"values": {
+							"maximum_distance": 3
+						}
+					},
+					{
+						"rule_type": "jaro",
+						"values": {
+							"match_percent_threshold": 85
+						}
+					}
+				]
+			}
+		]
+	}
+]

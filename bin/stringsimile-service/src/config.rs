@@ -7,7 +7,7 @@ use tracing::Level;
 
 use crate::{
     cli::CliArgs,
-    error::{ConfigYamlParsingSnafu, FileNotFoundSnafu},
+    error::{ConfigYamlParsingSnafu, FileReadSnafu},
     inputs::Input,
     outputs::Output,
 };
@@ -187,7 +187,7 @@ impl TryFrom<CliArgs> for ServiceConfig {
 
     fn try_from(value: CliArgs) -> crate::Result<ServiceConfig> {
         let file_config: FileBasedConfig =
-            serde_yaml::from_reader(File::open(value.config.clone()).context(FileNotFoundSnafu)?)
+            serde_yaml::from_reader(File::open(value.config.clone()).context(FileReadSnafu)?)
                 .context(ConfigYamlParsingSnafu)?;
         let mut base_config = file_config.build()?;
 

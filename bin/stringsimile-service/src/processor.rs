@@ -1,5 +1,6 @@
 use std::{
     fs::File,
+    io::{BufReader, Seek},
     panic,
     sync::{Arc, Mutex},
 };
@@ -18,7 +19,7 @@ use tracing::{debug, error, info, warn};
 
 use crate::{
     config::ServiceConfig,
-    error::{FileNotFoundSnafu, RuleJsonParsingSnafu, RuleParsingSnafu, StringsimileServiceError},
+    error::{FileReadSnafu, RuleParsingSnafu, StringsimileServiceError},
     inputs::{InputBuilder, InputStreamBuilder},
     outputs::OutputStreamBuilder,
     signal::ServiceSignal,
@@ -38,12 +39,26 @@ impl StringProcessor {
     }
 
     pub async fn reload_rules(&mut self) -> crate::Result<()> {
-        let file = File::open(self.config.matcher.rules_path.clone()).context(FileNotFoundSnafu)?;
-        *self.rules.lock().expect("mutex poisoned") = serde_json::Deserializer::from_reader(file)
-            .into_iter::<StringGroupConfig>()
-            .map(|c| c.map(|c| c.into_string_group()))
-            .collect::<Result<Result<Vec<StringGroup>, _>, _>>()
-            .context(RuleJsonParsingSnafu)?
+        let file = File::open(self.config.matcher.rules_path.clone()).context(FileReadSnafu)?;
+        let mut reader = BufReader::new(file);
+        let parsed_rules: Vec<StringGroupConfig> = match serde_json::from_reader(&mut reader) {
+            Ok(rules) => rules,
+            Err(err) => {
+                reader.rewind().context(FileReadSnafu)?;
+                serde_json::Deserializer::from_reader(&mut reader)
+                    .into_iter::<StringGroupConfig>()
+                    .collect::<Result<Vec<StringGroupConfig>, _>>()
+                    .map_err(|jsonl_err| StringsimileServiceError::RuleJsonParsing {
+                        source_json: err,
+                        source_jsonl: jsonl_err,
+                    })?
+            }
+        };
+
+        *self.rules.lock().expect("mutex poisoned") = parsed_rules
+            .into_iter()
+            .map(|c| c.into_string_group())
+            .collect::<Result<Vec<StringGroup>, _>>()
             .context(RuleParsingSnafu)?;
         Ok(())
     }
