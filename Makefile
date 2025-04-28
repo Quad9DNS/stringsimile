@@ -9,7 +9,7 @@ MANDIR?=$(PREFIX)/share/man
 CONFDIR?=/etc/stringsimile
 RULEDIR?=/var/lib/stringsimile
 
-export VERSION ?= $(shell command -v cat bin/stringsimile-service/Cargo.toml | grep version | cut -f 3 -d " " | cut -f2 -d '"' || echo unknown)
+VERSION?=$(shell cat bin/stringsimile-service/Cargo.toml | grep version | cut -f 3 -d " " | cut -f2 -d '"' || echo unknown)
 
 DOCS := $(addprefix target/man/,\
 	stringsimile.1 \
