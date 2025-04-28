@@ -52,7 +52,11 @@ impl Service<InitState> {
 
         Self::prepare_from_config(args.try_into().map_err(|err| {
             // The tracing subscriber is never initialized before this
-            tracing_subscriber::fmt().with_max_level(Level::INFO).init();
+            tracing_subscriber::fmt()
+                .with_file(false)
+                .with_target(false)
+                .with_max_level(Level::INFO)
+                .init();
             error!(message = "Configuration error.", error = %err);
             exitcode::USAGE
         })?)
@@ -65,6 +69,8 @@ impl Service<InitState> {
             .expect("Building async runtime failed!");
 
         tracing_subscriber::fmt()
+            .with_file(false)
+            .with_target(false)
             .with_max_level(config.log_level)
             .init();
 
