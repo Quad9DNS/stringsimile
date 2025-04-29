@@ -11,7 +11,7 @@ use crate::{
 };
 
 /// Rule
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct LevenshteinRule {
     /// Maximum distance allowed for this rule to be considered matched
     pub maximum_distance: u32,

@@ -3,9 +3,13 @@ use serde::{Deserialize, Serialize};
 use stringsimile_matcher::{
     rule::{GenericMatcherRule, IntoGenericMatcherRule},
     rules::{
-        confusables::ConfusablesRule, damerau_levenshtein::DamerauLevenshteinRule,
-        hamming::HammingRule, jaro::JaroRule, jaro_winkler::JaroWinklerRule,
+        confusables::ConfusablesRule,
+        damerau_levenshtein::DamerauLevenshteinRule,
+        hamming::HammingRule,
+        jaro::JaroRule,
+        jaro_winkler::JaroWinklerRule,
         levenshtein::LevenshteinRule,
+        soundex::{SoundexRule, SoundexRuleType},
     },
 };
 
@@ -25,6 +29,8 @@ pub enum RuleConfig {
     Jaro(JaroConfig),
     /// Configuration for Jaro-Winkler rule
     JaroWinkler(JaroWinklerConfig),
+    /// Configuration for Soundex rule
+    Soundex(SoundexConfig),
 }
 
 impl RuleConfig {
@@ -44,6 +50,9 @@ impl RuleConfig {
             }
             RuleConfig::DamerauLevenshtein(damerau_levenshtein_config) => {
                 Box::new(damerau_levenshtein_config.build().into_generic_matcher())
+            }
+            RuleConfig::Soundex(soundex_config) => {
+                Box::new(soundex_config.build().into_generic_matcher())
             }
         }
     }
@@ -132,6 +141,26 @@ impl JaroWinklerConfig {
         // TODO: add a way to warn about invalid value - require float 0-1
         JaroWinklerRule {
             match_percent: self.match_percent_threshold,
+        }
+    }
+}
+
+/// Configuration for Soundex rule
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SoundexConfig {
+    /// Minimum similarity
+    pub minimum_similarity: usize,
+    /// Type of soundex (normal or refined)
+    #[serde(default)]
+    pub soundex_type: SoundexRuleType,
+}
+
+impl SoundexConfig {
+    fn build(&self) -> SoundexRule {
+        // TODO: add a way to warn about invalid value - validate minimum similarit for normal (max 4)
+        SoundexRule {
+            minimum_similarity: self.minimum_similarity,
+            soundex_type: self.soundex_type,
         }
     }
 }
@@ -236,5 +265,61 @@ mod tests {
             panic!("Expected Hamming config");
         };
         assert_eq!(3, config.maximum_distance);
+    }
+
+    #[test]
+    fn test_parse_soundex_normal() {
+        let json = r#"
+        {
+            "rule_type": "soundex",
+            "values": {
+                "minimum_similarity": 3,
+                "soundex_type": "normal"
+            }
+        }
+            "#;
+
+        let RuleConfig::Soundex(config) = serde_json::from_str(json).unwrap() else {
+            panic!("Expected Soundex config");
+        };
+        assert_eq!(3, config.minimum_similarity);
+        assert_eq!(SoundexRuleType::Normal, config.soundex_type);
+    }
+
+    #[test]
+    fn test_parse_soundex_normal_default() {
+        let json = r#"
+        {
+            "rule_type": "soundex",
+            "values": {
+                "minimum_similarity": 3
+            }
+        }
+            "#;
+
+        let RuleConfig::Soundex(config) = serde_json::from_str(json).unwrap() else {
+            panic!("Expected Soundex config");
+        };
+        assert_eq!(3, config.minimum_similarity);
+        assert_eq!(SoundexRuleType::Normal, config.soundex_type);
+    }
+
+    #[test]
+    fn test_parse_soundex_refined() {
+        let json = r#"
+        {
+            "rule_type": "soundex",
+            "values": {
+                "minimum_similarity": 3,
+                "soundex_type": "refined"
+            }
+        }
+            "#;
+
+        let RuleConfig::Soundex(config) = serde_json::from_str(json).unwrap() else {
+            panic!("Expected Soundex config");
+        };
+        assert_eq!(3, config.minimum_similarity);
+        assert_eq!(SoundexRuleType::Refined, config.soundex_type);
     }
 }

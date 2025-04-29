@@ -21,6 +21,12 @@
 						}
 					},
 					{
+						"rule_type": "soundex",
+						"values": {
+							"minimum_similarity": 3
+						}
+					},
+					{
 						"rule_type": "jaro",
 						"values": {
 							"match_percent_threshold": 0.85

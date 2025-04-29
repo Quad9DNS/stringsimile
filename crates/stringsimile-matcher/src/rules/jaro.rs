@@ -11,7 +11,7 @@ use crate::{
 };
 
 /// Rule
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct JaroRule {
     /// Minimum match percentage for this rule to be considered a match
     pub match_percent: f64,

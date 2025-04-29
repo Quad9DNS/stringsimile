@@ -11,7 +11,7 @@ use crate::{
 };
 
 /// Rule
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct ConfusablesRule;
 
 /// metadata
