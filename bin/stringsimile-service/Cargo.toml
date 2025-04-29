@@ -22,6 +22,7 @@ assets = [
     { source = "../../target/man/stringsimile-config.5", dest = "usr/share/man/man5/stringsimile-config.5", mode = "644" },
     { source = "../../target/man/stringsimile-rule-config.5", dest = "usr/share/man/man5/stringsimile-rule-config.5", mode = "644" },
 ]
+depends = ["librdkafka1"]
 
 [package.metadata.deb.systemd-units]
 unit-scripts = "../../distribution/systemd/"
@@ -42,6 +43,16 @@ assets = [
     { source = "../../target/man/stringsimile-config.5", dest = "/usr/share/man/man5/stringsimile-config.5", mode = "644" },
     { source = "../../target/man/stringsimile-rule-config.5", dest = "/usr/share/man/man5/stringsimile-rule-config.5", mode = "644" },
 ]
+requires = { librdkafka = ">= 2.3.0" }
+
+[features]
+default = ["all", "rdkafka/cmake-build"]
+deb = ["all", "rdkafka/dynamic-linking"]
+rpm = ["all", "rdkafka/dynamic-linking"]
+all = ["all-inputs"]
+
+all-inputs = ["inputs-kafka"]
+inputs-kafka = ["dep:rdkafka"]
 
 [dependencies]
 stringsimile-matcher.workspace = true
@@ -51,6 +62,7 @@ async-stream.workspace = true
 clap = { workspace = true, features = ["derive"] }
 exitcode.workspace = true
 futures.workspace = true
+rdkafka = { workspace = true, optional = true }
 serde.workspace = true
 serde_json.workspace = true
 serde_yaml.workspace = true

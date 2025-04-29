@@ -16,7 +16,7 @@ DOCS := $(addprefix target/man/,\
 	stringsimile-config.5 \
 	stringsimile-rule-config.5)
 
-all: target/release/stringsimile $(DOCS) deb rpm
+all: $(DOCS) deb rpm target/release/stringsimile
 
 target/release/stringsimile:
 	cargo build --release
@@ -25,10 +25,12 @@ deb: target/debian/stringsimile_$(VERSION)-1_amd64.deb
 
 rpm: target/generate-rpm/stringsimile_$(VERSION)-1.x86_64.rpm
 
-target/debian/stringsimile_$(VERSION)-1_amd64.deb: target/release/stringsimile $(DOCS)
+target/debian/stringsimile_$(VERSION)-1_amd64.deb: $(DOCS)
+	cargo build --release --no-default-features --features deb
 	cargo deb
 
-target/generate-rpm/stringsimile_$(VERSION)-1.x86_64.rpm: target/release/stringsimile $(DOCS)
+target/generate-rpm/stringsimile_$(VERSION)-1.x86_64.rpm: $(DOCS)
+	cargo build --release --no-default-features --features rpm
 	cargo generate-rpm -p bin/stringsimile-service
 
 .PHONY: dev

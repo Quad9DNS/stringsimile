@@ -2,17 +2,24 @@ use std::{path::PathBuf, pin::Pin};
 
 use file::FileStream;
 use futures::Stream;
+#[cfg(feature = "inputs-kafka")]
+use kafka::KafkaInputConfig;
+use kafka::KafkaInputStream;
 use serde_json::Value;
 use stdin::StdinStream;
 
 mod bufreader;
 mod file;
+#[cfg(feature = "inputs-kafka")]
+mod kafka;
 mod stdin;
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub enum Input {
     Stdin,
     File(PathBuf),
+    #[cfg(feature = "inputs-kafka")]
+    Kafka(KafkaInputConfig),
 }
 
 impl InputStreamBuilder for Input {
@@ -22,6 +29,12 @@ impl InputStreamBuilder for Input {
         match self {
             Input::Stdin => StdinStream.into_stream().await,
             Input::File(path_buf) => FileStream(path_buf).into_stream().await,
+            #[cfg(feature = "inputs-kafka")]
+            Input::Kafka(kafka_input_config) => {
+                KafkaInputStream::new(kafka_input_config)
+                    .into_stream()
+                    .await
+            }
         }
     }
 }
@@ -33,6 +46,11 @@ impl InputBuilder for Input {
             Input::File(path_buf) => {
                 let file_name = path_buf.to_string_lossy();
                 format!("file{file_name}")
+            }
+            #[cfg(feature = "inputs-kafka")]
+            Input::Kafka(kafka_input_config) => {
+                let server = kafka_input_config.server();
+                format!("kafka({server})")
             }
         }
     }
