@@ -27,6 +27,12 @@
 						}
 					},
 					{
+						"rule_type": "metaphone",
+						"values": {
+							"max_rule_length": 3
+						}
+					},
+					{
 						"rule_type": "jaro",
 						"values": {
 							"match_percent_threshold": 0.85

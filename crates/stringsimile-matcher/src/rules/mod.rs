@@ -12,5 +12,7 @@ pub mod jaro;
 pub mod jaro_winkler;
 #[cfg(feature = "rules-levenshtein")]
 pub mod levenshtein;
+#[cfg(feature = "rules-metaphone")]
+pub mod metaphone;
 #[cfg(feature = "rules-soundex")]
 pub mod soundex;

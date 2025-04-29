@@ -41,7 +41,10 @@ Each of the rules has specific values that can be used to configure it:
   - maximum_distance - maximum Hamming distance to allow to consider this rule matched
 - Soundex
   - minimum_similarity - minimum Soundex similarity to consider this rule matched (max 4 for normal soundex)
-  - soundex_type - type of soundex to use ("normal" or "refined") - "normal" is limited to 4 maximum similarity
+  - soundex_type - type of Soundex to use ("normal" or "refined") - "normal" is limited to 4 maximum similarity
+- Metaphone
+  - max_code_length - maximum code length for Metaphone to generate (defaults to 4) - can be set to null for unlimited
+  - metaphone_type - type of Metaphone to use ("normal" or "double")
 
 Single string group object has the following keys:
 - name
@@ -66,7 +69,7 @@ Each rule set has the following keys:
 
 Each rule has the following keys:
 - rule_type
-  One of "levenshtein", "jaro", "jaro_winkler", "confusables", "damerau_levenshtein", "hamming", "soundex"
+  One of "levenshtein", "jaro", "jaro_winkler", "confusables", "damerau_levenshtein", "hamming", "soundex", "metaphone"
 - values
   Object dependent on the rule_type used. Some rules don't have additional
   values and this field can be skipped for them.

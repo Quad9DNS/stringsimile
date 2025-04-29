@@ -9,6 +9,7 @@ use stringsimile_matcher::{
         jaro::JaroRule,
         jaro_winkler::JaroWinklerRule,
         levenshtein::LevenshteinRule,
+        metaphone::{MetaphoneRule, MetaphoneRuleType},
         soundex::{SoundexRule, SoundexRuleType},
     },
 };
@@ -31,6 +32,8 @@ pub enum RuleConfig {
     JaroWinkler(JaroWinklerConfig),
     /// Configuration for Soundex rule
     Soundex(SoundexConfig),
+    /// Configuration for Metaphone rule
+    Metaphone(MetaphoneConfig),
 }
 
 impl RuleConfig {
@@ -53,6 +56,9 @@ impl RuleConfig {
             }
             RuleConfig::Soundex(soundex_config) => {
                 Box::new(soundex_config.build().into_generic_matcher())
+            }
+            RuleConfig::Metaphone(metaphone_config) => {
+                Box::new(metaphone_config.build().into_generic_matcher())
             }
         }
     }
@@ -161,6 +167,30 @@ impl SoundexConfig {
         SoundexRule {
             minimum_similarity: self.minimum_similarity,
             soundex_type: self.soundex_type,
+        }
+    }
+}
+
+/// Configuration for Metaphone rule
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MetaphoneConfig {
+    /// Max length of the generated Metaphone code
+    #[serde(default = "default_metaphone_max_code_length")]
+    pub max_code_length: Option<usize>,
+    /// Type of soundex (normal or refined)
+    #[serde(default)]
+    pub metaphone_type: MetaphoneRuleType,
+}
+
+const fn default_metaphone_max_code_length() -> Option<usize> {
+    Some(4)
+}
+
+impl MetaphoneConfig {
+    fn build(&self) -> MetaphoneRule {
+        MetaphoneRule {
+            max_code_length: self.max_code_length,
+            metaphone_type: self.metaphone_type,
         }
     }
 }
@@ -321,5 +351,95 @@ mod tests {
         };
         assert_eq!(3, config.minimum_similarity);
         assert_eq!(SoundexRuleType::Refined, config.soundex_type);
+    }
+
+    #[test]
+    fn test_parse_metaphone_normal() {
+        let json = r#"
+        {
+            "rule_type": "metaphone",
+            "values": {
+                "max_code_length": 3,
+                "metaphone_type": "normal"
+            }
+        }
+            "#;
+
+        let RuleConfig::Metaphone(config) = serde_json::from_str(json).unwrap() else {
+            panic!("Expected Metaphone config");
+        };
+        assert_eq!(Some(3), config.max_code_length);
+        assert_eq!(MetaphoneRuleType::Normal, config.metaphone_type);
+    }
+
+    #[test]
+    fn test_parse_metaphone_default() {
+        let json = r#"
+        {
+            "rule_type": "metaphone",
+            "values": {}
+        }
+            "#;
+
+        let RuleConfig::Metaphone(config) = serde_json::from_str(json).unwrap() else {
+            panic!("Expected Metaphone config");
+        };
+        assert_eq!(Some(4), config.max_code_length);
+        assert_eq!(MetaphoneRuleType::Normal, config.metaphone_type);
+    }
+
+    #[test]
+    fn test_parse_metaphone_null_length() {
+        let json = r#"
+        {
+            "rule_type": "metaphone",
+            "values": {
+                "max_code_length": null
+            }
+        }
+            "#;
+
+        let RuleConfig::Metaphone(config) = serde_json::from_str(json).unwrap() else {
+            panic!("Expected Metaphone config");
+        };
+        assert_eq!(None, config.max_code_length);
+        assert_eq!(MetaphoneRuleType::Normal, config.metaphone_type);
+    }
+
+    #[test]
+    fn test_parse_metaphone_double_default_length() {
+        let json = r#"
+        {
+            "rule_type": "metaphone",
+            "values": {
+                "metaphone_type": "double"
+            }
+        }
+            "#;
+
+        let RuleConfig::Metaphone(config) = serde_json::from_str(json).unwrap() else {
+            panic!("Expected Metaphone config");
+        };
+        assert_eq!(default_metaphone_max_code_length(), config.max_code_length);
+        assert_eq!(MetaphoneRuleType::Double, config.metaphone_type);
+    }
+
+    #[test]
+    fn test_parse_metaphone_double() {
+        let json = r#"
+        {
+            "rule_type": "metaphone",
+            "values": {
+                "max_code_length": 3,
+                "metaphone_type": "double"
+            }
+        }
+            "#;
+
+        let RuleConfig::Metaphone(config) = serde_json::from_str(json).unwrap() else {
+            panic!("Expected Metaphone config");
+        };
+        assert_eq!(Some(3), config.max_code_length);
+        assert_eq!(MetaphoneRuleType::Double, config.metaphone_type);
     }
 }

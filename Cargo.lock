@@ -779,6 +779,7 @@ dependencies = [
  "rphonetic",
  "serde",
  "serde_json",
+ "snafu",
  "strsim",
  "tracing",
  "triple_accel",
