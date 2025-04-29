@@ -33,6 +33,12 @@
 						}
 					},
 					{
+						"rule_type": "nysiis",
+						"values": {
+							"strict": true
+						}
+					},
+					{
 						"rule_type": "jaro",
 						"values": {
 							"match_percent_threshold": 0.85

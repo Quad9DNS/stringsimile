@@ -14,5 +14,7 @@ pub mod jaro_winkler;
 pub mod levenshtein;
 #[cfg(feature = "rules-metaphone")]
 pub mod metaphone;
+#[cfg(feature = "rules-nysiis")]
+pub mod nysiis;
 #[cfg(feature = "rules-soundex")]
 pub mod soundex;

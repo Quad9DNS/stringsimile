@@ -10,6 +10,7 @@ use stringsimile_matcher::{
         jaro_winkler::JaroWinklerRule,
         levenshtein::LevenshteinRule,
         metaphone::{MetaphoneRule, MetaphoneRuleType},
+        nysiis::NysiisRule,
         soundex::{SoundexRule, SoundexRuleType},
     },
 };
@@ -34,6 +35,8 @@ pub enum RuleConfig {
     Soundex(SoundexConfig),
     /// Configuration for Metaphone rule
     Metaphone(MetaphoneConfig),
+    /// Configuration for NYSIIS rule
+    Nysiis(NysiisConfig),
 }
 
 impl RuleConfig {
@@ -59,6 +62,9 @@ impl RuleConfig {
             }
             RuleConfig::Metaphone(metaphone_config) => {
                 Box::new(metaphone_config.build().into_generic_matcher())
+            }
+            RuleConfig::Nysiis(nysiis_config) => {
+                Box::new(nysiis_config.build().into_generic_matcher())
             }
         }
     }
@@ -192,6 +198,24 @@ impl MetaphoneConfig {
             max_code_length: self.max_code_length,
             metaphone_type: self.metaphone_type,
         }
+    }
+}
+
+/// Configuration for Nysiis rule
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NysiisConfig {
+    /// Strict mode can be disabled to allow codes over 6 characters in length
+    #[serde(default = "default_nysiis_strict_mode")]
+    pub strict: bool,
+}
+
+const fn default_nysiis_strict_mode() -> bool {
+    true
+}
+
+impl NysiisConfig {
+    fn build(&self) -> NysiisRule {
+        NysiisRule::new(self.strict)
     }
 }
 
@@ -441,5 +465,37 @@ mod tests {
         };
         assert_eq!(Some(3), config.max_code_length);
         assert_eq!(MetaphoneRuleType::Double, config.metaphone_type);
+    }
+
+    #[test]
+    fn test_parse_nysiis_non_strict() {
+        let json = r#"
+        {
+            "rule_type": "nysiis",
+            "values": {
+                "strict": false
+            }
+        }
+            "#;
+
+        let RuleConfig::Nysiis(config) = serde_json::from_str(json).unwrap() else {
+            panic!("Expected Nysiis config");
+        };
+        assert!(!config.strict);
+    }
+
+    #[test]
+    fn test_parse_nysiis_default() {
+        let json = r#"
+        {
+            "rule_type": "nysiis",
+            "values": {}
+        }
+            "#;
+
+        let RuleConfig::Nysiis(config) = serde_json::from_str(json).unwrap() else {
+            panic!("Expected Nysiis config");
+        };
+        assert!(config.strict);
     }
 }
