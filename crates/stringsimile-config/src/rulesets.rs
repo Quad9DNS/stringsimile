@@ -29,7 +29,11 @@ impl RuleSetConfig {
             string_match: self.string_match,
             split_target: self.split_target,
             ignore_tld: self.ignore_tld,
-            rules: self.match_rules.iter().map(RuleConfig::build).collect(),
+            rules: self
+                .match_rules
+                .iter()
+                .map(RuleConfig::build)
+                .collect::<Result<Vec<_>, _>>()?,
         })
     }
 }

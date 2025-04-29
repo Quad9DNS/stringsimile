@@ -10,4 +10,5 @@ stringsimile-matcher.workspace = true
 
 serde = { workspace = true, features = ["derive"] }
 serde_json.workspace = true
+snafu.workspace = true
 tracing.workspace = true

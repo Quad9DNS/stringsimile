@@ -1,6 +1,8 @@
 //! Configuration for rules
 use serde::{Deserialize, Serialize};
+use snafu::Snafu;
 use stringsimile_matcher::{
+    Error,
     rule::{GenericMatcherRule, IntoGenericMatcherRule},
     rules::{
         confusables::ConfusablesRule,
@@ -42,35 +44,69 @@ pub enum RuleConfig {
     MatchRating,
 }
 
+/// Errors for rule configuration
+#[derive(Debug, Clone, Snafu)]
+pub enum RuleConfigError {
+    /// Jaro rule configuration error
+    #[snafu(display(
+        "Invalid match percent threshold for Jaro rule. It has to be a decimal value between 0 and 1. Found: {}",
+        input_value
+    ))]
+    JaroConfigThresholdError {
+        /// Value that was provided to the rule
+        input_value: f64,
+    },
+
+    /// Jaro Winkler rule configuration error
+    #[snafu(display(
+        "Invalid match percent threshold for Jaro-Winkler rule. It has to be a decimal value between 0 and 1. Found: {}",
+        input_value
+    ))]
+    JaroWinklerConfigThresholdError {
+        /// Value that was provided to the rule
+        input_value: f64,
+    },
+
+    /// Soundex rule configuration error
+    #[snafu(display(
+        "Invalid minimum similarity value for Soundex rule. Maximum allowed value normal soundex is 4. Found: {}",
+        input_value
+    ))]
+    SoundexConfigSimilarityError {
+        /// Value that was provided to the rule
+        input_value: usize,
+    },
+}
+
 impl RuleConfig {
     /// Generates a rule implementation from this config
-    pub fn build(&self) -> Box<dyn GenericMatcherRule + 'static + Send> {
-        match self {
+    pub fn build(&self) -> Result<Box<dyn GenericMatcherRule + 'static + Send>, Error> {
+        Ok(match self {
             RuleConfig::Levenshtein(levenshtein_config) => {
-                Box::new(levenshtein_config.build().into_generic_matcher())
+                Box::new(levenshtein_config.build()?.into_generic_matcher())
             }
             RuleConfig::Hamming(hamming_config) => {
-                Box::new(hamming_config.build().into_generic_matcher())
+                Box::new(hamming_config.build()?.into_generic_matcher())
             }
-            RuleConfig::Confusables => Box::new(ConfusablesConfig.build().into_generic_matcher()),
-            RuleConfig::Jaro(jaro_config) => Box::new(jaro_config.build().into_generic_matcher()),
+            RuleConfig::Confusables => Box::new(ConfusablesConfig.build()?.into_generic_matcher()),
+            RuleConfig::Jaro(jaro_config) => Box::new(jaro_config.build()?.into_generic_matcher()),
             RuleConfig::JaroWinkler(jaro_winkler_config) => {
-                Box::new(jaro_winkler_config.build().into_generic_matcher())
+                Box::new(jaro_winkler_config.build()?.into_generic_matcher())
             }
             RuleConfig::DamerauLevenshtein(damerau_levenshtein_config) => {
-                Box::new(damerau_levenshtein_config.build().into_generic_matcher())
+                Box::new(damerau_levenshtein_config.build()?.into_generic_matcher())
             }
             RuleConfig::Soundex(soundex_config) => {
-                Box::new(soundex_config.build().into_generic_matcher())
+                Box::new(soundex_config.build()?.into_generic_matcher())
             }
             RuleConfig::Metaphone(metaphone_config) => {
-                Box::new(metaphone_config.build().into_generic_matcher())
+                Box::new(metaphone_config.build()?.into_generic_matcher())
             }
             RuleConfig::Nysiis(nysiis_config) => {
-                Box::new(nysiis_config.build().into_generic_matcher())
+                Box::new(nysiis_config.build()?.into_generic_matcher())
             }
-            RuleConfig::MatchRating => Box::new(MatchRatingConfig.build().into_generic_matcher()),
-        }
+            RuleConfig::MatchRating => Box::new(MatchRatingConfig.build()?.into_generic_matcher()),
+        })
     }
 }
 
@@ -82,10 +118,10 @@ pub struct LevenshteinConfig {
 }
 
 impl LevenshteinConfig {
-    fn build(&self) -> LevenshteinRule {
-        LevenshteinRule {
+    fn build(&self) -> Result<LevenshteinRule, Error> {
+        Ok(LevenshteinRule {
             maximum_distance: self.maximum_distance,
-        }
+        })
     }
 }
 
@@ -97,10 +133,10 @@ pub struct HammingConfig {
 }
 
 impl HammingConfig {
-    fn build(&self) -> HammingRule {
-        HammingRule {
+    fn build(&self) -> Result<HammingRule, Error> {
+        Ok(HammingRule {
             maximum_distance: self.maximum_distance,
-        }
+        })
     }
 }
 
@@ -109,8 +145,8 @@ impl HammingConfig {
 pub struct ConfusablesConfig;
 
 impl ConfusablesConfig {
-    fn build(&self) -> ConfusablesRule {
-        ConfusablesRule
+    fn build(&self) -> Result<ConfusablesRule, Error> {
+        Ok(ConfusablesRule)
     }
 }
 
@@ -122,10 +158,10 @@ pub struct DamerauLevenshteinConfig {
 }
 
 impl DamerauLevenshteinConfig {
-    fn build(&self) -> DamerauLevenshteinRule {
-        DamerauLevenshteinRule {
+    fn build(&self) -> Result<DamerauLevenshteinRule, Error> {
+        Ok(DamerauLevenshteinRule {
             maximum_distance: self.maximum_distance,
-        }
+        })
     }
 }
 
@@ -137,11 +173,17 @@ pub struct JaroConfig {
 }
 
 impl JaroConfig {
-    fn build(&self) -> JaroRule {
-        // TODO: add a way to warn about invalid value - require float 0-1
-        JaroRule {
-            match_percent: self.match_percent_threshold,
+    fn build(&self) -> Result<JaroRule, Error> {
+        if self.match_percent_threshold < 0.0 || self.match_percent_threshold > 1.0 {
+            return Err(RuleConfigError::JaroConfigThresholdError {
+                input_value: self.match_percent_threshold,
+            }
+            .into());
         }
+
+        Ok(JaroRule {
+            match_percent: self.match_percent_threshold,
+        })
     }
 }
 
@@ -153,11 +195,17 @@ pub struct JaroWinklerConfig {
 }
 
 impl JaroWinklerConfig {
-    fn build(&self) -> JaroWinklerRule {
-        // TODO: add a way to warn about invalid value - require float 0-1
-        JaroWinklerRule {
-            match_percent: self.match_percent_threshold,
+    fn build(&self) -> Result<JaroWinklerRule, Error> {
+        if self.match_percent_threshold < 0.0 || self.match_percent_threshold > 1.0 {
+            return Err(RuleConfigError::JaroWinklerConfigThresholdError {
+                input_value: self.match_percent_threshold,
+            }
+            .into());
         }
+
+        Ok(JaroWinklerRule {
+            match_percent: self.match_percent_threshold,
+        })
     }
 }
 
@@ -172,12 +220,18 @@ pub struct SoundexConfig {
 }
 
 impl SoundexConfig {
-    fn build(&self) -> SoundexRule {
-        // TODO: add a way to warn about invalid value - validate minimum similarit for normal (max 4)
-        SoundexRule {
+    fn build(&self) -> Result<SoundexRule, Error> {
+        if self.soundex_type == SoundexRuleType::Normal && self.minimum_similarity > 4 {
+            return Err(RuleConfigError::SoundexConfigSimilarityError {
+                input_value: self.minimum_similarity,
+            }
+            .into());
+        }
+
+        Ok(SoundexRule {
             minimum_similarity: self.minimum_similarity,
             soundex_type: self.soundex_type,
-        }
+        })
     }
 }
 
@@ -197,11 +251,11 @@ const fn default_metaphone_max_code_length() -> Option<usize> {
 }
 
 impl MetaphoneConfig {
-    fn build(&self) -> MetaphoneRule {
-        MetaphoneRule {
+    fn build(&self) -> Result<MetaphoneRule, Error> {
+        Ok(MetaphoneRule {
             max_code_length: self.max_code_length,
             metaphone_type: self.metaphone_type,
-        }
+        })
     }
 }
 
@@ -218,8 +272,8 @@ const fn default_nysiis_strict_mode() -> bool {
 }
 
 impl NysiisConfig {
-    fn build(&self) -> NysiisRule {
-        NysiisRule::new(self.strict)
+    fn build(&self) -> Result<NysiisRule, Error> {
+        Ok(NysiisRule::new(self.strict))
     }
 }
 
@@ -228,8 +282,8 @@ impl NysiisConfig {
 pub struct MatchRatingConfig;
 
 impl MatchRatingConfig {
-    fn build(&self) -> MatchRatingRule {
-        MatchRatingRule
+    fn build(&self) -> Result<MatchRatingRule, Error> {
+        Ok(MatchRatingRule)
     }
 }
 
