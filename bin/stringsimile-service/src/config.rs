@@ -8,7 +8,7 @@ use tracing::Level;
 use crate::{
     cli::CliArgs,
     error::{ConfigYamlParsingSnafu, FileReadSnafu},
-    inputs::Input,
+    inputs::{Input, kafka::KafkaInputConfig},
     outputs::Output,
 };
 
@@ -41,6 +41,8 @@ struct InputConfig {
     file_path: Option<PathBuf>,
     #[serde(default)]
     stdin: bool,
+    #[cfg(feature = "inputs-kafka")]
+    kafka: Option<KafkaInputConfig>,
 }
 
 impl InputConfig {
@@ -51,6 +53,10 @@ impl InputConfig {
         }
         if self.stdin {
             result.insert(Input::Stdin);
+        }
+        #[cfg(feature = "inputs-kafka")]
+        if let Some(kafka_config) = &self.kafka {
+            result.insert(Input::Kafka(kafka_config.clone()));
         }
         Ok(result)
     }

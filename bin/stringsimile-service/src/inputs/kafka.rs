@@ -18,6 +18,7 @@ pub struct KafkaInputConfig {
     topic: String,
     identifier: String,
     pointer: usize,
+    #[serde(default)]
     librdkafka_options: HashMap<String, String>,
 }
 

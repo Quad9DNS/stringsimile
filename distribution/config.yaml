@@ -7,6 +7,15 @@
   ## To enable stdin input, just set the stdin flag to true
   # stdin: false
 
+  ## If stringsimile is built with kafka support, it can be configured using kafka field
+  # kafka:
+  #   host: localhost
+  #   port: 9092
+  #   topic: stringsimile
+  #   identifier: stringsimile
+  #   pointer: 1000
+  #   librdkafka_options: {}
+
 ## Different outputs can be configured here (file output, stdout, kafka)
 # output:
   ## To enable file output, define path to write to

@@ -18,6 +18,21 @@ Configuration file uses YAML format with the following keys:
 	  Path to file that should be used as input.
 	- stdin
 	  Set to true if stdin should be used as input.
+	- kafka
+	  If stringsimile is built with kafka support, it can be set up as an
+	  input
+	    - host
+	    Hostname of kafka server
+	    - port
+	    Port of kafka server (defaults to 9092)
+	    - topic
+	    Kafka topic to subscribe to for input data
+	    - identifier
+	    Kafka identifier for input data
+	    - pointer
+	    Kafka pointer for input data
+	    - librdkafka_options
+	    Key value pairs of options to pass to librdkafka
 - output
   Configuration for inputs, where processed objects with match metadata should
   be output to. No outputs are used by default.

@@ -11,7 +11,7 @@ use stdin::StdinStream;
 mod bufreader;
 mod file;
 #[cfg(feature = "inputs-kafka")]
-mod kafka;
+pub mod kafka;
 mod stdin;
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
