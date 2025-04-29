@@ -178,13 +178,12 @@ impl StringProcessor {
                     .consume_stream(Box::pin(
                         BroadcastStream::new(tx.subscribe()).map_while(|res| res.ok()),
                     ))
-                    // TODO: do something with the error here
-                    .map_err(|_err| ()),
+                    .map_err(|err| {
+                        error!(message = "Output task has failed with an error: {}", err);
+                    }),
             );
         }
 
-        // TODO: abstract away inputs, pre-processors, transformers and outpus
-        // Also, don't let any errors stop the processing!
         loop {
             tokio::select! {
                 Some(task) = output_tasks.join_next() => {

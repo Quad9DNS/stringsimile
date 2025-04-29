@@ -3,7 +3,7 @@
 use std::fmt::Debug;
 
 use serde::Serialize;
-use tracing::{debug, error_span};
+use tracing::{debug, trace_span};
 
 use crate::{GenericMatcherResult, MatchResult, MatcherResult};
 
@@ -99,7 +99,7 @@ where
     T: MatcherRule,
 {
     fn match_rule_generic(&self, input_str: &str, target_str: &str) -> GenericMatcherResult {
-        let _ = error_span!(
+        let _ = trace_span!(
             "rule",
             input = input_str,
             target = target_str,

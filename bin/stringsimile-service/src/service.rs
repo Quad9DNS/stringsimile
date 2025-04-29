@@ -7,6 +7,7 @@ use tokio::runtime::Runtime;
 use tokio::sync::broadcast::Receiver;
 use tokio::time::sleep;
 use tracing::{Level, error, info};
+use tracing_subscriber::fmt::format::FmtSpan;
 
 use crate::cli::CliArgs;
 use crate::config::ServiceConfig;
@@ -72,6 +73,7 @@ impl Service<InitState> {
             .with_file(false)
             .with_target(false)
             .with_max_level(config.log_level)
+            .with_span_events(FmtSpan::FULL)
             .init();
 
         let signals = ServiceOsSignals::new(&runtime);
