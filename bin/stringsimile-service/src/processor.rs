@@ -141,7 +141,16 @@ impl StringProcessor {
                             matches
                                 .into_iter()
                                 .filter(|(_name, results)| report_all || results.has_matches())
-                                .map(|(name, result)| {
+                                .filter_map(|(name, mut result)| {
+                                    if !report_all {
+                                        for res in result.values_mut() {
+                                            res.retain(|m| m.matched);
+                                        }
+                                        if !result.has_matches() {
+                                            return None;
+                                        }
+                                    }
+
                                     let mut json = result.to_json();
                                     if let Some(obj) = json.as_object_mut() {
                                         obj.insert(
@@ -149,7 +158,7 @@ impl StringProcessor {
                                             Value::String(name),
                                         );
                                     }
-                                    json
+                                    Some(json)
                                 })
                                 .collect(),
                         ),
