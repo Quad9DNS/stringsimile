@@ -54,6 +54,9 @@
 						"rule_type": "confusables"
 					},
 					{
+						"rule_type": "match_rating"
+					},
+					{
 						"rule_type": "damerau_levenshtein",
 						"values": {
 							"maximum_distance": 3

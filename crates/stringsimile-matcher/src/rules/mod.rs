@@ -12,6 +12,8 @@ pub mod jaro;
 pub mod jaro_winkler;
 #[cfg(feature = "rules-levenshtein")]
 pub mod levenshtein;
+#[cfg(feature = "rules-match-rating")]
+pub mod match_rating;
 #[cfg(feature = "rules-metaphone")]
 pub mod metaphone;
 #[cfg(feature = "rules-nysiis")]

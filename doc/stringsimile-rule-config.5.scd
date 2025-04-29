@@ -47,6 +47,7 @@ Each of the rules has specific values that can be used to configure it:
   - metaphone_type - type of Metaphone to use ("normal" or "double")
 - NYSIIS
   - strict - can be set to false to disable strict mode and allow NYSIIS codes over 6 characters long - defaults to true
+- Match Rating - no additional values (values field may be skipped)
 
 Single string group object has the following keys:
 - name
@@ -71,7 +72,7 @@ Each rule set has the following keys:
 
 Each rule has the following keys:
 - rule_type
-  One of "levenshtein", "jaro", "jaro_winkler", "confusables", "damerau_levenshtein", "hamming", "soundex", "metaphone", "nysiis"
+  One of "levenshtein", "jaro", "jaro_winkler", "confusables", "damerau_levenshtein", "hamming", "soundex", "metaphone", "nysiis", "match_rating"
 - values
   Object dependent on the rule_type used. Some rules don't have additional
   values and this field can be skipped for them.

@@ -7,7 +7,7 @@ license.workspace = true
 
 [features]
 default = ["all"]
-all = ["rules-levenshtein", "rules-hamming", "rules-jaro", "rules-jaro-winkler", "rules-confusables", "rules-damerau-levenshtein", "rules-soundex", "rules-metaphone", "rules-nysiis"]
+all = ["rules-levenshtein", "rules-hamming", "rules-jaro", "rules-jaro-winkler", "rules-confusables", "rules-damerau-levenshtein", "rules-soundex", "rules-metaphone", "rules-nysiis", "rules-match-rating"]
 rules-levenshtein = ["dep:triple_accel"]
 rules-hamming = ["dep:triple_accel"]
 rules-jaro = ["dep:strsim"]
@@ -17,6 +17,7 @@ rules-damerau-levenshtein = ["dep:triple_accel"]
 rules-soundex = ["dep:rphonetic"]
 rules-metaphone = ["dep:rphonetic"]
 rules-nysiis = ["dep:rphonetic"]
+rules-match-rating = ["dep:rphonetic"]
 
 [dependencies]
 confusables = { workspace = true, optional = true }

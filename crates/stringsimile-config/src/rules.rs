@@ -9,6 +9,7 @@ use stringsimile_matcher::{
         jaro::JaroRule,
         jaro_winkler::JaroWinklerRule,
         levenshtein::LevenshteinRule,
+        match_rating::MatchRatingRule,
         metaphone::{MetaphoneRule, MetaphoneRuleType},
         nysiis::NysiisRule,
         soundex::{SoundexRule, SoundexRuleType},
@@ -37,6 +38,8 @@ pub enum RuleConfig {
     Metaphone(MetaphoneConfig),
     /// Configuration for NYSIIS rule
     Nysiis(NysiisConfig),
+    /// Configuration for Match Rating rule
+    MatchRating,
 }
 
 impl RuleConfig {
@@ -66,6 +69,7 @@ impl RuleConfig {
             RuleConfig::Nysiis(nysiis_config) => {
                 Box::new(nysiis_config.build().into_generic_matcher())
             }
+            RuleConfig::MatchRating => Box::new(MatchRatingConfig.build().into_generic_matcher()),
         }
     }
 }
@@ -216,6 +220,16 @@ const fn default_nysiis_strict_mode() -> bool {
 impl NysiisConfig {
     fn build(&self) -> NysiisRule {
         NysiisRule::new(self.strict)
+    }
+}
+
+/// Configuration for Match Rating rule
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MatchRatingConfig;
+
+impl MatchRatingConfig {
+    fn build(&self) -> MatchRatingRule {
+        MatchRatingRule
     }
 }
 
@@ -497,5 +511,18 @@ mod tests {
             panic!("Expected Nysiis config");
         };
         assert!(config.strict);
+    }
+
+    #[test]
+    fn test_parse_match_rating() {
+        let json = r#"
+        {
+            "rule_type": "match_rating"
+        }
+            "#;
+
+        let RuleConfig::MatchRating = serde_json::from_str(json).unwrap() else {
+            panic!("Expected Match Rating config");
+        };
     }
 }
