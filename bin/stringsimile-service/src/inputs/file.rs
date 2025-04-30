@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use tokio::{fs::File, io::BufReader};
 use tracing::error;
 
-use super::InputStreamBuilder;
+use super::{InputStreamBuilder, bufreader::BufReaderWithMetrics, metrics::InputMetrics};
 
 pub struct FileStream(pub PathBuf);
 
@@ -20,6 +20,11 @@ impl InputStreamBuilder for FileStream {
                 return Err(Box::new(error));
             }
         };
-        BufReader::new(file).into_stream().await
+        BufReaderWithMetrics {
+            reader: BufReader::new(file),
+            metrics: InputMetrics::for_input_type("file"),
+        }
+        .into_stream()
+        .await
     }
 }

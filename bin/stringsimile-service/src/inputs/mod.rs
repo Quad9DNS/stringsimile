@@ -11,6 +11,7 @@ mod file;
 mod kafka;
 #[cfg(feature = "inputs-kafka")]
 pub use kafka::KafkaInputConfig;
+mod metrics;
 mod stdin;
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]

@@ -21,6 +21,7 @@ use crate::{
     config::ServiceConfig,
     error::{FileReadSnafu, RuleParsingSnafu, StringsimileServiceError},
     inputs::{InputBuilder, InputStreamBuilder},
+    metrics::ExportMetrics,
     outputs::OutputStreamBuilder,
     signal::ServiceSignal,
 };
@@ -55,11 +56,13 @@ impl StringProcessor {
             }
         };
 
-        *self.rules.lock().expect("mutex poisoned") = parsed_rules
+        let built_rules = parsed_rules
             .into_iter()
             .map(|c| c.into_string_group())
             .collect::<Result<Vec<StringGroup>, _>>()
             .context(RuleParsingSnafu)?;
+        built_rules.export_metrics();
+        *self.rules.lock().expect("mutex poisoned") = built_rules;
         Ok(())
     }
 

@@ -1,6 +1,7 @@
+use metrics::counter;
 use tokio::io::{self, BufReader};
 
-use super::InputStreamBuilder;
+use super::{InputStreamBuilder, bufreader::BufReaderWithMetrics, metrics::InputMetrics};
 
 pub struct StdinStream;
 
@@ -10,6 +11,11 @@ impl InputStreamBuilder for StdinStream {
     ) -> crate::Result<
         std::pin::Pin<Box<dyn futures::Stream<Item = (String, Option<serde_json::Value>)> + Send>>,
     > {
-        BufReader::new(io::stdin()).into_stream().await
+        BufReaderWithMetrics {
+            reader: BufReader::new(io::stdin()),
+            metrics: InputMetrics::for_input_type("stdin"),
+        }
+        .into_stream()
+        .await
     }
 }

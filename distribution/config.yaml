@@ -50,6 +50,18 @@
   ## the rules.
   # report_all: false
 
+## stringsimile metrics exporters can be configured here
+## All metrics are exported in prometheus format
+metrics:
+  ## Export metrics to file
+  file:
+    file_path: "/tmp/stringsimile.prom"
+    # export_interval_secs: 15
+
+  ## Export metrics to stdout
+  # stdout:
+    # export_interval_secs: 15
+
 ## Log level can be configured
 ## Valid levels are: "error", "warn", "info", "debug", "trace"
 # log_level: "INFO"

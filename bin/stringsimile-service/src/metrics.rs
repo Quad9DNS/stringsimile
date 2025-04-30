@@ -1,7 +1,9 @@
 use std::{panic, time::Duration};
 
 use futures::TryFutureExt;
+use metrics::gauge;
 use metrics_exporter_prometheus::PrometheusHandle;
+use stringsimile_matcher::ruleset::StringGroup;
 use tokio::{sync::broadcast::Receiver, task::JoinSet};
 use tracing::{error, info};
 
@@ -65,5 +67,27 @@ impl MetricsProcessor {
                 }
             }
         }
+    }
+}
+
+pub trait ExportMetrics {
+    fn export_metrics(&self);
+}
+
+impl ExportMetrics for Vec<StringGroup> {
+    fn export_metrics(&self) {
+        gauge!("string_groupnames").set(self.len() as f64);
+        let (rule_sets, rules) = self
+            .iter()
+            .map(|g| {
+                (
+                    g.rule_sets.len(),
+                    g.rule_sets.iter().map(|s| s.rules.len()).sum::<usize>(),
+                )
+            })
+            .reduce(|(sets, rules), g| (sets + g.0, rules + g.1))
+            .unwrap_or((0, 0));
+        gauge!("rule_sets").set(rule_sets as f64);
+        gauge!("rules").set(rules as f64);
     }
 }

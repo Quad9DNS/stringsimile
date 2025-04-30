@@ -58,7 +58,7 @@ Configuration file uses YAML format with the following keys:
 	- rule_path
 	  Path to directory (or file) that contains JSON (or JSONL) files with
 	  rules. Check out *stringsimile-rule-config*(5) for information on
-	  rules files. Default to /var/lib/stringsimile
+	  rules files. Defaults to /var/lib/stringsimile
 	- input_field
 	  Field from input object to match agains the rules. Defaults to ".domain_name".
 	  This field supports simple syntax for accessing nested objects:
@@ -69,6 +69,21 @@ Configuration file uses YAML format with the following keys:
 	- report_all
 	  Set to true to put matching metadata in all objects, regardless of
 	  match result. Useful for debugging the rules.
+- metrics
+  Configuration for metrics exporters. Metrics exporters export metrics in
+  Prometheus format.
+	- file
+	  Export metrics to a file. Configured by default to work with
+	  prometheus node-exporter.
+	    - file_path
+	    Path to the file to export to. Defaults to
+	    /var/lib/node-exporter/stringsimile.prom
+	    - export_interval_secs
+	    How often to export metrics to the given file. Default to 15.
+	- stdout
+	  Export metrics to stdout. Not enabled by default.
+	    - export_interval_secs
+	    How often to export metrics to stdout.
 - log_level
   Logging level.
   Valid levels are: "error", "warn", "info", "debug", "trace"
@@ -80,13 +95,19 @@ The following example shows default configuration values:
 input:
   file_path: null
   stdin: false
+  kafka: null
 output:
   file_path: null
   stdout: false
+  kafka: null
 matcher:
   rule_path: "/var/lib/stringsimile"
   input_field: ".domain_name"
   report_all: false
+metrics:
+  file:
+    file_path: /var/lib/node-exporter/stringsimile.prom
+    export_interval_secs: 15
 log_level: "INFO"
 ```
 

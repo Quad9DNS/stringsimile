@@ -8,7 +8,7 @@ use rdkafka::{
 use serde::{Deserialize, Serialize};
 use tracing::warn;
 
-use super::InputStreamBuilder;
+use super::{InputStreamBuilder, metrics::InputMetrics};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct KafkaInputConfig {
@@ -78,23 +78,34 @@ impl InputStreamBuilder for StreamConsumer {
     ) -> crate::Result<
         std::pin::Pin<Box<dyn futures::Stream<Item = (String, Option<serde_json::Value>)> + Send>>,
     > {
+        let metrics = InputMetrics::for_input_type("kafka");
         Ok(Box::pin(async_stream::stream! {
             loop {
                 match self.recv().await {
-                    Err(e) => warn!("Kafka error: {}", e),
+                    Err(e) => {
+                        metrics.read_errors.increment(1);
+                        warn!("Kafka error: {}", e)
+                    },
                     Ok(m) => {
                         match m.payload_view::<str>() {
                             None => {
+                                metrics.read_errors.increment(1);
                                 warn!("Error while reading kafka message");
                             },
                             Some(Ok(s)) => match serde_json::from_str(s) {
-                                Ok(parsed) => yield (s.to_string(), Some(parsed)),
+                                Ok(parsed) => {
+                                    metrics.objects.increment(1);
+                                    metrics.bytes.increment(s.len() as u64);
+                                    yield (s.to_string(), Some(parsed))
+                                },
                                 Err(error) => {
+                                    metrics.parse_errors.increment(1);
                                     warn!(message = "Parsing input message failed.", error = %error);
                                     yield (s.to_string(), None);
                                 }
                             },
                             Some(Err(e)) => {
+                                metrics.parse_errors.increment(1);
                                 warn!("Error while deserializing message payload: {:?}", e);
                             }
                         };

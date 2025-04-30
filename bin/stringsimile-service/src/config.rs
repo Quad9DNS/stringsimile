@@ -95,12 +95,24 @@ impl OutputConfig {
     }
 }
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 struct MetricsConfig {
     #[serde(default)]
     file: Option<FileExporterConfig>,
     #[serde(default)]
     stdout: Option<StdoutExporterConfig>,
+}
+
+impl Default for MetricsConfig {
+    fn default() -> Self {
+        Self {
+            file: Some(FileExporterConfig {
+                file_path: "/var/lib/node-exporter/stringsimile.prom".into(),
+                export_interval_secs: 15,
+            }),
+            stdout: Default::default(),
+        }
+    }
 }
 
 impl MetricsConfig {
