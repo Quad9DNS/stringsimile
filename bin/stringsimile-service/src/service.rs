@@ -3,6 +3,7 @@ use std::{process::ExitStatus, time::Duration};
 
 use clap::Parser;
 use exitcode::ExitCode;
+use metrics_exporter_prometheus::PrometheusBuilder;
 use tokio::runtime::Runtime;
 use tokio::sync::broadcast::Receiver;
 use tokio::time::sleep;
@@ -11,6 +12,7 @@ use tracing_subscriber::fmt::format::FmtSpan;
 
 use crate::cli::CliArgs;
 use crate::config::ServiceConfig;
+use crate::metrics::MetricsProcessor;
 use crate::processor::StringProcessor;
 use crate::signal::{ServiceOsSignals, ServiceSignal};
 
@@ -25,6 +27,7 @@ pub struct Service<T> {
 pub struct InitState {
     pub signals: ServiceOsSignals,
     pub processor: StringProcessor,
+    pub metrics_processor: MetricsProcessor,
 }
 
 impl Service<()> {
@@ -76,13 +79,22 @@ impl Service<InitState> {
             .with_span_events(FmtSpan::FULL)
             .init();
 
+        let metrics_recorder = PrometheusBuilder::new().build_recorder();
+        let metrics_handle = metrics_recorder.handle();
+        metrics::set_global_recorder(metrics_recorder).expect("Failed preparing metrics recorder!");
+
         let signals = ServiceOsSignals::new(&runtime);
         let processor = StringProcessor::from_config(config.clone());
+        let metrics_processor = MetricsProcessor::from_config(config.clone(), metrics_handle);
         Ok((
             runtime,
             Self {
                 config,
-                state: InitState { signals, processor },
+                state: InitState {
+                    signals,
+                    processor,
+                    metrics_processor,
+                },
             },
         ))
     }
@@ -90,10 +102,16 @@ impl Service<InitState> {
     pub fn start(self, handle: &Handle) -> Result<Service<StartedState>, ExitCode> {
         let Self {
             config,
-            state: InitState { signals, processor },
+            state:
+                InitState {
+                    signals,
+                    processor,
+                    metrics_processor,
+                },
         } = self;
 
         handle.spawn(processor.run(signals.handler.subscribe()));
+        handle.spawn(metrics_processor.run(signals.handler.subscribe()));
 
         Ok(Service {
             config,

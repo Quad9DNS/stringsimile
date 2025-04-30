@@ -8,7 +8,9 @@ use stdout::StdoutOutput;
 mod bufwriter;
 mod file;
 #[cfg(feature = "outputs-kafka")]
-pub mod kafka;
+mod kafka;
+#[cfg(feature = "outputs-kafka")]
+pub use kafka::KafkaOutputConfig;
 mod stdout;
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
@@ -16,7 +18,7 @@ pub enum Output {
     Stdout,
     File(PathBuf),
     #[cfg(feature = "outputs-kafka")]
-    Kafka(kafka::KafkaOutputConfig),
+    Kafka(KafkaOutputConfig),
 }
 
 impl OutputStreamBuilder for Output {

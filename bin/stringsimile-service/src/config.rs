@@ -9,6 +9,7 @@ use crate::{
     cli::CliArgs,
     error::{ConfigYamlParsingSnafu, FileReadSnafu},
     inputs::Input,
+    metrics_exporters::{FileExporterConfig, MetricsExporter, StdoutExporterConfig},
     outputs::Output,
 };
 
@@ -18,6 +19,8 @@ pub struct FileBasedConfig {
     input: InputConfig,
     #[serde(default)]
     output: OutputConfig,
+    #[serde(default)]
+    metrics: MetricsConfig,
     #[serde(default)]
     matcher: MatcherConfig,
     #[serde(default = "default_log_level")]
@@ -29,6 +32,7 @@ impl FileBasedConfig {
         Ok(ServiceConfig {
             inputs: self.input.build()?,
             outputs: self.output.build()?,
+            metrics: self.metrics.build()?,
             matcher: self.matcher.clone(),
             log_level: self.log_level.parse()?,
         })
@@ -43,7 +47,7 @@ struct InputConfig {
     stdin: bool,
     #[cfg(feature = "inputs-kafka")]
     #[serde(default)]
-    kafka: Option<crate::inputs::kafka::KafkaInputConfig>,
+    kafka: Option<crate::inputs::KafkaInputConfig>,
 }
 
 impl InputConfig {
@@ -71,7 +75,7 @@ struct OutputConfig {
     stdout: bool,
     #[cfg(feature = "outputs-kafka")]
     #[serde(default)]
-    kafka: Option<crate::outputs::kafka::KafkaOutputConfig>,
+    kafka: Option<crate::outputs::KafkaOutputConfig>,
 }
 
 impl OutputConfig {
@@ -86,6 +90,27 @@ impl OutputConfig {
         #[cfg(feature = "outputs-kafka")]
         if let Some(kafka_config) = &self.kafka {
             result.insert(Output::Kafka(kafka_config.clone()));
+        }
+        Ok(result)
+    }
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+struct MetricsConfig {
+    #[serde(default)]
+    file: Option<FileExporterConfig>,
+    #[serde(default)]
+    stdout: Option<StdoutExporterConfig>,
+}
+
+impl MetricsConfig {
+    pub fn build(&self) -> crate::Result<HashSet<MetricsExporter>> {
+        let mut result = HashSet::default();
+        if let Some(config) = &self.file {
+            result.insert(MetricsExporter::File(config.clone()));
+        }
+        if let Some(config) = &self.stdout {
+            result.insert(MetricsExporter::Stdout(config.clone()));
         }
         Ok(result)
     }
@@ -150,6 +175,8 @@ pub struct ServiceConfig {
     pub inputs: HashSet<Input>,
     /// List of outputs to write output data to.
     pub outputs: HashSet<Output>,
+    /// List of metrics exporters to export metrics with.
+    pub metrics: HashSet<MetricsExporter>,
     /// Configuration for matcher, defining rules source and field to consider when matching.
     pub matcher: MatcherConfig,
     /// Internal logging level.
@@ -161,6 +188,7 @@ impl ServiceConfig {
         Self {
             inputs: self.inputs.into_iter().chain(other.inputs).collect(),
             outputs: self.outputs.into_iter().chain(other.outputs).collect(),
+            metrics: self.metrics.into_iter().chain(other.metrics).collect(),
             matcher: self.matcher.merge(other.matcher),
             log_level: self.log_level.max(other.log_level),
         }
@@ -244,6 +272,7 @@ impl TryFrom<CliArgs> for ServiceConfig {
         let cli_config = ServiceConfig {
             inputs: new_inputs,
             outputs: new_outputs,
+            metrics: HashSet::new(),
             matcher: matcher_config,
             // Any default for now, will be replaced with the calculated level
             log_level: Level::INFO,

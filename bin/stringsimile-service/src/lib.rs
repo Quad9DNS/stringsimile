@@ -4,6 +4,8 @@ mod cli;
 mod config;
 mod error;
 mod inputs;
+mod metrics;
+mod metrics_exporters;
 mod outputs;
 mod processor;
 pub mod service;

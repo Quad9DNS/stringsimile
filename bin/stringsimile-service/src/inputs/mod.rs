@@ -8,7 +8,9 @@ use stdin::StdinStream;
 mod bufreader;
 mod file;
 #[cfg(feature = "inputs-kafka")]
-pub mod kafka;
+mod kafka;
+#[cfg(feature = "inputs-kafka")]
+pub use kafka::KafkaInputConfig;
 mod stdin;
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
@@ -16,7 +18,7 @@ pub enum Input {
     Stdin,
     File(PathBuf),
     #[cfg(feature = "inputs-kafka")]
-    Kafka(kafka::KafkaInputConfig),
+    Kafka(KafkaInputConfig),
 }
 
 impl InputStreamBuilder for Input {
