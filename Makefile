@@ -46,7 +46,16 @@ lint:
 	cargo clippy
 
 .PHONY: check
-check: lint test
+check:
+	cargo check
+	cargo check --no-default-features
+	cargo check --no-default-features --features basic
+
+.PHONY: check-all
+check-all: check lint test check-deny
+
+.PHONY: check-deny
+check-deny:
 	cargo deny check
 
 .PHONY: test

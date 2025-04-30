@@ -2,9 +2,6 @@ use std::{path::PathBuf, pin::Pin};
 
 use file::FileStream;
 use futures::Stream;
-#[cfg(feature = "inputs-kafka")]
-use kafka::KafkaInputConfig;
-use kafka::KafkaInputStream;
 use serde_json::Value;
 use stdin::StdinStream;
 
@@ -19,7 +16,7 @@ pub enum Input {
     Stdin,
     File(PathBuf),
     #[cfg(feature = "inputs-kafka")]
-    Kafka(KafkaInputConfig),
+    Kafka(kafka::KafkaInputConfig),
 }
 
 impl InputStreamBuilder for Input {
@@ -31,7 +28,7 @@ impl InputStreamBuilder for Input {
             Input::File(path_buf) => FileStream(path_buf).into_stream().await,
             #[cfg(feature = "inputs-kafka")]
             Input::Kafka(kafka_input_config) => {
-                KafkaInputStream::new(kafka_input_config)
+                kafka::KafkaInputStream::new(kafka_input_config)
                     .into_stream()
                     .await
             }

@@ -7,12 +7,16 @@ use stdout::StdoutOutput;
 
 mod bufwriter;
 mod file;
+#[cfg(feature = "outputs-kafka")]
+pub mod kafka;
 mod stdout;
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub enum Output {
     Stdout,
     File(PathBuf),
+    #[cfg(feature = "outputs-kafka")]
+    Kafka(kafka::KafkaOutputConfig),
 }
 
 impl OutputStreamBuilder for Output {
@@ -23,6 +27,12 @@ impl OutputStreamBuilder for Output {
         match self {
             Output::Stdout => StdoutOutput.consume_stream(stream).await,
             Output::File(path_buf) => FileStream(path_buf).consume_stream(stream).await,
+            #[cfg(feature = "outputs-kafka")]
+            Output::Kafka(kafka_otuput_config) => {
+                kafka::KafkaOutputStream::new(kafka_otuput_config)
+                    .consume_stream(stream)
+                    .await
+            }
         }
     }
 }
@@ -34,6 +44,11 @@ impl OutputBuilder for Output {
             Output::File(path_buf) => {
                 let file_name = path_buf.to_string_lossy();
                 format!("file{file_name}")
+            }
+            #[cfg(feature = "outputs-kafka")]
+            Output::Kafka(kafka_output_config) => {
+                let server = kafka_output_config.server();
+                format!("kafka({server})")
             }
         }
     }

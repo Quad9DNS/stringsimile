@@ -49,10 +49,15 @@ requires = { librdkafka = ">= 2.3.0" }
 default = ["all", "rdkafka/cmake-build"]
 deb = ["all", "rdkafka/dynamic-linking"]
 rpm = ["all", "rdkafka/dynamic-linking"]
-all = ["all-inputs"]
+all = ["all-inputs", "all-outputs"]
+
+basic = []
 
 all-inputs = ["inputs-kafka"]
 inputs-kafka = ["dep:rdkafka"]
+
+all-outputs = ["outputs-kafka"]
+outputs-kafka = ["dep:rdkafka"]
 
 [dependencies]
 stringsimile-matcher.workspace = true

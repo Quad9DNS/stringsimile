@@ -24,6 +24,14 @@
   ## To enable stdout output, just set the stdout flag to true
   # stdout: false
 
+  ## If stringsimile is built with kafka support, it can be configured using kafka field
+  # kafka:
+  #   host: localhost
+  #   port: 9092
+  #   topic: stringsimile
+  #   identifier: stringsimile
+  #   librdkafka_options: {}
+
 ## Rule matcher can be configured here
 # matcher:
   ## Path for reading rules can be defined using `rule_path`

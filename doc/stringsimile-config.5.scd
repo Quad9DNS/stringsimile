@@ -40,6 +40,19 @@ Configuration file uses YAML format with the following keys:
 	  Path to file that should be used as output.
 	- stdout
 	  Set to true if stdout should be used as output.
+	- kafka
+	  If stringsimile is built with kafka support, it can be set up as an
+	  output
+	    - host
+	    Hostname of kafka server
+	    - port
+	    Port of kafka server (defaults to 9092)
+	    - topic
+	    Kafka topic to send output to
+	    - identifier
+	    Kafka identifier for output data
+	    - librdkafka_options
+	    Key value pairs of options to pass to librdkafka
 - matcher
   Configuration for rules matcher.
 	- rule_path
