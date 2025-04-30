@@ -1,4 +1,4 @@
-use std::panic;
+use std::{panic, time::Duration};
 
 use futures::TryFutureExt;
 use metrics_exporter_prometheus::PrometheusHandle;
@@ -24,6 +24,14 @@ impl MetricsProcessor {
 
     pub async fn run(self, mut signals: Receiver<ServiceSignal>) {
         let mut export_tasks = JoinSet::new();
+
+        let upkeep_handle = self.metrics_handle.clone();
+        tokio::spawn(async move {
+            loop {
+                tokio::time::sleep(Duration::from_secs(5)).await;
+                upkeep_handle.run_upkeep();
+            }
+        });
 
         for metrics_exporter in self.config.metrics.clone() {
             export_tasks.spawn(
