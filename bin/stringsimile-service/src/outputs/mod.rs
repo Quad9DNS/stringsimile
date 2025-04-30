@@ -11,6 +11,8 @@ mod file;
 mod kafka;
 #[cfg(feature = "outputs-kafka")]
 pub use kafka::KafkaOutputConfig;
+mod metrics;
+mod serialization;
 mod stdout;
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]

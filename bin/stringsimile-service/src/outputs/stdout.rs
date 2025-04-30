@@ -1,7 +1,7 @@
 use futures::Stream;
 use tokio::io::{self, BufWriter};
 
-use super::OutputStreamBuilder;
+use super::{OutputStreamBuilder, bufwriter::BufWriterWithMetrics, metrics::OutputMetrics};
 
 pub struct StdoutOutput;
 
@@ -10,6 +10,11 @@ impl OutputStreamBuilder for StdoutOutput {
         self,
         stream: std::pin::Pin<Box<dyn Stream<Item = (String, Option<serde_json::Value>)> + Send>>,
     ) -> crate::Result<()> {
-        BufWriter::new(io::stdout()).consume_stream(stream).await
+        BufWriterWithMetrics {
+            writer: BufWriter::new(io::stdout()),
+            metrics: OutputMetrics::for_output_type("stdout"),
+        }
+        .consume_stream(stream)
+        .await
     }
 }

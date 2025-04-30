@@ -52,10 +52,10 @@
 
 ## stringsimile metrics exporters can be configured here
 ## All metrics are exported in prometheus format
-metrics:
+# metrics:
   ## Export metrics to file
-  file:
-    file_path: "/tmp/stringsimile.prom"
+  # file:
+    # file_path: "/var/lib/node-exporter/stringsimile.prom"
     # export_interval_secs: 15
 
   ## Export metrics to stdout

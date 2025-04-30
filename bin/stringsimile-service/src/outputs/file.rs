@@ -4,7 +4,7 @@ use futures::Stream;
 use tokio::{fs::File, io::BufWriter};
 use tracing::error;
 
-use super::OutputStreamBuilder;
+use super::{OutputStreamBuilder, bufwriter::BufWriterWithMetrics, metrics::OutputMetrics};
 
 pub struct FileStream(pub PathBuf);
 
@@ -20,6 +20,11 @@ impl OutputStreamBuilder for FileStream {
                 return Err(Box::new(error));
             }
         };
-        BufWriter::new(file).consume_stream(stream).await
+        BufWriterWithMetrics {
+            writer: BufWriter::new(file),
+            metrics: OutputMetrics::for_output_type("file"),
+        }
+        .consume_stream(stream)
+        .await
     }
 }

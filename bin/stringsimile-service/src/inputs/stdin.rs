@@ -1,4 +1,3 @@
-use metrics::counter;
 use tokio::io::{self, BufReader};
 
 use super::{InputStreamBuilder, bufreader::BufReaderWithMetrics, metrics::InputMetrics};

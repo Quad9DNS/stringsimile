@@ -8,9 +8,12 @@ use rdkafka::{
 };
 use serde::{Deserialize, Serialize};
 use tokio_stream::StreamExt;
-use tracing::trace;
+use tracing::{error, trace};
+
+use crate::outputs::serialization::json_serialize_value;
 
 use super::OutputStreamBuilder;
+use super::metrics::OutputMetrics;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct KafkaOutputConfig {
@@ -67,29 +70,32 @@ impl OutputStreamBuilder for KafkaOutputStream {
         config.set("client.id", self.config.identifier);
 
         let producer: FutureProducer = config.create()?;
+        let metrics = OutputMetrics::for_output_type("kafka");
 
         while let Some((original_input, object)) = stream.next().await {
-            if let Some(value) = object {
-                let serialized = &serde_json::to_vec(&value).expect("Serialization failed");
-                let send_status = producer
-                    .send(
-                        FutureRecord::<(), _>::to(&self.config.topic).payload(serialized),
-                        Duration::from_secs(0),
-                    )
-                    .await
-                    .expect("Kafka send failed");
-                trace!("Kafka send status: {:?}", send_status);
+            let value_to_write = if let Some(value) = object {
+                json_serialize_value(original_input, &value, &metrics).await
             } else {
-                let send_status = producer
-                    .send(
-                        FutureRecord::<(), _>::to(&self.config.topic)
-                            .payload(original_input.as_bytes()),
-                        Duration::from_secs(0),
-                    )
-                    .await
-                    .expect("Kafka send failed");
-                trace!("Kafka send status: {:?}", send_status);
-            }
+                original_input
+            };
+            let send_status = match producer
+                .send(
+                    FutureRecord::<(), _>::to(&self.config.topic)
+                        .payload(value_to_write.as_bytes()),
+                    Duration::from_secs(0),
+                )
+                .await
+            {
+                Ok(send_status) => send_status,
+                Err(err) => {
+                    metrics.write_errors.increment(1);
+                    error!(message = "Output (kafka) write failed!", error = %err.0);
+                    continue;
+                }
+            };
+            metrics.objects.increment(1);
+            metrics.bytes.increment(value_to_write.len() as u64);
+            trace!("Kafka send status: {:?}", send_status);
         }
 
         Ok(())

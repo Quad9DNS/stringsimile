@@ -20,12 +20,14 @@ impl InputMetrics {
                 "input_type" => input_type.to_string()
             ),
             read_errors: counter!(
-                "input_read_errors",
-                "input_type" => input_type.to_string()
+                "input_errors",
+                "input_type" => input_type.to_string(),
+                "error_type" => "read"
             ),
             parse_errors: counter!(
-                "input_parse_errors",
-                "input_type" => input_type.to_string()
+                "input_errors",
+                "input_type" => input_type.to_string(),
+                "error_type" => "parse"
             ),
         }
     }
