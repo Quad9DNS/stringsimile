@@ -40,10 +40,7 @@ impl MetricsProcessor {
                 metrics_exporter
                     .start_exporting(self.metrics_handle.clone())
                     .map_err(|err| {
-                        error!(
-                            message = "Metrics exporter task has failed with an error: {}",
-                            err
-                        );
+                        error!("Metrics exporter task has failed with an error: {}", err);
                     }),
             );
         }

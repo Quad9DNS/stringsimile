@@ -57,6 +57,7 @@
   # file:
     # file_path: "/var/lib/node-exporter/stringsimile.prom"
     # export_interval_secs: 15
+    # mode: 0o644
 
   ## Export metrics to stdout
   # stdout:

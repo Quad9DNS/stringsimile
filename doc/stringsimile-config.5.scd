@@ -65,6 +65,7 @@ Configuration file uses YAML format with the following keys:
 	  e.g. ".domain_name" will look for "domain_name" key in root object.
 	  ".value.domain_name" will look for "value" in root object
 	  and then for "domain_name" in the "value" object.
+	  ".domain_names[0]" will take first value in "domain_names" array.
 	  Any failures in matching will just pass through the object unmodified.
 	- report_all
 	  Set to true to put matching metadata in all objects, regardless of
@@ -80,6 +81,8 @@ Configuration file uses YAML format with the following keys:
 	    /var/lib/node-exporter/stringsimile.prom
 	    - export_interval_secs
 	    How often to export metrics to the given file. Default to 15.
+	    - mode
+	    File mode for the created file. Default to 644.
 	- stdout
 	  Export metrics to stdout. Not enabled by default.
 	    - export_interval_secs

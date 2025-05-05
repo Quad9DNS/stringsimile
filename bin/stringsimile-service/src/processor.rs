@@ -135,7 +135,7 @@ impl StringProcessor {
                     }
                 };
 
-                debug!(message = "Processing input from {}", input_name);
+                debug!("Processing input from {}", input_name);
                 let mut matches = Vec::default();
                 {
                     let rules = rules.lock().expect("mutex poisoned");

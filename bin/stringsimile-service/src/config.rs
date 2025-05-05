@@ -110,6 +110,7 @@ impl Default for MetricsConfig {
             file: Some(FileExporterConfig {
                 file_path: "/var/lib/node-exporter/stringsimile.prom".into(),
                 export_interval_secs: 15,
+                mode: 0o644,
             }),
             stdout: Default::default(),
         }
