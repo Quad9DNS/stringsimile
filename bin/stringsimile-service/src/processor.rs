@@ -2,6 +2,7 @@ use std::{
     fs::File,
     io::{BufReader, Seek},
     panic,
+    path::PathBuf,
     sync::{Arc, Mutex},
 };
 
@@ -16,6 +17,7 @@ use tokio::{
 };
 use tokio_stream::{StreamExt, StreamMap, wrappers::BroadcastStream};
 use tracing::{debug, error, info, warn};
+use walkdir::WalkDir;
 
 use crate::{
     config::ServiceConfig,
@@ -43,8 +45,8 @@ impl StringProcessor {
         }
     }
 
-    pub async fn reload_rules(&mut self) -> crate::Result<()> {
-        let file = File::open(self.config.matcher.rules_path.clone()).context(FileReadSnafu)?;
+    async fn parse_file(file_path: PathBuf) -> crate::Result<Vec<StringGroupConfig>> {
+        let file = File::open(file_path).context(FileReadSnafu)?;
         let mut reader = BufReader::new(file);
         let parsed_rules: Vec<StringGroupConfig> = match serde_json::from_reader(&mut reader) {
             Ok(rules) => rules,
@@ -58,6 +60,33 @@ impl StringProcessor {
                         source_jsonl: jsonl_err,
                     })?
             }
+        };
+        Ok(parsed_rules)
+    }
+
+    pub async fn reload_rules(&mut self) -> crate::Result<()> {
+        let parsed_rules = if self.config.matcher.rules_path.is_dir() {
+            let mut parsed_rules: Vec<StringGroupConfig> = Vec::new();
+            for entry in WalkDir::new(self.config.matcher.rules_path.clone())
+                .into_iter()
+                .filter_map(|e| e.ok())
+            {
+                if entry.file_type().is_file() {
+                    match Self::parse_file(entry.path().to_path_buf()).await {
+                        Ok(rules) => parsed_rules.extend(rules),
+                        Err(err) => {
+                            warn!(
+                                "Error while reading {}. Skipping. Error: {:?}",
+                                entry.path().display(),
+                                err
+                            )
+                        }
+                    }
+                }
+            }
+            parsed_rules
+        } else {
+            Self::parse_file(self.config.matcher.rules_path.clone()).await?
         };
 
         let built_rules = parsed_rules
