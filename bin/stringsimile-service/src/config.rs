@@ -8,6 +8,7 @@ use tracing::Level;
 use crate::{
     cli::CliArgs,
     error::{ConfigYamlParsingSnafu, FileReadSnafu},
+    field_access::FieldAccessorConfig,
     inputs::Input,
     metrics_exporters::{FileExporterConfig, MetricsExporter, StdoutExporterConfig},
     outputs::Output,
@@ -133,7 +134,7 @@ pub struct MatcherConfig {
     #[serde(default = "default_rules_path")]
     pub rules_path: PathBuf,
     #[serde(default = "default_field_name")]
-    pub input_field: String,
+    pub input_field: FieldAccessorConfig,
     #[serde(default)]
     pub report_all: bool,
 }
@@ -172,8 +173,8 @@ fn default_rules_path() -> PathBuf {
         .expect("Invalid default rules path")
 }
 
-fn default_field_name() -> String {
-    ".domain_name".to_string()
+fn default_field_name() -> FieldAccessorConfig {
+    FieldAccessorConfig(".domain_name".to_string())
 }
 
 fn default_log_level() -> String {
@@ -251,7 +252,7 @@ impl TryFrom<CliArgs> for ServiceConfig {
 
         let matcher_config = MatcherConfig {
             rules_path: value.rules_path.clone(),
-            input_field: value.input_field.clone(),
+            input_field: FieldAccessorConfig(value.input_field.clone()),
             report_all: value.report_all,
         };
 

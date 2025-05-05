@@ -25,4 +25,10 @@ pub enum StringsimileServiceError {
 
     #[snafu(display("Preparing input {} has failed: {}", input_name, source))]
     InputFail { input_name: String, source: Error },
+
+    #[snafu(display("Reading input field: {}", source))]
+    InputParsing { source: Error },
+
+    #[snafu(display("Invalid input field config: {}", source))]
+    InputConfig { source: Error },
 }

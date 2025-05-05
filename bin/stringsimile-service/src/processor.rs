@@ -19,7 +19,11 @@ use tracing::{debug, error, info, warn};
 
 use crate::{
     config::ServiceConfig,
-    error::{FileReadSnafu, RuleParsingSnafu, StringsimileServiceError},
+    error::{
+        FileReadSnafu, InputConfigSnafu, InputParsingSnafu, RuleParsingSnafu,
+        StringsimileServiceError,
+    },
+    field_access::UnwrappedFields,
     inputs::{InputBuilder, InputStreamBuilder},
     metrics::ExportMetrics,
     outputs::OutputStreamBuilder,
@@ -94,7 +98,19 @@ impl StringProcessor {
             input_streams.insert(input_name, input_stream);
         }
 
-        let input_field = self.config.matcher.input_field.clone();
+        let input_field = match self
+            .config
+            .matcher
+            .input_field
+            .build()
+            .context(InputConfigSnafu)
+        {
+            Ok(accessor) => accessor,
+            Err(error) => {
+                error!(message = "Configuration error!", error = %error);
+                return;
+            }
+        };
         let rules = Arc::clone(&self.rules);
         let report_all = self.config.matcher.report_all;
 
@@ -105,19 +121,18 @@ impl StringProcessor {
                     return (original_input, None);
                 };
 
-                let Value::Object(mut map) = message else {
-                    warn!("Expected JSON object, but found: {message}");
-                    return (original_input, None);
-                };
-
-                let Some(field) = map.get(&input_field) else {
-                    warn!("Specified key field ({}) not found in input.", input_field);
-                    return (original_input, None);
-                };
-
-                let Value::String(name) = field else {
-                    warn!("Expected string value in key field, but found: {:?}", field);
-                    return (original_input, None);
+                let UnwrappedFields {
+                    input_object_map: mut map,
+                    input_field_value: name,
+                } = match input_field.access_field(message).context(InputParsingSnafu) {
+                    Ok(fields) => fields,
+                    Err(error) => {
+                        warn!(
+                            "Input parsing error!\nError: {:?}\nOriginal input: {}",
+                            error, original_input
+                        );
+                        return (original_input, None);
+                    }
                 };
 
                 debug!(message = "Processing input from {}", input_name);
@@ -125,7 +140,7 @@ impl StringProcessor {
                 {
                     let rules = rules.lock().expect("mutex poisoned");
                     for rule in rules.iter() {
-                        let match_results = rule.generate_matches(name);
+                        let match_results = rule.generate_matches(&name);
                         matches.push((rule.name.clone(), match_results));
                     }
                 }

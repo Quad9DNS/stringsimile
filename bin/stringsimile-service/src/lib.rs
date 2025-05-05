@@ -3,6 +3,7 @@ use stringsimile_matcher::Error;
 mod cli;
 mod config;
 mod error;
+mod field_access;
 mod inputs;
 mod metrics;
 mod metrics_exporters;
