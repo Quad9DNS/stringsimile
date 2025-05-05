@@ -63,7 +63,8 @@ impl InputStreamBuilder for KafkaInputStream {
             config.set(key, value);
         }
         config.set("bootstrap.servers", self.config.server());
-        config.set("client.id", self.config.identifier);
+        config.set("client.id", self.config.identifier.clone());
+        config.set("group.id", self.config.identifier);
 
         let consumer: StreamConsumer = config.create()?;
         consumer.subscribe(&[&self.config.topic])?;
