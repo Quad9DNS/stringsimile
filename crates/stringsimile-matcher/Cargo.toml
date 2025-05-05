@@ -25,6 +25,7 @@ rphonetic = { workspace = true, optional = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json.workspace = true
 snafu.workspace = true
+metrics.workspace = true
 strsim = { workspace = true, optional = true }
 tracing.workspace = true
 triple_accel = { workspace = true, optional = true }

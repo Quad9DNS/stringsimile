@@ -1,7 +1,8 @@
 //! Group of related rules
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap};
 
+use metrics::{Counter, counter};
 use serde_json::{Map, Value};
 use tracing::{debug, trace_span, warn};
 
@@ -28,11 +29,44 @@ pub struct StringGroup {
     pub name: String,
     /// Rule sets that are in this group
     pub rule_sets: Vec<RuleSet>,
+    metrics: HashMap<String, HashMap<String, RuleMetrics>>,
+}
+
+struct RuleMetrics {
+    matches: Counter,
+    misses: Counter,
+    errors: Counter,
+}
+
+impl RuleMetrics {
+    fn new(string_group: &str, rule_set: &str, rule: &str) -> Self {
+        Self {
+            matches: counter!("rule_matches",
+                "string_group" => string_group.to_string(),
+                "rule_set" => rule_set.to_string(),
+                "rule" => rule.to_string(),
+            ),
+            misses: counter!("rule_misses",
+                "string_group" => string_group.to_string(),
+                "rule_set" => rule_set.to_string(),
+                "rule" => rule.to_string(),
+            ),
+            errors: counter!("rule_errors",
+                "string_group" => string_group.to_string(),
+                "rule_set" => rule_set.to_string(),
+                "rule" => rule.to_string(),
+            ),
+        }
+    }
 }
 
 impl RuleSet {
     /// Matches the value to this rule set and generates matches with metadata
-    pub fn generate_matches(&self, name: &str) -> Vec<GenericMatchResult> {
+    fn generate_matches(
+        &self,
+        name: &str,
+        metrics: &HashMap<String, RuleMetrics>,
+    ) -> Vec<GenericMatchResult> {
         let _ = trace_span!("ruleset", input = name, ruleset = self.name).enter();
         debug!(
             message = format!("Generating matches for rule set: {}", self.name),
@@ -52,6 +86,7 @@ impl RuleSet {
         }
 
         for rule in &self.rules {
+            let rule_metrics = metrics.get(rule.name()).expect("Missing metrics for rule");
             for (index, part) in parts.iter().enumerate() {
                 match rule.match_rule_generic(part, &self.string_match) {
                     Ok(mut result) => {
@@ -63,9 +98,15 @@ impl RuleSet {
                                 .metadata
                                 .insert("split_position".to_string(), Value::Number(index.into()));
                         }
+                        if result.matched {
+                            rule_metrics.matches.increment(1);
+                        } else {
+                            rule_metrics.misses.increment(1);
+                        }
                         matches.push(result.into_full_metadata());
                     }
                     Err(err) => {
+                        rule_metrics.errors.increment(1);
                         warn!(message = "Matcher failed", error = ?err);
                     }
                 }
@@ -77,6 +118,32 @@ impl RuleSet {
 }
 
 impl StringGroup {
+    /// Creates a new string group with given name and rule sets
+    pub fn new(name: String, rule_sets: Vec<RuleSet>) -> Self {
+        let metrics = rule_sets
+            .iter()
+            .map(|rs| {
+                (
+                    rs.name.clone(),
+                    rs.rules
+                        .iter()
+                        .map(|rule| {
+                            (
+                                rule.name().to_string(),
+                                RuleMetrics::new(&name, &rs.name, rule.name()),
+                            )
+                        })
+                        .collect(),
+                )
+            })
+            .collect();
+        Self {
+            name: name.clone(),
+            rule_sets,
+            metrics,
+        }
+    }
+
     /// Matches the value to this string group and generates matches with metadata
     pub fn generate_matches(&self, input: &str) -> BTreeMap<String, Vec<GenericMatchResult>> {
         let _ = trace_span!("string group", input = input, group = self.name).enter();
@@ -84,7 +151,12 @@ impl StringGroup {
         let mut matches: BTreeMap<String, Vec<GenericMatchResult>> = BTreeMap::default();
 
         for rule_set in &self.rule_sets {
-            let rule_set_matches = rule_set.generate_matches(input);
+            let rule_set_matches = rule_set.generate_matches(
+                input,
+                self.metrics
+                    .get(&rule_set.name)
+                    .expect("Missing rule set metrics"),
+            );
             matches.insert(rule_set.name.clone(), rule_set_matches);
         }
 

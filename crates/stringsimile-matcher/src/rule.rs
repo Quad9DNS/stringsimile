@@ -89,6 +89,9 @@ pub trait IntoGenericMatcherRule {
 
 /// Generic matcher rule. Works for all matchers by converting their metadata into JSON value.
 pub trait GenericMatcherRule {
+    /// Name of the rule
+    fn name(&self) -> &str;
+
     /// Tries to match input string to target string using this rule, turning result into a generic
     /// value.
     fn match_rule_generic(&self, input_str: &str, target_str: &str) -> GenericMatcherResult;
@@ -115,6 +118,10 @@ where
         self.match_rule(input_str, target_str)
             .map_err(Box::new)?
             .try_into_generic_result()
+    }
+
+    fn name(&self) -> &str {
+        T::OutputMetadata::RULE_NAME
     }
 }
 

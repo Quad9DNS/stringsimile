@@ -48,14 +48,13 @@ pub struct StringGroupConfig {
 impl StringGroupConfig {
     /// Convert into StringGroup that can be used for matching
     pub fn into_string_group(self) -> Result<StringGroup, Error> {
-        Ok(StringGroup {
-            name: self.name,
-            rule_sets: self
-                .rule_sets
+        Ok(StringGroup::new(
+            self.name,
+            self.rule_sets
                 .into_iter()
                 .map(RuleSetConfig::into_rule_set)
                 .collect::<Result<Vec<_>, _>>()?,
-        })
+        ))
     }
 }
 
