@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - "*"
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Build deb
+        uses: houseabsolute/actions-rust-cross@v1
+        with:
+          command: deb
+          target: ${{ matrix.platform.target }}
+          args: "--release --no-default-features --features deb"
+          strip: true
+
+      - name: Upload deb build files
+        uses: actions/upload-artifact@v4
+        with:
+          name: stringsimile-deb
+          path: ./target/debian
+
+
+      - name: Build RPM binary
+        uses: houseabsolute/actions-rust-cross@v1
+        with:
+          command: build
+          target: ${{ matrix.platform.target }}
+          args: "--release --no-default-features --features rpm"
+          strip: true
+
+      - name: Build rpm
+        uses: houseabsolute/actions-rust-cross@v1
+        with:
+          command: generate-rpm
+          target: ${{ matrix.platform.target }}
+          args: "-p bin/stringsimile-service"
+          strip: true
+
+      - name: Upload rpm build files
+        uses: actions/upload-artifact@v4
+        with:
+          name: stringsimile-rpm
+          path: ./target/generate-rpm
+
+      - name: Build static binary
+        uses: houseabsolute/actions-rust-cross@v1
+        with:
+          command: build
+          target: ${{ matrix.platform.target }}
+          args: "--release"
+          strip: true
+
+      - name: Upload static build files
+        uses: actions/upload-artifact@v4
+        with:
+          name: stringsimile-static
+          path: ./target/release
