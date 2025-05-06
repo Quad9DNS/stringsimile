@@ -15,7 +15,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install librdkafka
-        run: apt-get update -y && apt-get -y install librdkafka-dev
+        run: sudo apt-get update -y && sudo apt-get -y install librdkafka-dev
 
       - name: Install cargo-deb
         uses: houseabsolute/actions-rust-cross@v1
