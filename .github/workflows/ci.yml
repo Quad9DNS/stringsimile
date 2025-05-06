@@ -14,8 +14,11 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Install librdkafka
-        run: sudo apt-get update -y && sudo apt-get -y install librdkafka-dev
+      - name: Install librdkafka and scdoc
+        run: sudo apt-get update -y && sudo apt-get -y install librdkafka-dev && scdoc
+
+      - name: Build docs
+        run: make doc
 
       - name: Install cargo-deb
         uses: houseabsolute/actions-rust-cross@v1
@@ -37,6 +40,7 @@ jobs:
         with:
           command: deb
           target: x86_64-unknown-linux-gnu
+          args: "-- --no-default-features --features deb"
 
       - name: Upload deb build files
         uses: actions/upload-artifact@v4

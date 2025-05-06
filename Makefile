@@ -27,7 +27,7 @@ rpm: target/generate-rpm/stringsimile_$(VERSION)-1.x86_64.rpm
 
 target/debian/stringsimile_$(VERSION)-1_amd64.deb: $(DOCS)
 	cargo build --release --no-default-features --features deb
-	cargo deb
+	cargo deb -- --no-default-features --features deb
 
 target/generate-rpm/stringsimile_$(VERSION)-1.x86_64.rpm: $(DOCS)
 	cargo build --release --no-default-features --features rpm
