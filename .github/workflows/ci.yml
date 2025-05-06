@@ -5,7 +5,7 @@ on: workflow_dispatch
 jobs:
   build:
     name: Build
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repo
@@ -45,6 +45,27 @@ jobs:
           name: stringsimile-deb
           path: ./target/x86_64-unknown-linux-gnu/debian
 
+      - name: Build deb basic binary
+        uses: houseabsolute/actions-rust-cross@v1
+        with:
+          command: build
+          target: x86_64-unknown-linux-gnu
+          args: "--release --no-default-features --features basic"
+          strip: true
+
+      - name: Build deb basic
+        uses: houseabsolute/actions-rust-cross@v1
+        with:
+          command: deb
+          target: x86_64-unknown-linux-gnu
+          args: "-- --no-default-features --features basic"
+
+      - name: Upload deb basic build files
+        uses: actions/upload-artifact@v4
+        with:
+          name: stringsimile-deb-basic
+          path: ./target/x86_64-unknown-linux-gnu/debian
+
       - name: Install cargo-generate-rpm
         uses: houseabsolute/actions-rust-cross@v1
         with:
@@ -73,6 +94,27 @@ jobs:
           name: stringsimile-rpm
           path: ./target/x86_64-unknown-linux-gnu/generate-rpm
 
+      - name: Build basic RPM binary
+        uses: houseabsolute/actions-rust-cross@v1
+        with:
+          command: build
+          target: x86_64-unknown-linux-gnu
+          args: "--release --no-default-features --features basic"
+          strip: true
+
+      - name: Build basic rpm
+        uses: houseabsolute/actions-rust-cross@v1
+        with:
+          command: generate-rpm
+          target: x86_64-unknown-linux-gnu
+          args: "-p bin/stringsimile-service"
+
+      - name: Upload basic rpm build files
+        uses: actions/upload-artifact@v4
+        with:
+          name: stringsimile-basic-rpm
+          path: ./target/x86_64-unknown-linux-gnu/generate-rpm
+
       - name: Build static binary
         uses: houseabsolute/actions-rust-cross@v1
         with:
@@ -85,4 +127,18 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: stringsimile-static
+          path: ./target/release
+
+      - name: Build basic static binary
+        uses: houseabsolute/actions-rust-cross@v1
+        with:
+          command: build
+          target: x86_64-unknown-linux-gnu
+          args: "--release --no-default-features --features basic"
+          strip: true
+
+      - name: Upload basic static build files
+        uses: actions/upload-artifact@v4
+        with:
+          name: stringsimile-basic-static
           path: ./target/release
