@@ -1,4 +1,5 @@
 use std::{
+    collections::HashMap,
     fs::File,
     io::{BufReader, Seek},
     panic,
@@ -7,15 +8,13 @@ use std::{
 };
 
 use futures::{TryFutureExt, stream::FusedStream};
+use metrics::counter;
 use serde_json::{Map, Value};
 use snafu::ResultExt;
 use stringsimile_config::rulesets::StringGroupConfig;
 use stringsimile_matcher::ruleset::{StringGroup, StringGroupMatchResult};
-use tokio::{
-    sync::broadcast::{self, Receiver},
-    task::JoinSet,
-};
-use tokio_stream::{StreamExt, StreamMap, wrappers::BroadcastStream};
+use tokio::{sync::broadcast::Receiver, sync::mpsc, task::JoinSet};
+use tokio_stream::{StreamExt, StreamMap, wrappers::ReceiverStream};
 use tracing::{debug, error, info, warn};
 use walkdir::WalkDir;
 
@@ -28,7 +27,7 @@ use crate::{
     field_access::{FieldAccessor, UnwrappedFields},
     inputs::{InputBuilder, InputStreamBuilder},
     metrics::ExportMetrics,
-    outputs::OutputStreamBuilder,
+    outputs::{OutputBuilder, OutputStreamBuilder},
     signal::ServiceSignal,
 };
 
@@ -143,24 +142,22 @@ impl StringProcessor {
         let rules = Arc::clone(&self.rules);
         let report_all = self.config.matcher.report_all;
 
-        let (tx, _rx) = broadcast::channel(128);
-
         let mut output_tasks = JoinSet::new();
+        let mut senders = HashMap::new();
 
         for output in self.config.outputs.clone() {
+            let output_name = output.name().clone();
+            let (tx, rx) = mpsc::channel(128);
+            senders.insert(output_name, tx);
             output_tasks.spawn(
                 output
-                    .consume_stream(Box::pin(
-                        BroadcastStream::new(tx.subscribe()).map_while(|res| res.ok()),
-                    ))
+                    .consume_stream(Box::pin(ReceiverStream::new(rx)))
                     .map_err(|err| {
                         error!(message = "Output task has failed with an error: {}", err);
                     }),
             );
         }
 
-        // let mut transform_futures = FuturesUnordered::new();
-        //
         let mut transform_futures = futures::StreamExt::buffer_unordered(
             input_streams.map(|(input_name, (original_input, message))| {
                 tokio::spawn(Self::process_input_data(
@@ -175,12 +172,16 @@ impl StringProcessor {
             self.config.process.threads,
         );
 
+        let rule_loading_errors = counter!("process_errors", "type" => "rule_reload");
+        let output_passing_errors = counter!("process_errors", "type" => "output_message_passing");
+        let rule_matching_errors = counter!("process_errors", "type" => "rule_matching");
+
         loop {
             tokio::select! {
                 Some(task) = output_tasks.join_next() => {
                     match task {
-                        Ok(_t) => {
-                            info!("Output task completed successfully.");
+                        Ok(t) => {
+                            info!("Output task completed successfully. {:?}", t);
                         }
                         Err(err) if err.is_panic() => panic::resume_unwind(err.into_panic()),
                         Err(err) => {
@@ -191,11 +192,15 @@ impl StringProcessor {
                 Some(result) = transform_futures.next(), if !transform_futures.is_terminated() => {
                     match result {
                         Ok(val) => {
-                            if let Err(err) = tx.send(val) {
-                                warn!(message = "Passing message to outputs failed.", error = %err);
+                            for (output_name, sender) in &senders {
+                                if let Err(err) = sender.send(val.clone()).await {
+                                    output_passing_errors.increment(1);
+                                    warn!(message = "Passing message to output failed.", output = output_name, error = %err);
+                                }
                             }
                         }
                         Err(err) => {
+                            rule_matching_errors.increment(1);
                             warn!(message = "Rule matcher task failed.", error = %err);
                         }
                     }
@@ -203,6 +208,7 @@ impl StringProcessor {
                 Ok(signal) = signals.recv() => match signal {
                     ServiceSignal::ReloadConfig => {
                         if let Err(err) = self.reload_rules().await {
+                            rule_loading_errors.increment(1);
                             error!(message = "Reloading rules has failed! Keeping previous rules.", error = %err);
                         }
                     },
