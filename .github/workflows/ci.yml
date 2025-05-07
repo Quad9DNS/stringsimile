@@ -17,6 +17,9 @@ jobs:
         include:
           - target: x86_64-unknown-linux-musl
             needs-musl: true
+            output-file-name: musl
+          - target: x86_64-unknown-linux-gnu
+            output-file-name: gnu
           - variant: all-dynamic
             needs-librdkafka: true
           - package: deb
@@ -105,5 +108,5 @@ jobs:
       - name: Upload build files
         uses: actions/upload-artifact@v4
         with:
-          name: stringsimile-${{ matrix.variant }}-${{ matrix.package }}
+          name: stringsimile-${{ matrix.variant }}-${{ matrix.output-file-name }}-${{ matrix.package }}
           path: ./target/${{ matrix.variant }}/${{ matrix.target }}/${{ matrix.target-dir }}
