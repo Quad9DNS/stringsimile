@@ -35,7 +35,7 @@ target/%/debian/stringsimile_$(VERSION)-1_amd64.deb: target/%/release/stringsimi
 	CARGO_TARGET_DIR="target/$*" cargo deb --variant $*
 
 target/%/generate-rpm/stringsimile_$(VERSION)-1.x86_64.rpm: target/%/release/stringsimile $(DOCS)
-	cargo generate-rpm -p bin/stringsimile-service --target-dir "target/$*"
+	cargo generate-rpm -p bin/stringsimile-service --target-dir "target/$*" --variant $*
 
 .PHONY: dev
 dev:
