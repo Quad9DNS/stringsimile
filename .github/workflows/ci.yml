@@ -33,7 +33,7 @@ jobs:
             target-dir: generate-rpm
           - package: binary
             needs-binary-build: true
-            target-dir: release
+            target-dir: release/stringsimile
 
     steps:
       - name: Checkout repo
