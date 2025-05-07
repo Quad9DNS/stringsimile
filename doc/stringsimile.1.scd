@@ -24,6 +24,9 @@ For more information use *--help* option.
 *-q, --quiet...*
 	Decrease log verbosity. May be repeated for further decrease.
 
+*-t, --threads...*
+	Set number of threads to use. Defaults to number of cores.
+
 *--input-file <INPUT_FILE>*
 	Optionally set file to read input data from
 
@@ -35,6 +38,12 @@ For more information use *--help* option.
 
 *--output-to-stdout*
 	Set to true to write output data to stdout
+
+*--metrics-file <METRICS_FILE>*
+	Optionally set file to write metrics data to
+
+*--metrics-to-stdout*
+	Set to true to write metrics data to stdout
 
 *--input-field <INPUT_FIELD>*
 	Field to take from input JSON object, to match against rules [default: .domain_name]
