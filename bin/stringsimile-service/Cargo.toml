@@ -22,7 +22,20 @@ assets = [
     { source = "../../target/man/stringsimile-config.5", dest = "usr/share/man/man5/stringsimile-config.5", mode = "644" },
     { source = "../../target/man/stringsimile-rule-config.5", dest = "usr/share/man/man5/stringsimile-rule-config.5", mode = "644" },
 ]
+
+[package.metadata.deb.variants.default]
+depends = []
+default-features = true
+
+[package.metadata.deb.variants.all-dynamic]
 depends = ["librdkafka1"]
+default-features = false
+features = ["all-dynamic"]
+
+[package.metadata.deb.variants.basic]
+depends = []
+default-features = false
+features = ["basic"]
 
 [package.metadata.deb.systemd-units]
 unit-scripts = "../../distribution/systemd/"
@@ -43,15 +56,31 @@ assets = [
     { source = "../../target/man/stringsimile-config.5", dest = "/usr/share/man/man5/stringsimile-config.5", mode = "644" },
     { source = "../../target/man/stringsimile-rule-config.5", dest = "/usr/share/man/man5/stringsimile-rule-config.5", mode = "644" },
 ]
+
+[package.metadata.generate-rpm.variants.default]
+requires = {}
+default-features = true
+
+[package.metadata.generate-rpm.variants.all-dynamic]
 requires = { librdkafka = ">= 2.3.0" }
+default-features = false
+features = ["all-dynamic"]
+
+[package.metadata.generate-rpm.variants.basic]
+requires = {}
+default-features = false
+features = ["basic"]
 
 [features]
-default = ["all", "rdkafka/cmake-build"]
-deb = ["all", "rdkafka/dynamic-linking"]
-rpm = ["all", "rdkafka/dynamic-linking"]
+default = ["all-static"]
+all-static = ["all", "kafka-static"]
+all-dynamic = ["all", "kafka-dynamic"]
 all = ["all-inputs", "all-outputs"]
 
 basic = []
+
+kafka-static = ["rdkafka/cmake-build"]
+kafka-dynamic = ["rdkafka/dynamic-linking"]
 
 all-inputs = ["inputs-kafka"]
 inputs-kafka = ["dep:rdkafka"]

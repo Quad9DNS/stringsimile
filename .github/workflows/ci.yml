@@ -1,4 +1,4 @@
-name: Build DEB, RPM and static binary
+name: Build binaries
 
 on: workflow_dispatch
 
@@ -7,143 +7,101 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
 
+    strategy:
+      matrix:
+        variant: [default, all-dynamic, basic]
+        target: [x86_64-unknown-linux-gnu, x86_64-unknown-linux-musl]
+        package: [deb, rpm, binary]
+        include:
+          - target: x86_64-unknown-linux-musl
+            needs-musl: true
+          - variant: all-dynamic
+            needs-librdkafka: true
+          - package: deb
+            needs-cargo-deb: true
+            build-deb: true
+            target-dir: debian
+          - package: rpm
+            needs-cargo-generate-rpm: true
+            needs-binary-build: true
+            build-rpm: true
+            target-dir: generate-rpm
+          - package: binary
+            needs-binary-build: true
+            target-dir: release
+
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
 
       - name: Setup musl rust toolchain
+        if: ${{ matrix.needs-musl }}
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           target: x86_64-unknown-linux-musl
 
-      - name: Install librdkafka and scdoc
+      - name: Install librdkafka
+        if: ${{ matrix.needs-librdkafka }}
         run: sudo apt-get update -y && sudo apt-get -y install librdkafka-dev scdoc musl-tools
+
+      - name: Install musl-tools
+        if: ${{ matrix.needs-musl }}
+        run: sudo apt-get update -y && sudo apt-get -y install musl-tools
+
+      - name: Install scdoc
+        run: sudo apt-get update -y && sudo apt-get -y install scdoc
 
       - name: Build docs
         run: make doc
 
       - name: Install cargo-deb
         uses: houseabsolute/actions-rust-cross@v1
+        if: ${{ matrix.needs-cargo-deb }}
         with:
           command: install
           target: x86_64-unknown-linux-gnu
           args: "cargo-deb"
 
-      - name: Build deb binary
-        uses: houseabsolute/actions-rust-cross@v1
-        with:
-          command: build
-          target: x86_64-unknown-linux-musl
-          args: "--release --no-default-features --features deb"
-          strip: true
-
-      - name: Build deb
-        uses: houseabsolute/actions-rust-cross@v1
-        with:
-          command: deb
-          target: x86_64-unknown-linux-musl
-          args: "-- --no-default-features --features deb"
-
-      - name: Upload deb build files
-        uses: actions/upload-artifact@v4
-        with:
-          name: stringsimile-deb
-          path: ./target/x86_64-unknown-linux-musl/debian
-
-      - name: Build deb basic binary
-        uses: houseabsolute/actions-rust-cross@v1
-        with:
-          command: build
-          target: x86_64-unknown-linux-musl
-          args: "--release --no-default-features --features basic"
-          strip: true
-
-      - name: Build deb basic
-        uses: houseabsolute/actions-rust-cross@v1
-        with:
-          command: deb
-          target: x86_64-unknown-linux-musl
-          args: "-- --no-default-features --features basic"
-
-      - name: Upload deb basic build files
-        uses: actions/upload-artifact@v4
-        with:
-          name: stringsimile-deb-basic
-          path: ./target/x86_64-unknown-linux-musl/debian
-
       - name: Install cargo-generate-rpm
         uses: houseabsolute/actions-rust-cross@v1
+        if: ${{ matrix.needs-cargo-generate-rpm }}
         with:
           command: install
           target: x86_64-unknown-linux-gnu
           args: "cargo-generate-rpm"
 
-      - name: Build RPM binary
+      - name: Build binary
         uses: houseabsolute/actions-rust-cross@v1
+        if: ${{ matrix.needs-binary-build }}
+        env:
+          CARGO_TARGET_DIR: "target/${{ matrix.variant }}"
         with:
           command: build
-          target: x86_64-unknown-linux-musl
-          args: "--release --no-default-features --features rpm"
-          strip: true
+          target: ${{ matrix.target }}
+          args: "--release --no-default-features --features ${{ matrix.variant }}"
+          force-use-cross: true
+
+      - name: Build deb
+        uses: houseabsolute/actions-rust-cross@v1
+        if: ${{ matrix.build-deb }}
+        env:
+          CARGO_TARGET_DIR: "target/${{ matrix.variant }}"
+        with:
+          command: deb
+          target: ${{ matrix.target }}
+          args: "--variant ${{ matrix.variant }}"
+          force-use-cross: true
 
       - name: Build rpm
         uses: houseabsolute/actions-rust-cross@v1
+        if: ${{ matrix.build-rpm }}
         with:
           command: generate-rpm
           target: x86_64-unknown-linux-musl
-          args: "-p bin/stringsimile-service"
+          args: "-p bin/stringsimile-service --target-dir target/${{ matrix.variant }}"
 
-      - name: Upload rpm build files
+      - name: Upload build files
         uses: actions/upload-artifact@v4
         with:
-          name: stringsimile-rpm
-          path: ./target/x86_64-unknown-linux-musl/generate-rpm
-
-      - name: Build basic RPM binary
-        uses: houseabsolute/actions-rust-cross@v1
-        with:
-          command: build
-          target: x86_64-unknown-linux-musl
-          args: "--release --no-default-features --features basic"
-          strip: true
-
-      - name: Build basic rpm
-        uses: houseabsolute/actions-rust-cross@v1
-        with:
-          command: generate-rpm
-          target: x86_64-unknown-linux-musl
-          args: "-p bin/stringsimile-service"
-
-      - name: Upload basic rpm build files
-        uses: actions/upload-artifact@v4
-        with:
-          name: stringsimile-basic-rpm
-          path: ./target/x86_64-unknown-linux-musl/generate-rpm
-
-      - name: Build static binary
-        uses: houseabsolute/actions-rust-cross@v1
-        with:
-          command: build
-          target: x86_64-unknown-linux-musl
-          args: "--release"
-          strip: true
-
-      - name: Upload static build files
-        uses: actions/upload-artifact@v4
-        with:
-          name: stringsimile-static
-          path: ./target/release
-
-      - name: Build basic static binary
-        uses: houseabsolute/actions-rust-cross@v1
-        with:
-          command: build
-          target: x86_64-unknown-linux-musl
-          args: "--release --no-default-features --features basic"
-          strip: true
-
-      - name: Upload basic static build files
-        uses: actions/upload-artifact@v4
-        with:
-          name: stringsimile-basic-static
-          path: ./target/release
+          name: stringsimile-${{ matrix.variant }}-${{ matrix.package }}
+          path: ./target/${{ matrix.variant }}/${{ matrix.target }}/${{ matrix.target-dir }}

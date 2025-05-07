@@ -16,22 +16,26 @@ DOCS := $(addprefix target/man/,\
 	stringsimile-config.5 \
 	stringsimile-rule-config.5)
 
-all: $(DOCS) deb rpm target/release/stringsimile
+all: $(DOCS) all-deb all-rpm target/default/release/stringsimile target/basic/release/stringsimile
 
-target/release/stringsimile:
-	cargo build --release
+target/%/release/stringsimile:
+	CARGO_TARGET_DIR="target/$*" cargo build --release --no-default-features --features $*
 
-deb: target/debian/stringsimile_$(VERSION)-1_amd64.deb
+all-deb: deb deb-dynamic deb-basic
+deb: target/default/debian/stringsimile_$(VERSION)-1_amd64.deb
+deb-dynamic: target/all-dynamic/debian/stringsimile_$(VERSION)-1_amd64.deb
+deb-basic: target/basic/debian/stringsimile_$(VERSION)-1_amd64.deb
 
-rpm: target/generate-rpm/stringsimile_$(VERSION)-1.x86_64.rpm
+all-rpm: rpm rpm-dynamic rpm-basic
+rpm: target/default/generate-rpm/stringsimile_$(VERSION)-1.x86_64.rpm
+rpm-dynamic: target/all-dynamic/generate-rpm/stringsimile_$(VERSION)-1.x86_64.rpm
+rpm-basic: target/basic/generate-rpm/stringsimile_$(VERSION)-1.x86_64.rpm
 
-target/debian/stringsimile_$(VERSION)-1_amd64.deb: $(DOCS)
-	cargo build --release --no-default-features --features deb
-	cargo deb -- --no-default-features --features deb
+target/%/debian/stringsimile_$(VERSION)-1_amd64.deb: target/%/release/stringsimile $(DOCS)
+	CARGO_TARGET_DIR="target/$*" cargo deb --variant $*
 
-target/generate-rpm/stringsimile_$(VERSION)-1.x86_64.rpm: $(DOCS)
-	cargo build --release --no-default-features --features rpm
-	cargo generate-rpm -p bin/stringsimile-service
+target/%/generate-rpm/stringsimile_$(VERSION)-1.x86_64.rpm: target/%/release/stringsimile $(DOCS)
+	cargo generate-rpm -p bin/stringsimile-service --target-dir "target/$*"
 
 .PHONY: dev
 dev:
@@ -78,9 +82,9 @@ RM?=rm -f
 clean:
 	cargo clean
 
-install: $(DOCS) target/release/stringsimile
+install: $(DOCS) target/default/release/stringsimile
 	mkdir -m755 -p $(DESTDIR)$(BINDIR) $(DESTDIR)$(MANDIR)/man1 $(DESTDIR)$(MANDIR)/man5 $(CONFDIR) ($RULEDIR)
-	install -m755 target/release/stringsimile $(DESTDIR)$(BINDIR)/stringsimile
+	install -m755 target/default/release/stringsimile $(DESTDIR)$(BINDIR)/stringsimile
 	install -m644 target/man/stringsimile.1 $(DESTDIR)$(MANDIR)/man1/stringsimile.1
 	install -m644 target/man/stringsimile-config.5 $(DESTDIR)$(MANDIR)/man5/stringsimile-config.5
 	install -m644 target/man/stringsimile-rule-config.5 $(DESTDIR)$(MANDIR)/man5/stringsimile-rule-config.5
