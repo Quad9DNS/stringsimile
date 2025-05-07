@@ -46,7 +46,7 @@ jobs:
 
       - name: Install librdkafka
         if: ${{ matrix.needs-librdkafka }}
-        run: sudo apt-get update -y && sudo apt-get -y install librdkafka-dev scdoc musl-tools
+        run: sudo apt-get update -y && sudo apt-get -y install librdkafka-dev
 
       - name: Install musl-tools
         if: ${{ matrix.needs-musl }}
