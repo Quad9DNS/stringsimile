@@ -343,10 +343,26 @@ impl TryFrom<CliArgs> for ServiceConfig {
             log_level: Level::INFO,
         };
 
+        let mut new_metrics = HashSet::default();
+
+        if value.metrics_to_stdout {
+            new_metrics.insert(MetricsExporter::Stdout(StdoutExporterConfig {
+                export_interval_secs: 15,
+            }));
+        }
+
+        if let Some(metrics_file) = &value.metrics_file {
+            new_metrics.insert(MetricsExporter::File(FileExporterConfig {
+                file_path: metrics_file.clone(),
+                export_interval_secs: 15,
+                mode: 0o644,
+            }));
+        }
+
         let cli_config = ServiceConfig {
             inputs: new_inputs,
             outputs: new_outputs,
-            metrics: HashSet::new(),
+            metrics: new_metrics,
             matcher: matcher_config,
             process: process_config,
         };

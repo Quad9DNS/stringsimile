@@ -48,4 +48,12 @@ pub struct CliArgs {
     /// Number of threads to use.
     #[clap(short, long)]
     pub threads: Option<usize>,
+
+    /// Optionally set file to write metrics data to.
+    #[clap(long)]
+    pub metrics_file: Option<PathBuf>,
+
+    /// Set to true to write metrics data to stdout.
+    #[clap(long, default_value_t = false)]
+    pub metrics_to_stdout: bool,
 }
