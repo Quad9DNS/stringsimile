@@ -50,7 +50,10 @@ jobs:
 
       - name: Install musl-tools
         if: ${{ matrix.needs-musl }}
-        run: sudo apt-get update -y && sudo apt-get -y install musl-tools
+        run: |
+          sudo apt-get update -y && sudo apt-get -y install musl-tools g++
+          # HACK to resolve musl build - will probably cause an issue in the future
+          sudo ln -s /bin/g++ /bin/musl-g++
 
       - name: Install scdoc
         run: sudo apt-get update -y && sudo apt-get -y install scdoc
