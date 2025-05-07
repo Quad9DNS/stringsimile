@@ -44,9 +44,6 @@ jobs:
         with:
           target: ${{ matrix.target }}
 
-      - name: Setup rust cross
-        run: cargo install cross
-
       - name: Install librdkafka
         if: ${{ matrix.needs-librdkafka }}
         run: sudo apt-get update -y && sudo apt-get -y install librdkafka-dev scdoc musl-tools
@@ -74,19 +71,19 @@ jobs:
         env:
           CARGO_TARGET_DIR: "target/${{ matrix.variant }}"
         run: |
-          cross build --target "${{ matrix.target }}" --release --no-default-features --features "${{ matrix.variant }}"
+          cargo build --target "${{ matrix.target }}" --release --no-default-features --features "${{ matrix.variant }}"
 
       - name: Build deb
         if: ${{ matrix.build-deb }}
         env:
           CARGO_TARGET_DIR: "target/${{ matrix.variant }}"
         run: |
-          cross deb --variant "${{ matrix.variant }}"
+          cargo deb --variant "${{ matrix.variant }}"
 
       - name: Build rpm
         if: ${{ matrix.build-rpm }}
         run: |
-          cross generate-rpm -p bin/stringsimile-service --target-dir "target/${{ matrix.variant }}" --variant ${{ matrix.variant }}
+          cargo generate-rpm -p bin/stringsimile-service --target-dir "target/${{ matrix.variant }}" --variant ${{ matrix.variant }}
 
       - name: Upload build files
         uses: actions/upload-artifact@v4
