@@ -20,10 +20,23 @@ pub struct RuleSet {
     /// If set to true, will ignore TLD part of the split string
     pub ignore_tld: bool,
     /// Rules to apply to this match
-    pub rules: Vec<Box<dyn GenericMatcherRule + 'static + Send>>,
+    pub rules: Vec<Box<dyn GenericMatcherRule>>,
+}
+
+impl Clone for RuleSet {
+    fn clone(&self) -> Self {
+        Self {
+            name: self.name.clone(),
+            string_match: self.string_match.clone(),
+            split_target: self.split_target,
+            ignore_tld: self.ignore_tld,
+            rules: self.rules.iter().map(|r| r.clone_dyn()).collect(),
+        }
+    }
 }
 
 /// String group
+#[derive(Clone)]
 pub struct StringGroup {
     /// Name of the group
     pub name: String,
@@ -32,6 +45,7 @@ pub struct StringGroup {
     metrics: HashMap<String, HashMap<String, RuleMetrics>>,
 }
 
+#[derive(Clone)]
 struct RuleMetrics {
     matches: Counter,
     misses: Counter,

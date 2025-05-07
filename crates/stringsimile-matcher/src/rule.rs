@@ -59,7 +59,7 @@ impl<T: RuleMetadata, E: Debug> MatcherResultRuleMetadataExt<T, E> for MatcherRe
 /// Interface of a matcher rule.
 /// It defines outputs of the matcher and the actual implementation, since different matchers can
 /// produce different metadata, to give additional information on the match.
-pub trait MatcherRule {
+pub trait MatcherRule: 'static {
     /// Additional data for positive matches.
     type OutputMetadata: RuleMetadata;
     /// Error type for matcher (negative matches should not be treated as errors).
@@ -88,18 +88,21 @@ pub trait IntoGenericMatcherRule {
 }
 
 /// Generic matcher rule. Works for all matchers by converting their metadata into JSON value.
-pub trait GenericMatcherRule {
+pub trait GenericMatcherRule: Send + 'static {
     /// Name of the rule
     fn name(&self) -> &str;
 
     /// Tries to match input string to target string using this rule, turning result into a generic
     /// value.
     fn match_rule_generic(&self, input_str: &str, target_str: &str) -> GenericMatcherResult;
+
+    /// Clones this generic matcher
+    fn clone_dyn(&self) -> Box<dyn GenericMatcherRule>;
 }
 
 impl<T> GenericMatcherRule for T
 where
-    T: MatcherRule,
+    T: MatcherRule + Clone + Send,
 {
     fn match_rule_generic(&self, input_str: &str, target_str: &str) -> GenericMatcherResult {
         let _ = trace_span!(
@@ -123,6 +126,10 @@ where
     fn name(&self) -> &str {
         T::OutputMetadata::RULE_NAME
     }
+
+    fn clone_dyn(&self) -> Box<dyn GenericMatcherRule> {
+        Box::new(self.clone())
+    }
 }
 
 impl<T> IntoGenericMatcherRule for T
@@ -137,6 +144,7 @@ where
 
 #[cfg(test)]
 /// Example matcher
+#[derive(Clone)]
 pub struct ExampleRule;
 
 #[cfg(test)]

@@ -6,7 +6,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use futures::TryFutureExt;
+use futures::{TryFutureExt, stream::FusedStream};
 use serde_json::{Map, Value};
 use snafu::ResultExt;
 use stringsimile_config::rulesets::StringGroupConfig;
@@ -25,7 +25,7 @@ use crate::{
         FileReadSnafu, InputConfigSnafu, InputParsingSnafu, RuleParsingSnafu,
         StringsimileServiceError,
     },
-    field_access::UnwrappedFields,
+    field_access::{FieldAccessor, UnwrappedFields},
     inputs::{InputBuilder, InputStreamBuilder},
     metrics::ExportMetrics,
     outputs::OutputStreamBuilder,
@@ -143,78 +143,6 @@ impl StringProcessor {
         let rules = Arc::clone(&self.rules);
         let report_all = self.config.matcher.report_all;
 
-        let mut transformed_stream =
-            input_streams.map(|(input_name, (original_input, message))| {
-                let Some(message) = message else {
-                    warn!("Input data was not a JSON object!");
-                    return (original_input, None);
-                };
-
-                let UnwrappedFields {
-                    input_object_map: mut map,
-                    input_field_value: name,
-                } = match input_field.access_field(message).context(InputParsingSnafu) {
-                    Ok(fields) => fields,
-                    Err(error) => {
-                        warn!(
-                            "Input parsing error!\nError: {:?}\nOriginal input: {}",
-                            error, original_input
-                        );
-                        return (original_input, None);
-                    }
-                };
-
-                debug!("Processing input from {}", input_name);
-                let mut matches = Vec::default();
-                {
-                    let rules = rules.lock().expect("mutex poisoned");
-                    for rule in rules.iter() {
-                        let match_results = rule.generate_matches(&name);
-                        matches.push((rule.name.clone(), match_results));
-                    }
-                }
-                if !report_all
-                    && !matches
-                        .iter()
-                        .map(|(_name, results)| results)
-                        .any(StringGroupMatchResult::has_matches)
-                {
-                    (original_input, None)
-                } else {
-                    let mut inner_data = Map::default();
-                    inner_data.insert(
-                        "groups".to_string(),
-                        Value::Array(
-                            matches
-                                .into_iter()
-                                .filter(|(_name, results)| report_all || results.has_matches())
-                                .filter_map(|(name, mut result)| {
-                                    if !report_all {
-                                        for res in result.values_mut() {
-                                            res.retain(|m| m.matched);
-                                        }
-                                        if !result.has_matches() {
-                                            return None;
-                                        }
-                                    }
-
-                                    let mut json = result.to_json();
-                                    if let Some(obj) = json.as_object_mut() {
-                                        obj.insert(
-                                            "string_group_name".to_string(),
-                                            Value::String(name),
-                                        );
-                                    }
-                                    Some(json)
-                                })
-                                .collect(),
-                        ),
-                    );
-                    map.insert("stringsimile".to_string(), Value::Object(inner_data));
-                    (original_input, Some(Value::Object(map)))
-                }
-            });
-
         let (tx, _rx) = broadcast::channel(128);
 
         let mut output_tasks = JoinSet::new();
@@ -231,6 +159,22 @@ impl StringProcessor {
             );
         }
 
+        // let mut transform_futures = FuturesUnordered::new();
+        //
+        let mut transform_futures = futures::StreamExt::buffer_unordered(
+            input_streams.map(|(input_name, (original_input, message))| {
+                tokio::spawn(Self::process_input_data(
+                    rules.lock().expect("mutex poisoned").clone(),
+                    report_all,
+                    input_field.clone(),
+                    input_name,
+                    original_input,
+                    message,
+                ))
+            }),
+            32,
+        );
+
         loop {
             tokio::select! {
                 Some(task) = output_tasks.join_next() => {
@@ -244,9 +188,16 @@ impl StringProcessor {
                         }
                     }
                 },
-                Some(val) = transformed_stream.next() => {
-                    if let Err(err) = tx.send(val) {
-                        warn!(message = "Passing message to outputs failed.", error = %err);
+                Some(result) = transform_futures.next(), if !transform_futures.is_terminated() => {
+                    match result {
+                        Ok(val) => {
+                            if let Err(err) = tx.send(val) {
+                                warn!(message = "Passing message to outputs failed.", error = %err);
+                            }
+                        }
+                        Err(err) => {
+                            warn!(message = "Rule matcher task failed.", error = %err);
+                        }
                     }
                 },
                 Ok(signal) = signals.recv() => match signal {
@@ -261,6 +212,80 @@ impl StringProcessor {
                     }
                 }
             }
+        }
+    }
+
+    async fn process_input_data(
+        rules: Vec<StringGroup>,
+        report_all: bool,
+        input_field: FieldAccessor,
+        input_name: String,
+        original_input: String,
+        message: Option<Value>,
+    ) -> (String, Option<Value>) {
+        let Some(message) = message else {
+            warn!("Input data was not a JSON object!");
+            return (original_input, None);
+        };
+
+        let UnwrappedFields {
+            input_object_map: mut map,
+            input_field_value: name,
+        } = match input_field.access_field(message).context(InputParsingSnafu) {
+            Ok(fields) => fields,
+            Err(error) => {
+                warn!(
+                    "Input parsing error!\nError: {:?}\nOriginal input: {}",
+                    error, original_input
+                );
+                return (original_input, None);
+            }
+        };
+
+        debug!("Processing input from {}", input_name);
+        let mut matches = Vec::default();
+        {
+            for rule in rules.iter() {
+                let match_results = rule.generate_matches(&name);
+                matches.push((rule.name.clone(), match_results));
+            }
+        }
+        if !report_all
+            && !matches
+                .iter()
+                .map(|(_name, results)| results)
+                .any(StringGroupMatchResult::has_matches)
+        {
+            (original_input, None)
+        } else {
+            let mut inner_data = Map::default();
+            inner_data.insert(
+                "groups".to_string(),
+                Value::Array(
+                    matches
+                        .into_iter()
+                        .filter(|(_name, results)| report_all || results.has_matches())
+                        .filter_map(|(name, mut result)| {
+                            if !report_all {
+                                for res in result.values_mut() {
+                                    res.retain(|m| m.matched);
+                                }
+                                if !result.has_matches() {
+                                    return None;
+                                }
+                            }
+
+                            let mut json = result.to_json();
+                            if let Some(obj) = json.as_object_mut() {
+                                obj.insert("string_group_name".to_string(), Value::String(name));
+                            }
+                            Some(json)
+                        })
+                        .collect(),
+                ),
+            );
+            map.insert("stringsimile".to_string(), Value::Object(inner_data));
+            (original_input, Some(Value::Object(map)))
         }
     }
 }

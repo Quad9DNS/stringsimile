@@ -68,6 +68,7 @@ impl Service<InitState> {
 
     pub fn prepare_from_config(config: ServiceConfig) -> Result<(Runtime, Self), ExitCode> {
         let runtime = tokio::runtime::Builder::new_multi_thread()
+            .worker_threads(32)
             .enable_all()
             .build()
             .expect("Building async runtime failed!");

@@ -80,7 +80,7 @@ pub enum RuleConfigError {
 
 impl RuleConfig {
     /// Generates a rule implementation from this config
-    pub fn build(&self) -> Result<Box<dyn GenericMatcherRule + 'static + Send>, Error> {
+    pub fn build(&self) -> Result<Box<dyn GenericMatcherRule>, Error> {
         Ok(match self {
             RuleConfig::Levenshtein(levenshtein_config) => {
                 Box::new(levenshtein_config.build()?.into_generic_matcher())
