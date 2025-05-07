@@ -78,12 +78,12 @@ jobs:
         env:
           CARGO_TARGET_DIR: "target/${{ matrix.variant }}"
         run: |
-          cargo deb --variant "${{ matrix.variant }}"
+          cargo deb --variant "${{ matrix.variant }}" --target "${{ matrix.target }}"
 
       - name: Build rpm
         if: ${{ matrix.build-rpm }}
         run: |
-          cargo generate-rpm -p bin/stringsimile-service --target-dir "target/${{ matrix.variant }}" --variant ${{ matrix.variant }}
+          cargo generate-rpm -p bin/stringsimile-service --target-dir "target/${{ matrix.variant }}" --variant "${{ matrix.variant }}" --target "${{ matrix.target }}"
 
       - name: Upload build files
         uses: actions/upload-artifact@v4
