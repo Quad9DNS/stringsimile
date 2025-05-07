@@ -63,6 +63,12 @@
   # stdout:
     # export_interval_secs: 15
 
-## Log level can be configured
-## Valid levels are: "error", "warn", "info", "debug", "trace"
-# log_level: "INFO"
+## stringsimile process configuration
+# process:
+  ## Log level can be configured
+  ## Valid levels are: "error", "warn", "info", "debug", "trace"
+  # log_level: "INFO"
+
+  ## Number of threads to use
+  ## Defaults to number of available cores
+  # threads: null

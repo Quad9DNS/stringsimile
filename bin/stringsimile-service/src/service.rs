@@ -68,7 +68,7 @@ impl Service<InitState> {
 
     pub fn prepare_from_config(config: ServiceConfig) -> Result<(Runtime, Self), ExitCode> {
         let runtime = tokio::runtime::Builder::new_multi_thread()
-            .worker_threads(32)
+            .worker_threads(config.process.threads)
             .enable_all()
             .build()
             .expect("Building async runtime failed!");
@@ -76,7 +76,7 @@ impl Service<InitState> {
         tracing_subscriber::fmt()
             .with_file(false)
             .with_target(false)
-            .with_max_level(config.log_level)
+            .with_max_level(config.process.log_level)
             .with_span_events(FmtSpan::FULL)
             .init();
 

@@ -44,4 +44,8 @@ pub struct CliArgs {
     /// Set to true to always write match metadata in output, even for failed matches.
     #[clap(long, default_value_t = false)]
     pub report_all: bool,
+
+    /// Number of threads to use.
+    #[clap(short, long)]
+    pub threads: Option<usize>,
 }

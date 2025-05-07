@@ -87,9 +87,13 @@ Configuration file uses YAML format with the following keys:
 	  Export metrics to stdout. Not enabled by default.
 	    - export_interval_secs
 	    How often to export metrics to stdout.
-- log_level
-  Logging level.
-  Valid levels are: "error", "warn", "info", "debug", "trace"
+- process
+  Configuration for the stringsimile process.
+	- log_level
+	  Logging level.
+	  Valid levels are: "error", "warn", "info", "debug", "trace"
+	- threads
+	  Number of threads to use. Defaults to number of available cores.
 
 # EXAMPLES
 

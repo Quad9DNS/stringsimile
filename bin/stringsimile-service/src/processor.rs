@@ -172,7 +172,7 @@ impl StringProcessor {
                     message,
                 ))
             }),
-            32,
+            self.config.process.threads,
         );
 
         loop {

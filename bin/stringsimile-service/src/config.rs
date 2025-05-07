@@ -24,8 +24,8 @@ pub struct FileBasedConfig {
     metrics: MetricsConfig,
     #[serde(default)]
     matcher: MatcherConfig,
-    #[serde(default = "default_log_level")]
-    log_level: String,
+    #[serde(default)]
+    process: ProcessConfig,
 }
 
 impl FileBasedConfig {
@@ -35,7 +35,7 @@ impl FileBasedConfig {
             outputs: self.output.build()?,
             metrics: self.metrics.build()?,
             matcher: self.matcher.clone(),
-            log_level: self.log_level.parse()?,
+            process: self.process.build()?,
         })
     }
 }
@@ -168,6 +168,32 @@ impl MatcherConfig {
     }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProcessConfig {
+    #[serde(default = "default_thread_count")]
+    threads: usize,
+    #[serde(default = "default_log_level")]
+    log_level: String,
+}
+
+impl Default for ProcessConfig {
+    fn default() -> Self {
+        Self {
+            threads: default_thread_count(),
+            log_level: default_log_level(),
+        }
+    }
+}
+
+impl ProcessConfig {
+    pub fn build(&self) -> crate::Result<ValidatedProcessConfig> {
+        Ok(ValidatedProcessConfig {
+            threads: self.threads,
+            log_level: self.log_level.parse()?,
+        })
+    }
+}
+
 fn default_rules_path() -> PathBuf {
     "/var/lib/stringsimile"
         .parse()
@@ -182,6 +208,34 @@ fn default_log_level() -> String {
     "info".to_string()
 }
 
+fn default_thread_count() -> usize {
+    std::thread::available_parallelism()
+        .map(|r| r.get())
+        .unwrap_or(1)
+}
+
+/// Parsed and validated process configuration for the stringsimile service.
+#[derive(Debug, Clone)]
+pub struct ValidatedProcessConfig {
+    /// Number of threads to use
+    pub threads: usize,
+    /// Internal logging level
+    pub log_level: Level,
+}
+
+impl ValidatedProcessConfig {
+    pub fn merge(self, other: Self) -> Self {
+        Self {
+            threads: if other.threads == default_thread_count() {
+                self.threads
+            } else {
+                other.threads
+            },
+            log_level: self.log_level.max(other.log_level),
+        }
+    }
+}
+
 /// Parsed and validated configuration for the stringsimile service.
 #[derive(Debug, Clone)]
 pub struct ServiceConfig {
@@ -193,8 +247,8 @@ pub struct ServiceConfig {
     pub metrics: HashSet<MetricsExporter>,
     /// Configuration for matcher, defining rules source and field to consider when matching.
     pub matcher: MatcherConfig,
-    /// Internal logging level.
-    pub log_level: Level,
+    /// Configuration for the process.
+    pub process: ValidatedProcessConfig,
 }
 
 impl ServiceConfig {
@@ -204,7 +258,7 @@ impl ServiceConfig {
             outputs: self.outputs.into_iter().chain(other.outputs).collect(),
             metrics: self.metrics.into_iter().chain(other.metrics).collect(),
             matcher: self.matcher.merge(other.matcher),
-            log_level: self.log_level.max(other.log_level),
+            process: self.process.merge(other.process),
         }
     }
 }
@@ -248,7 +302,7 @@ impl TryFrom<CliArgs> for ServiceConfig {
         let mut base_config = file_config.build()?;
 
         let log_level_increase = value.verbose - value.quiet;
-        let current_log_level = base_config.log_level.into_u8();
+        let current_log_level = base_config.process.log_level.into_u8();
         let new_log_level = Level::from_u8(current_log_level.saturating_add(log_level_increase));
 
         let matcher_config = MatcherConfig {
@@ -283,17 +337,22 @@ impl TryFrom<CliArgs> for ServiceConfig {
                 .retain(|i| !matches!(i, Output::File(_)));
         }
 
+        let process_config = ValidatedProcessConfig {
+            threads: value.threads.unwrap_or(default_thread_count()),
+            // Any default for now, will be replaced with the calculated level
+            log_level: Level::INFO,
+        };
+
         let cli_config = ServiceConfig {
             inputs: new_inputs,
             outputs: new_outputs,
             metrics: HashSet::new(),
             matcher: matcher_config,
-            // Any default for now, will be replaced with the calculated level
-            log_level: Level::INFO,
+            process: process_config,
         };
 
         let mut config = base_config.merge(cli_config);
-        config.log_level = new_log_level;
+        config.process.log_level = new_log_level;
 
         Ok(config)
     }
