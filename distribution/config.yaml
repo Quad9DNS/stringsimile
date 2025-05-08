@@ -63,6 +63,9 @@
   # stdout:
     # export_interval_secs: 15
 
+  ## Prefix to add to all metrics names
+  # name_prefix: stringsimile
+
 ## stringsimile process configuration
 # process:
   ## Log level can be configured

@@ -102,6 +102,8 @@ struct MetricsConfig {
     file: Option<FileExporterConfig>,
     #[serde(default)]
     stdout: Option<StdoutExporterConfig>,
+    #[serde(default = "default_metrics_prefix")]
+    name_prefix: String,
 }
 
 impl Default for MetricsConfig {
@@ -113,20 +115,24 @@ impl Default for MetricsConfig {
                 mode: 0o644,
             }),
             stdout: Default::default(),
+            name_prefix: default_metrics_prefix(),
         }
     }
 }
 
 impl MetricsConfig {
-    pub fn build(&self) -> crate::Result<HashSet<MetricsExporter>> {
-        let mut result = HashSet::default();
+    pub fn build(&self) -> crate::Result<ValidatedMetricsConfig> {
+        let mut exporters = HashSet::default();
         if let Some(config) = &self.file {
-            result.insert(MetricsExporter::File(config.clone()));
+            exporters.insert(MetricsExporter::File(config.clone()));
         }
         if let Some(config) = &self.stdout {
-            result.insert(MetricsExporter::Stdout(config.clone()));
+            exporters.insert(MetricsExporter::Stdout(config.clone()));
         }
-        Ok(result)
+        Ok(ValidatedMetricsConfig {
+            exporters,
+            prefix: self.name_prefix.clone(),
+        })
     }
 }
 
@@ -214,6 +220,10 @@ fn default_thread_count() -> usize {
         .unwrap_or(1)
 }
 
+fn default_metrics_prefix() -> String {
+    "stringsimile".to_string()
+}
+
 /// Parsed and validated process configuration for the stringsimile service.
 #[derive(Debug, Clone)]
 pub struct ValidatedProcessConfig {
@@ -236,6 +246,28 @@ impl ValidatedProcessConfig {
     }
 }
 
+/// Configuration for stringsimile metrics.
+#[derive(Debug, Clone)]
+pub struct ValidatedMetricsConfig {
+    /// List of metrics exporters to export metrics with.
+    pub exporters: HashSet<MetricsExporter>,
+    /// Prefix to apply to all metrics names.
+    pub prefix: String,
+}
+
+impl ValidatedMetricsConfig {
+    pub fn merge(self, other: Self) -> Self {
+        Self {
+            exporters: self.exporters.into_iter().chain(other.exporters).collect(),
+            prefix: if other.prefix == default_metrics_prefix() {
+                self.prefix
+            } else {
+                other.prefix
+            },
+        }
+    }
+}
+
 /// Parsed and validated configuration for the stringsimile service.
 #[derive(Debug, Clone)]
 pub struct ServiceConfig {
@@ -243,8 +275,8 @@ pub struct ServiceConfig {
     pub inputs: HashSet<Input>,
     /// List of outputs to write output data to.
     pub outputs: HashSet<Output>,
-    /// List of metrics exporters to export metrics with.
-    pub metrics: HashSet<MetricsExporter>,
+    /// Configuration for metrics.
+    pub metrics: ValidatedMetricsConfig,
     /// Configuration for matcher, defining rules source and field to consider when matching.
     pub matcher: MatcherConfig,
     /// Configuration for the process.
@@ -256,7 +288,7 @@ impl ServiceConfig {
         Self {
             inputs: self.inputs.into_iter().chain(other.inputs).collect(),
             outputs: self.outputs.into_iter().chain(other.outputs).collect(),
-            metrics: self.metrics.into_iter().chain(other.metrics).collect(),
+            metrics: self.metrics.merge(other.metrics),
             matcher: self.matcher.merge(other.matcher),
             process: self.process.merge(other.process),
         }
@@ -359,10 +391,15 @@ impl TryFrom<CliArgs> for ServiceConfig {
             }));
         }
 
+        let metrics_config = ValidatedMetricsConfig {
+            exporters: new_metrics,
+            prefix: value.metrics_name_prefix,
+        };
+
         let cli_config = ServiceConfig {
             inputs: new_inputs,
             outputs: new_outputs,
-            metrics: new_metrics,
+            metrics: metrics_config,
             matcher: matcher_config,
             process: process_config,
         };

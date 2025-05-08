@@ -45,6 +45,9 @@ For more information use *--help* option.
 *--metrics-to-stdout*
 	Set to true to write metrics data to stdout
 
+*--metrics-name-prefix*
+	Prefix to add to all metrics names [default: stringsimile_]
+
 *--input-field <INPUT_FIELD>*
 	Field to take from input JSON object, to match against rules [default: .domain_name]
 

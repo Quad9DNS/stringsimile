@@ -56,4 +56,8 @@ pub struct CliArgs {
     /// Set to true to write metrics data to stdout.
     #[clap(long, default_value_t = false)]
     pub metrics_to_stdout: bool,
+
+    /// Prefix to add to all metrics names.
+    #[clap(long, default_value = "stringsimile")]
+    pub metrics_name_prefix: String,
 }

@@ -35,7 +35,7 @@ impl MetricsProcessor {
             }
         });
 
-        for metrics_exporter in self.config.metrics.clone() {
+        for metrics_exporter in self.config.metrics.exporters.clone() {
             export_tasks.spawn(
                 metrics_exporter
                     .start_exporting(self.metrics_handle.clone())

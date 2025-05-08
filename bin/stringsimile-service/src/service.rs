@@ -4,6 +4,7 @@ use std::{process::ExitStatus, time::Duration};
 use clap::Parser;
 use exitcode::ExitCode;
 use metrics_exporter_prometheus::PrometheusBuilder;
+use metrics_util::layers::{PrefixLayer, Stack};
 use tokio::runtime::Runtime;
 use tokio::sync::broadcast::Receiver;
 use tokio::time::sleep;
@@ -82,7 +83,20 @@ impl Service<InitState> {
 
         let metrics_recorder = PrometheusBuilder::new().build_recorder();
         let metrics_handle = metrics_recorder.handle();
-        metrics::set_global_recorder(metrics_recorder).expect("Failed preparing metrics recorder!");
+
+        let layers = Stack::new(metrics_recorder);
+
+        let metrics_prefix = config.metrics.prefix.clone();
+        if !metrics_prefix.is_empty() {
+            layers
+                .push(PrefixLayer::new(metrics_prefix))
+                .install()
+                .expect("Failed preparing metrics recorder!");
+        } else {
+            layers
+                .install()
+                .expect("Failed preparing metrics recorder!");
+        }
 
         let signals = ServiceOsSignals::new(&runtime);
         let processor = StringProcessor::from_config(config.clone());

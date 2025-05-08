@@ -80,13 +80,15 @@ Configuration file uses YAML format with the following keys:
 	    Path to the file to export to. Defaults to
 	    /var/lib/node-exporter/stringsimile.prom
 	    - export_interval_secs
-	    How often to export metrics to the given file. Default to 15.
+	    How often to export metrics to the given file. Defaults to 15.
 	    - mode
-	    File mode for the created file. Default to 644.
+	    File mode for the created file. Defaults to 644.
 	- stdout
 	  Export metrics to stdout. Not enabled by default.
 	    - export_interval_secs
 	    How often to export metrics to stdout.
+	- name_prefix
+	  Prefix to add to all metrics names. Defaults to stringsimile_
 - process
   Configuration for the stringsimile process.
 	- log_level
