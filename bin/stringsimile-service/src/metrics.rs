@@ -1,4 +1,7 @@
-use std::{panic, time::Duration};
+use std::{
+    panic,
+    time::{Duration, Instant},
+};
 
 use futures::TryFutureExt;
 use metrics::gauge;
@@ -14,23 +17,33 @@ use crate::{
 pub struct MetricsProcessor {
     config: ServiceConfig,
     metrics_handle: PrometheusHandle,
+    process_init_time: Instant,
 }
 
 impl MetricsProcessor {
-    pub fn from_config(config: ServiceConfig, metrics_handle: PrometheusHandle) -> Self {
+    pub fn from_config(
+        config: ServiceConfig,
+        metrics_handle: PrometheusHandle,
+        process_init_time: Instant,
+    ) -> Self {
         Self {
             config,
             metrics_handle,
+            process_init_time,
         }
     }
 
     pub async fn run(self, mut signals: Receiver<ServiceSignal>) {
         let mut export_tasks = JoinSet::new();
 
+        let uptime_metric = gauge!("process_uptime_secs");
+        let init_time = self.process_init_time;
+
         let upkeep_handle = self.metrics_handle.clone();
         tokio::spawn(async move {
             loop {
                 tokio::time::sleep(Duration::from_secs(5)).await;
+                uptime_metric.set(Instant::now().duration_since(init_time).as_secs_f64());
                 upkeep_handle.run_upkeep();
             }
         });

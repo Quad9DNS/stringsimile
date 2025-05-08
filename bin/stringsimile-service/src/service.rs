@@ -1,4 +1,5 @@
 #![allow(missing_docs)]
+use std::time::Instant;
 use std::{process::ExitStatus, time::Duration};
 
 use clap::Parser;
@@ -68,6 +69,8 @@ impl Service<InitState> {
     }
 
     pub fn prepare_from_config(config: ServiceConfig) -> Result<(Runtime, Self), ExitCode> {
+        let init_time = Instant::now();
+
         let runtime = tokio::runtime::Builder::new_multi_thread()
             .worker_threads(config.process.threads)
             .enable_all()
@@ -100,7 +103,8 @@ impl Service<InitState> {
 
         let signals = ServiceOsSignals::new(&runtime);
         let processor = StringProcessor::from_config(config.clone());
-        let metrics_processor = MetricsProcessor::from_config(config.clone(), metrics_handle);
+        let metrics_processor =
+            MetricsProcessor::from_config(config.clone(), metrics_handle, init_time);
         Ok((
             runtime,
             Self {
