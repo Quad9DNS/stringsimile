@@ -34,6 +34,9 @@ jobs:
           - package: binary
             needs-binary-build: true
             target-dir: release/stringsimile
+        exclude:
+          - target: x86_64-unknown-linux-musl
+            variant: all-dynamic
 
     steps:
       - name: Checkout repo
