@@ -1,9 +1,10 @@
 #![allow(missing_docs)]
-use std::time::Instant;
+use std::time::{Instant, SystemTime, UNIX_EPOCH};
 use std::{process::ExitStatus, time::Duration};
 
 use clap::Parser;
 use exitcode::ExitCode;
+use metrics::gauge;
 use metrics_exporter_prometheus::PrometheusBuilder;
 use metrics_util::layers::{PrefixLayer, Stack};
 use tokio::runtime::Runtime;
@@ -156,12 +157,22 @@ impl Service<StartedState> {
 
         let mut signal_rx = signals.receiver;
 
+        let last_reload_signal = gauge!("last_reload_signal");
+
         let signal = loop {
             tokio::select! {
                 signal = signal_rx.recv() => {
                     info!(message = "Handling signal", signal = ?signal);
                     match signal{
-                        Ok(ServiceSignal::ReloadConfig) => (),
+                        Ok(ServiceSignal::ReloadConfig) => {
+                            // Other components will handle config reload
+                            // Here we will just emit the metric
+                            let now = SystemTime::now();
+                            // Ignoring error here, since there is nothing meaningful to be done
+                            if let Ok(epoch_timestamp) = now.duration_since(UNIX_EPOCH) {
+                                last_reload_signal.set(epoch_timestamp.as_secs_f64())
+                            }
+                        },
                         Ok(signal @ ServiceSignal::Shutdown | signal @ ServiceSignal::Quit) => break signal,
                         Err(err) => {
                             error!(message = "Receiving OS signal failed!", error = %err);
