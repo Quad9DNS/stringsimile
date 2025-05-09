@@ -8,8 +8,6 @@ jobs:
     runs-on: ubuntu-latest
 
     strategy:
-      # Keep disabled until all variant builds are cleaned up
-      fail-fast: false
       matrix:
         variant: [default, all-dynamic, basic]
         target: [x86_64-unknown-linux-gnu, x86_64-unknown-linux-musl]
