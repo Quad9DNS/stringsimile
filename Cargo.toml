@@ -18,6 +18,7 @@ stringsimile-config = { path = "./crates/stringsimile-config" }
 async-stream = { version = "0.3.6" }
 clap = { version = "4.5.36" }
 confusables = { version = "0.1.0" }
+criterion = { version = "0.5.1" }
 exitcode = { version = "1.1.2" }
 futures = { version = "0.3.31" }
 rdkafka = { version = "0.37.0" }
