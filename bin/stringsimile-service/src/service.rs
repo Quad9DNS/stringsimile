@@ -131,7 +131,7 @@ impl Service<InitState> {
         } = self;
 
         handle.spawn(processor.run(signals.handler.subscribe()));
-        handle.spawn(metrics_processor.run(signals.handler.subscribe()));
+        handle.spawn(metrics_processor.run(signals.handler.subscribe(), handle.clone()));
 
         Ok(Service {
             config,
