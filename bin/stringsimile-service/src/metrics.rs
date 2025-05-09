@@ -12,11 +12,13 @@ use tracing::{error, info};
 
 use crate::{
     config::ServiceConfig, metrics_exporters::MetricsExporterTaskBuilder, signal::ServiceSignal,
+    system_metrics::SystemMetrics,
 };
 
 pub struct MetricsProcessor {
     config: ServiceConfig,
     metrics_handle: PrometheusHandle,
+    sytem_metrics: SystemMetrics,
     process_init_time: Instant,
 }
 
@@ -29,6 +31,7 @@ impl MetricsProcessor {
         Self {
             config,
             metrics_handle,
+            sytem_metrics: SystemMetrics::new(),
             process_init_time,
         }
     }
@@ -38,11 +41,17 @@ impl MetricsProcessor {
 
         let uptime_metric = gauge!("process_uptime_secs");
         let init_time = self.process_init_time;
+        let mut system_metrics = self.sytem_metrics;
+
+        // Initial metrics emission
+        uptime_metric.set(Instant::now().duration_since(init_time).as_secs_f64());
+        system_metrics.emit_system_metrics();
 
         let upkeep_handle = self.metrics_handle.clone();
         tokio::spawn(async move {
             loop {
                 tokio::time::sleep(Duration::from_secs(5)).await;
+                system_metrics.emit_system_metrics();
                 uptime_metric.set(Instant::now().duration_since(init_time).as_secs_f64());
                 upkeep_handle.run_upkeep();
             }

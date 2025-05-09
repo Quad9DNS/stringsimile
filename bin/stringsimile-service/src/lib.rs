@@ -11,6 +11,7 @@ mod outputs;
 mod processor;
 pub mod service;
 mod signal;
+mod system_metrics;
 
 /// Type alias for generic result.
 pub type Result<T> = std::result::Result<T, Error>;
