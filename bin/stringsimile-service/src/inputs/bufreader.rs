@@ -38,3 +38,82 @@ impl<R: AsyncRead + Send + 'static> InputStreamBuilder for BufReaderWithMetrics<
         )))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn bad_input() {
+        let input = "".as_bytes();
+        let reader = BufReader::new(input);
+        let reader_with_metrics = BufReaderWithMetrics {
+            reader,
+            metrics: InputMetrics::for_input_type("test"),
+        };
+
+        let result = reader_with_metrics.into_stream().await;
+        assert!(result.is_ok());
+        let mut stream = result.unwrap();
+
+        assert!(stream.next().await.is_none());
+    }
+
+    #[tokio::test]
+    async fn invalid_json() {
+        let input = "test".as_bytes();
+        let reader = BufReader::new(input);
+        let reader_with_metrics = BufReaderWithMetrics {
+            reader,
+            metrics: InputMetrics::for_input_type("test"),
+        };
+
+        let result = reader_with_metrics.into_stream().await;
+        assert!(result.is_ok());
+        let mut stream = result.unwrap();
+
+        let first_item = stream.next().await.expect("Read failed");
+        // Preserve original text
+        assert_eq!(first_item.0, "test");
+        // Invalid JSON so no parsed value
+        assert!(first_item.1.is_none());
+    }
+
+    #[tokio::test]
+    async fn valid_json() {
+        let original_input = r#"{"input": "test", "metadata": {}}"#;
+        let input = original_input.as_bytes();
+        let reader = BufReader::new(input);
+        let reader_with_metrics = BufReaderWithMetrics {
+            reader,
+            metrics: InputMetrics::for_input_type("test"),
+        };
+
+        let result = reader_with_metrics.into_stream().await;
+        assert!(result.is_ok());
+        let mut stream = result.unwrap();
+
+        let first_item = stream.next().await.expect("Read failed");
+        // Preserve original text
+        assert_eq!(first_item.0, original_input);
+
+        let parsed_value = first_item.1.expect("Parse failed");
+        let object = parsed_value.as_object().expect("JSON not an object");
+        assert_eq!(
+            object
+                .get("input")
+                .expect("Missing input field")
+                .as_str()
+                .expect("Expected input to be a string"),
+            "test"
+        );
+        assert!(
+            object
+                .get("metadata")
+                .expect("Missing metadata field")
+                .as_object()
+                .expect("Expected metadata to be an object")
+                .is_empty(),
+        );
+    }
+}
