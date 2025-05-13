@@ -4,7 +4,7 @@ use tokio::io::{AsyncWrite, AsyncWriteExt, BufWriter};
 use tokio_stream::StreamExt;
 use tracing::error;
 
-use super::{OutputStreamBuilder, metrics::OutputMetrics, serialization::json_serialize_value};
+use super::{metrics::OutputMetrics, serialization::json_serialize_value, OutputStreamBuilder};
 
 pub struct BufWriterWithMetrics<W> {
     pub writer: BufWriter<W>,
@@ -53,5 +53,53 @@ impl<W: AsyncWrite> OutputStreamBuilder for BufWriterWithMetrics<W> {
         }
 
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use futures::{stream, Stream};
+    use serde_json::{json, Value};
+
+    use super::*;
+
+    async fn run_with_stream<S: Stream<Item = (String, Option<Value>)> + Send + 'static>(
+        input_stream: S,
+    ) -> String {
+        let mut buffer = Vec::default();
+        let writer = BufWriterWithMetrics {
+            writer: BufWriter::new(&mut buffer),
+            metrics: OutputMetrics::for_output_type("test"),
+        };
+
+        writer
+            .consume_stream(Box::pin(input_stream))
+            .await
+            .expect("Output failed");
+
+        String::from_utf8(buffer).expect("Invalid UTF8")
+    }
+
+    #[tokio::test]
+    async fn just_original_input() {
+        let input = stream::iter(vec![("original_input".to_string(), None)]);
+        let result = run_with_stream(input).await;
+
+        assert_eq!(result, "original_input\n");
+    }
+
+    #[tokio::test]
+    async fn serialized_output() {
+        let input = stream::iter(vec![(
+            r#"{"input":      "test", "metadata":          {}}"#.to_string(),
+            Some(json!({
+                "input": "test",
+                "metadata": {}
+            })),
+        )]);
+
+        let result = run_with_stream(input).await;
+
+        assert_eq!(result, "{\"input\":\"test\",\"metadata\":{}}\n");
     }
 }

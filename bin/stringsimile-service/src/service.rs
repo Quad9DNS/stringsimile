@@ -9,6 +9,7 @@ use metrics_exporter_prometheus::PrometheusBuilder;
 use metrics_util::layers::{PrefixLayer, Stack};
 use tokio::runtime::Runtime;
 use tokio::sync::broadcast::Receiver;
+use tokio::task::JoinHandle;
 use tokio::time::sleep;
 use tracing::{Level, error, info};
 use tracing_subscriber::fmt::format::FmtSpan;
@@ -130,18 +131,25 @@ impl Service<InitState> {
                 },
         } = self;
 
-        handle.spawn(processor.run(signals.handler.subscribe()));
-        handle.spawn(metrics_processor.run(signals.handler.subscribe(), handle.clone()));
+        let processor_handle = handle.spawn(processor.run(signals.handler.subscribe()));
+        let metrics_handle =
+            handle.spawn(metrics_processor.run(signals.handler.subscribe(), handle.clone()));
 
         Ok(Service {
             config,
-            state: StartedState { signals },
+            state: StartedState {
+                signals,
+                processor_handle,
+                metrics_handle,
+            },
         })
     }
 }
 
 pub struct StartedState {
     pub signals: ServiceOsSignals,
+    pub processor_handle: JoinHandle<()>,
+    pub metrics_handle: JoinHandle<()>,
 }
 
 impl Service<StartedState> {
@@ -152,7 +160,12 @@ impl Service<StartedState> {
     pub async fn main(self) -> Service<FinishedState> {
         let Service {
             config,
-            state: StartedState { signals },
+            state:
+                StartedState {
+                    signals,
+                    mut processor_handle,
+                    metrics_handle,
+                },
         } = self;
 
         let mut signal_rx = signals.receiver;
@@ -179,6 +192,9 @@ impl Service<StartedState> {
                         }
                     }
                 }
+                _ = &mut processor_handle => {
+                    break ServiceSignal::Shutdown;
+                }
                 else => unreachable!("Signal streams never end"),
             }
         };
@@ -188,6 +204,8 @@ impl Service<StartedState> {
             state: FinishedState {
                 signal,
                 signal_receiver: signal_rx,
+                processor_handle,
+                metrics_handle,
             },
         }
     }
@@ -196,6 +214,8 @@ impl Service<StartedState> {
 pub struct FinishedState {
     pub signal: ServiceSignal,
     pub signal_receiver: Receiver<ServiceSignal>,
+    pub processor_handle: JoinHandle<()>,
+    pub metrics_handle: JoinHandle<()>,
 }
 
 impl Service<FinishedState> {
@@ -206,18 +226,33 @@ impl Service<FinishedState> {
                 FinishedState {
                     signal,
                     signal_receiver,
+                    processor_handle,
+                    metrics_handle,
                 },
         } = self;
 
         match signal {
-            ServiceSignal::Shutdown => Self::stop(signal_receiver).await,
+            ServiceSignal::Shutdown => {
+                Self::stop(processor_handle, metrics_handle, signal_receiver).await
+            }
             ServiceSignal::Quit => Self::quit(),
             _ => unreachable!(),
         }
     }
 
-    async fn stop(mut signal_rx: Receiver<ServiceSignal>) -> ExitStatus {
+    async fn stop(
+        processor_handle: JoinHandle<()>,
+        metrics_handle: JoinHandle<()>,
+        mut signal_rx: Receiver<ServiceSignal>,
+    ) -> ExitStatus {
         tokio::select! {
+            _ = processor_handle, if !processor_handle.is_finished() => {
+                metrics_handle.abort();
+                let _ = metrics_handle.await;
+                ExitStatus::from_raw({
+                    exitcode::OK
+                })
+            }
             // TODO: replace with active tasks graceful shutdown
             _ = sleep(Duration::from_secs(1)) => ExitStatus::from_raw({
                 exitcode::OK

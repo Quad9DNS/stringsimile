@@ -44,11 +44,11 @@ impl MetricsExporterBuilder for MetricsExporter {
     }
 }
 
-pub trait MetricsExporterTaskBuilder {
+pub(crate) trait MetricsExporterTaskBuilder {
     async fn start_exporting(self, handle: PrometheusHandle) -> crate::Result<()>;
 }
 
-pub trait MetricsExporterBuilder: MetricsExporterTaskBuilder {
+pub(crate) trait MetricsExporterBuilder: MetricsExporterTaskBuilder {
     #[allow(unused)]
     fn name(&self) -> String;
 }

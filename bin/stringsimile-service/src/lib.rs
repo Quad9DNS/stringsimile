@@ -1,14 +1,14 @@
 use stringsimile_matcher::Error;
 
 mod cli;
-mod config;
+pub mod config;
 mod error;
-mod field_access;
-mod inputs;
+pub mod field_access;
+pub mod inputs;
 mod metrics;
-mod metrics_exporters;
-mod outputs;
-mod processor;
+pub mod metrics_exporters;
+pub mod outputs;
+pub mod processor;
 pub mod service;
 mod signal;
 mod system_metrics;

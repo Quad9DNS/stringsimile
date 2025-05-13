@@ -58,14 +58,14 @@ impl OutputBuilder for Output {
     }
 }
 
-pub trait OutputStreamBuilder {
+pub(crate) trait OutputStreamBuilder {
     async fn consume_stream(
         self,
         stream: Pin<Box<dyn Stream<Item = (String, Option<Value>)> + Send>>,
     ) -> crate::Result<()>;
 }
 
-pub trait OutputBuilder: OutputStreamBuilder {
+pub(crate) trait OutputBuilder: OutputStreamBuilder {
     #[allow(unused)]
     fn name(&self) -> String;
 }

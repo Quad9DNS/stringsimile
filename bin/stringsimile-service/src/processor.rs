@@ -176,22 +176,28 @@ impl StringProcessor {
         let output_passing_errors = counter!("process_errors", "type" => "output_message_passing");
         let rule_matching_errors = counter!("process_errors", "type" => "rule_matching");
 
+        let mut inputs_done = false;
+
         loop {
             tokio::select! {
-                Some(task) = output_tasks.join_next() => {
+                task = output_tasks.join_next() => {
                     match task {
-                        Ok(t) => {
+                        Some(Ok(t)) => {
                             info!("Output task completed successfully. {:?}", t);
                         }
-                        Err(err) if err.is_panic() => panic::resume_unwind(err.into_panic()),
-                        Err(err) => {
+                        Some(Err(err)) if err.is_panic() => panic::resume_unwind(err.into_panic()),
+                        Some(Err(err)) => {
                             error!(message = "Output task failed!", error = %err);
+                        }
+                        None => {
+                            info!("All outputs completed, stopping the stringsimile processor...");
+                            break;
                         }
                     }
                 },
-                Some(result) = transform_futures.next(), if !transform_futures.is_terminated() => {
+                result = transform_futures.next(), if !inputs_done => {
                     match result {
-                        Ok(val) => {
+                        Some(Ok(val)) => {
                             for (output_name, sender) in &senders {
                                 if let Err(err) = sender.send(val.clone()).await {
                                     output_passing_errors.increment(1);
@@ -199,9 +205,16 @@ impl StringProcessor {
                                 }
                             }
                         }
-                        Err(err) => {
+                        Some(Err(err)) => {
                             rule_matching_errors.increment(1);
                             warn!(message = "Rule matcher task failed.", error = %err);
+                        }
+                        None => {
+                            if transform_futures.is_terminated() {
+                                info!("Inputs done, waiting for processing to complete to stop stringsimile processor...");
+                                senders.clear();
+                                inputs_done = true;
+                            }
                         }
                     }
                 },
