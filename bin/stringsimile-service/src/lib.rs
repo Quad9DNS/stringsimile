@@ -8,7 +8,7 @@ pub mod inputs;
 mod metrics;
 pub mod metrics_exporters;
 pub mod outputs;
-mod processor;
+pub mod processor;
 pub mod service;
 mod signal;
 mod system_metrics;

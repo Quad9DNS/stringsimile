@@ -112,8 +112,13 @@ tracing-subscriber.workspace = true
 walkdir.workspace = true
 
 [dev-dependencies]
+criterion.workspace = true
 tempfile.workspace = true
 
 [[bin]]
 name = "stringsimile"
 path = "src/main.rs"
+
+[[bench]]
+name = "service"
+harness = false
