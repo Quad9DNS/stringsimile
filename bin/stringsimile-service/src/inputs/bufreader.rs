@@ -15,7 +15,7 @@ impl<R: AsyncRead + Send + 'static> InputStreamBuilder for BufReaderWithMetrics<
     ) -> crate::Result<
         std::pin::Pin<Box<dyn futures::Stream<Item = (String, Option<serde_json::Value>)> + Send>>,
     > {
-        Ok(Box::pin(LinesStream::new(self.reader.lines()).filter_map(
+        Ok(Box::pin(LinesStream::new(self.reader.lines()).map_while(
             move |line| match line {
                 Ok(line) => match serde_json::from_str(&line) {
                     Ok(parsed) => {

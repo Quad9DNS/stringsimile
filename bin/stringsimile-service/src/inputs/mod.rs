@@ -56,12 +56,12 @@ impl InputBuilder for Input {
     }
 }
 
-pub trait InputStreamBuilder {
+pub(crate) trait InputStreamBuilder {
     async fn into_stream(
         self,
     ) -> crate::Result<Pin<Box<dyn Stream<Item = (String, Option<Value>)> + Send>>>;
 }
 
-pub trait InputBuilder: InputStreamBuilder {
+pub(crate) trait InputBuilder: InputStreamBuilder {
     fn name(&self) -> String;
 }
