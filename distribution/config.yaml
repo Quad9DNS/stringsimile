@@ -11,7 +11,7 @@
   # kafka:
   #   host: localhost
   #   port: 9092
-  #   topic: stringsimile
+  #   topics: ["stringsimile"]
   #   identifier: stringsimile
   #   pointer: 1000
   #   librdkafka_options: {}

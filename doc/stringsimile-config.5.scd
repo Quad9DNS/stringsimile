@@ -25,8 +25,8 @@ Configuration file uses YAML format with the following keys:
 	    Hostname of kafka server
 	    - port
 	    Port of kafka server (defaults to 9092)
-	    - topic
-	    Kafka topic to subscribe to for input data
+	    - topics
+	    Kafka topics to subscribe to for input data
 	    - identifier
 	    Kafka identifier for input data
 	    - pointer
@@ -117,7 +117,9 @@ metrics:
   file:
     file_path: /var/lib/node-exporter/stringsimile.prom
     export_interval_secs: 15
-log_level: "INFO"
+process:
+  log_level: "INFO"
+  threads: null
 ```
 
 This example shows a simple configuration for using stdin/stdout:

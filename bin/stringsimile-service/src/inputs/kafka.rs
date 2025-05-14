@@ -15,7 +15,7 @@ pub struct KafkaInputConfig {
     host: String,
     #[serde(default = "default_kafka_input_port")]
     port: usize,
-    topic: String,
+    topics: Vec<String>,
     identifier: String,
     pointer: usize,
     #[serde(default)]
@@ -26,7 +26,7 @@ impl Hash for KafkaInputConfig {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.host.hash(state);
         self.port.hash(state);
-        self.topic.hash(state);
+        self.topics.hash(state);
         self.identifier.hash(state);
         self.pointer.hash(state);
     }
@@ -63,11 +63,11 @@ impl InputStreamBuilder for KafkaInputStream {
             config.set(key, value);
         }
         config.set("bootstrap.servers", self.config.server());
-        config.set("client.id", self.config.identifier.clone());
         config.set("group.id", self.config.identifier);
 
         let consumer: StreamConsumer = config.create()?;
-        consumer.subscribe(&[&self.config.topic])?;
+        let topics: Vec<&str> = self.config.topics.iter().map(|t| t.as_str()).collect();
+        consumer.subscribe(&topics)?;
 
         consumer.into_stream().await
     }
