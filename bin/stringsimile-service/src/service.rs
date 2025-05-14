@@ -55,7 +55,7 @@ impl Service<InitState> {
     pub fn prepare() -> Result<(Runtime, Self), ExitCode> {
         let args = CliArgs::try_parse().map_err(|error| {
             _ = error.print();
-            exitcode::USAGE
+            error.exit_code()
         })?;
 
         Self::prepare_from_config(args.try_into().map_err(|err| {
