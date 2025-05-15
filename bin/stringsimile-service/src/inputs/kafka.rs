@@ -3,7 +3,7 @@ use std::{collections::HashMap, time::Duration};
 
 use rdkafka::{
     ClientConfig, Message, TopicPartitionList,
-    consumer::{CommitMode, Consumer, StreamConsumer},
+    consumer::{Consumer, StreamConsumer},
 };
 use serde::{Deserialize, Serialize};
 use tracing::warn;
@@ -70,8 +70,14 @@ impl InputStreamBuilder for KafkaInputStream {
         for (key, value) in &self.config.librdkafka_options {
             config.set(key, value);
         }
-        config.set("bootstrap.servers", self.config.server());
-        config.set("group.id", self.config.identifier);
+
+        config
+            .set("bootstrap.servers", self.config.server())
+            .set("group.id", self.config.identifier)
+            .set("client.id", "stringsimile")
+            .set("enable.auto.commit", "true")
+            .set("auto.commit.interval.ms", "5000")
+            .set("enable.auto.offset.store", "true");
 
         let consumer: StreamConsumer = config.create()?;
         let topics: Vec<&str> = self.config.topics.iter().map(|t| t.as_str()).collect();
@@ -138,7 +144,6 @@ impl InputStreamBuilder for StreamConsumer {
                                 warn!("Error while deserializing message payload: {:?}", e);
                             }
                         };
-                        self.commit_message(&m, CommitMode::Async).unwrap();
                     }
                 };
             }

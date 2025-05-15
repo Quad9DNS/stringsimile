@@ -65,8 +65,10 @@ impl OutputStreamBuilder for KafkaOutputStream {
         for (key, value) in &self.config.librdkafka_options {
             config.set(key, value);
         }
-        config.set("bootstrap.servers", self.config.server());
-        config.set("group.id", self.config.identifier);
+        config
+            .set("bootstrap.servers", self.config.server())
+            .set("group.id", self.config.identifier)
+            .set("client.id", "stringsimile");
 
         let producer: FutureProducer = config.create()?;
         let metrics = OutputMetrics::for_output_type("kafka");
