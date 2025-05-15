@@ -2,6 +2,8 @@ use tokio::io::{AsyncBufReadExt, AsyncRead, BufReader};
 use tokio_stream::{StreamExt, wrappers::LinesStream};
 use tracing::{error, warn};
 
+use crate::message::StringsimileMessage;
+
 use super::{InputStreamBuilder, metrics::InputMetrics};
 
 pub struct BufReaderWithMetrics<R> {
@@ -12,21 +14,20 @@ pub struct BufReaderWithMetrics<R> {
 impl<R: AsyncRead + Send + 'static> InputStreamBuilder for BufReaderWithMetrics<R> {
     async fn into_stream(
         self,
-    ) -> crate::Result<
-        std::pin::Pin<Box<dyn futures::Stream<Item = (String, Option<serde_json::Value>)> + Send>>,
-    > {
+    ) -> crate::Result<std::pin::Pin<Box<dyn futures::Stream<Item = StringsimileMessage> + Send>>>
+    {
         Ok(Box::pin(LinesStream::new(self.reader.lines()).map_while(
             move |line| match line {
                 Ok(line) => match serde_json::from_str(&line) {
                     Ok(parsed) => {
                         self.metrics.objects.increment(1);
                         self.metrics.bytes.increment(line.len() as u64);
-                        Some((line, Some(parsed)))
+                        Some(StringsimileMessage::new_parsed(line, parsed))
                     }
                     Err(error) => {
                         self.metrics.parse_errors.increment(1);
                         warn!(message = "Parsing input line failed.", error = %error);
-                        Some((line, None))
+                        Some(StringsimileMessage::new_unparsed(line))
                     }
                 },
                 Err(error) => {
@@ -74,9 +75,9 @@ mod tests {
 
         let first_item = stream.next().await.expect("Read failed");
         // Preserve original text
-        assert_eq!(first_item.0, "test");
+        assert_eq!(first_item.original_input(), "test");
         // Invalid JSON so no parsed value
-        assert!(first_item.1.is_none());
+        assert!(first_item.parsed_value().is_none());
     }
 
     #[tokio::test]
@@ -95,9 +96,9 @@ mod tests {
 
         let first_item = stream.next().await.expect("Read failed");
         // Preserve original text
-        assert_eq!(first_item.0, original_input);
+        assert_eq!(first_item.original_input(), original_input);
 
-        let parsed_value = first_item.1.expect("Parse failed");
+        let parsed_value = first_item.parsed_value().expect("Parse failed");
         let object = parsed_value.as_object().expect("JSON not an object");
         assert_eq!(
             object

@@ -8,6 +8,8 @@ use rdkafka::{
 use serde::{Deserialize, Serialize};
 use tracing::warn;
 
+use crate::message::StringsimileMessage;
+
 use super::{InputStreamBuilder, metrics::InputMetrics};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -55,9 +57,8 @@ impl KafkaInputStream {
 impl InputStreamBuilder for KafkaInputStream {
     async fn into_stream(
         self,
-    ) -> crate::Result<
-        std::pin::Pin<Box<dyn futures::Stream<Item = (String, Option<serde_json::Value>)> + Send>>,
-    > {
+    ) -> crate::Result<std::pin::Pin<Box<dyn futures::Stream<Item = StringsimileMessage> + Send>>>
+    {
         let mut config = ClientConfig::new();
         for (key, value) in &self.config.librdkafka_options {
             config.set(key, value);
@@ -76,9 +77,8 @@ impl InputStreamBuilder for KafkaInputStream {
 impl InputStreamBuilder for StreamConsumer {
     async fn into_stream(
         self,
-    ) -> crate::Result<
-        std::pin::Pin<Box<dyn futures::Stream<Item = (String, Option<serde_json::Value>)> + Send>>,
-    > {
+    ) -> crate::Result<std::pin::Pin<Box<dyn futures::Stream<Item = StringsimileMessage> + Send>>>
+    {
         let metrics = InputMetrics::for_input_type("kafka");
         Ok(Box::pin(async_stream::stream! {
             loop {
@@ -97,12 +97,12 @@ impl InputStreamBuilder for StreamConsumer {
                                 Ok(parsed) => {
                                     metrics.objects.increment(1);
                                     metrics.bytes.increment(s.len() as u64);
-                                    yield (s.to_string(), Some(parsed))
+                                    yield StringsimileMessage::new_parsed(s.to_string(), parsed)
                                 },
                                 Err(error) => {
                                     metrics.parse_errors.increment(1);
                                     warn!(message = "Parsing input message failed.", error = %error);
-                                    yield (s.to_string(), None);
+                                    yield StringsimileMessage::new_unparsed(s.to_string())
                                 }
                             },
                             Some(Err(e)) => {

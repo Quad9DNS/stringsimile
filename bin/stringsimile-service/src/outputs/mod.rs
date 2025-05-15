@@ -2,7 +2,6 @@ use std::{path::PathBuf, pin::Pin};
 
 use file::FileStream;
 use futures::Stream;
-use serde_json::Value;
 use stdout::StdoutOutput;
 
 mod bufwriter;
@@ -11,6 +10,8 @@ mod file;
 mod kafka;
 #[cfg(feature = "outputs-kafka")]
 pub use kafka::KafkaOutputConfig;
+
+use crate::message::StringsimileMessage;
 mod metrics;
 mod serialization;
 mod stdout;
@@ -26,7 +27,7 @@ pub enum Output {
 impl OutputStreamBuilder for Output {
     async fn consume_stream(
         self,
-        stream: Pin<Box<dyn Stream<Item = (String, Option<Value>)> + Send>>,
+        stream: Pin<Box<dyn Stream<Item = StringsimileMessage> + Send>>,
     ) -> crate::Result<()> {
         match self {
             Output::Stdout => StdoutOutput.consume_stream(stream).await,
@@ -61,7 +62,7 @@ impl OutputBuilder for Output {
 pub(crate) trait OutputStreamBuilder {
     async fn consume_stream(
         self,
-        stream: Pin<Box<dyn Stream<Item = (String, Option<Value>)> + Send>>,
+        stream: Pin<Box<dyn Stream<Item = StringsimileMessage> + Send>>,
     ) -> crate::Result<()>;
 }
 

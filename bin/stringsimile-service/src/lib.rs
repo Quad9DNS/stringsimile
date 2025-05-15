@@ -5,6 +5,7 @@ pub mod config;
 mod error;
 pub mod field_access;
 pub mod inputs;
+mod message;
 mod metrics;
 pub mod metrics_exporters;
 pub mod outputs;

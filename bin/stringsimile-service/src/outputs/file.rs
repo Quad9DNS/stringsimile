@@ -4,6 +4,8 @@ use futures::Stream;
 use tokio::{fs::File, io::BufWriter};
 use tracing::error;
 
+use crate::message::StringsimileMessage;
+
 use super::{OutputStreamBuilder, bufwriter::BufWriterWithMetrics, metrics::OutputMetrics};
 
 pub struct FileStream(pub PathBuf);
@@ -11,7 +13,7 @@ pub struct FileStream(pub PathBuf);
 impl OutputStreamBuilder for FileStream {
     async fn consume_stream(
         self,
-        stream: std::pin::Pin<Box<dyn Stream<Item = (String, Option<serde_json::Value>)> + Send>>,
+        stream: std::pin::Pin<Box<dyn Stream<Item = StringsimileMessage> + Send>>,
     ) -> crate::Result<()> {
         let file = match File::create(self.0).await {
             Ok(file) => file,

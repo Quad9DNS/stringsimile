@@ -10,6 +10,7 @@ use serde::{Deserialize, Serialize};
 use tokio_stream::StreamExt;
 use tracing::{error, trace};
 
+use crate::message::StringsimileMessage;
 use crate::outputs::serialization::json_serialize_value;
 
 use super::OutputStreamBuilder;
@@ -58,9 +59,7 @@ impl KafkaOutputStream {
 impl OutputStreamBuilder for KafkaOutputStream {
     async fn consume_stream(
         self,
-        mut stream: std::pin::Pin<
-            Box<dyn Stream<Item = (String, Option<serde_json::Value>)> + Send>,
-        >,
+        mut stream: std::pin::Pin<Box<dyn Stream<Item = StringsimileMessage> + Send>>,
     ) -> crate::Result<()> {
         let mut config = ClientConfig::new();
         for (key, value) in &self.config.librdkafka_options {
@@ -72,12 +71,8 @@ impl OutputStreamBuilder for KafkaOutputStream {
         let producer: FutureProducer = config.create()?;
         let metrics = OutputMetrics::for_output_type("kafka");
 
-        while let Some((original_input, object)) = stream.next().await {
-            let value_to_write = if let Some(value) = object {
-                json_serialize_value(original_input, &value, &metrics).await
-            } else {
-                original_input
-            };
+        while let Some(message) = stream.next().await {
+            let value_to_write = json_serialize_value(message, &metrics).await;
             let send_status = match producer
                 .send(
                     FutureRecord::<(), _>::to(&self.config.topic)

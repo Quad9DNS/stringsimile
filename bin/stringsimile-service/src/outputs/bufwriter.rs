@@ -4,7 +4,9 @@ use tokio::io::{AsyncWrite, AsyncWriteExt, BufWriter};
 use tokio_stream::StreamExt;
 use tracing::error;
 
-use super::{metrics::OutputMetrics, serialization::json_serialize_value, OutputStreamBuilder};
+use crate::message::StringsimileMessage;
+
+use super::{OutputStreamBuilder, metrics::OutputMetrics, serialization::json_serialize_value};
 
 pub struct BufWriterWithMetrics<W> {
     pub writer: BufWriter<W>,
@@ -29,17 +31,11 @@ async fn write_string<W: AsyncWrite>(
 impl<W: AsyncWrite> OutputStreamBuilder for BufWriterWithMetrics<W> {
     async fn consume_stream(
         self,
-        mut stream: std::pin::Pin<
-            Box<dyn futures::Stream<Item = (String, Option<serde_json::Value>)> + Send>,
-        >,
+        mut stream: std::pin::Pin<Box<dyn futures::Stream<Item = StringsimileMessage> + Send>>,
     ) -> crate::Result<()> {
         let mut writer = Box::pin(self.writer);
-        while let Some((original_input, object)) = stream.next().await {
-            let value_to_write = if let Some(value) = object {
-                json_serialize_value(original_input, &value, &self.metrics).await
-            } else {
-                original_input
-            };
+        while let Some(message) = stream.next().await {
+            let value_to_write = json_serialize_value(message, &self.metrics).await;
             if write_string(&mut writer, &self.metrics, value_to_write + "\n")
                 .await
                 .is_err()
@@ -58,12 +54,12 @@ impl<W: AsyncWrite> OutputStreamBuilder for BufWriterWithMetrics<W> {
 
 #[cfg(test)]
 mod tests {
-    use futures::{stream, Stream};
-    use serde_json::{json, Value};
+    use futures::{Stream, stream};
+    use serde_json::json;
 
     use super::*;
 
-    async fn run_with_stream<S: Stream<Item = (String, Option<Value>)> + Send + 'static>(
+    async fn run_with_stream<S: Stream<Item = StringsimileMessage> + Send + 'static>(
         input_stream: S,
     ) -> String {
         let mut buffer = Vec::default();
@@ -82,7 +78,9 @@ mod tests {
 
     #[tokio::test]
     async fn just_original_input() {
-        let input = stream::iter(vec![("original_input".to_string(), None)]);
+        let input = stream::iter(vec![StringsimileMessage::new_unparsed(
+            "original_input".to_string(),
+        )]);
         let result = run_with_stream(input).await;
 
         assert_eq!(result, "original_input\n");
@@ -90,12 +88,12 @@ mod tests {
 
     #[tokio::test]
     async fn serialized_output() {
-        let input = stream::iter(vec![(
+        let input = stream::iter(vec![StringsimileMessage::new_parsed(
             r#"{"input":      "test", "metadata":          {}}"#.to_string(),
-            Some(json!({
+            json!({
                 "input": "test",
                 "metadata": {}
-            })),
+            }),
         )]);
 
         let result = run_with_stream(input).await;

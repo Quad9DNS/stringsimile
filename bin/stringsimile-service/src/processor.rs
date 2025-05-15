@@ -26,6 +26,7 @@ use crate::{
     },
     field_access::{FieldAccessor, UnwrappedFields},
     inputs::{InputBuilder, InputStreamBuilder},
+    message::StringsimileMessage,
     metrics::ExportMetrics,
     outputs::{OutputBuilder, OutputStreamBuilder},
     signal::ServiceSignal,
@@ -159,13 +160,12 @@ impl StringProcessor {
         }
 
         let mut transform_futures = futures::StreamExt::buffer_unordered(
-            input_streams.map(|(input_name, (original_input, message))| {
+            input_streams.map(|(input_name, message)| {
                 tokio::spawn(Self::process_input_data(
                     rules.lock().expect("mutex poisoned").clone(),
                     report_all,
                     input_field.clone(),
                     input_name,
-                    original_input,
                     message,
                 ))
             }),
@@ -239,12 +239,12 @@ impl StringProcessor {
         report_all: bool,
         input_field: FieldAccessor,
         input_name: String,
-        original_input: String,
-        message: Option<Value>,
-    ) -> (String, Option<Value>) {
+        message: StringsimileMessage,
+    ) -> StringsimileMessage {
+        let (original_input, message) = message.into_parts();
         let Some(message) = message else {
             warn!("Input data was not a JSON object!");
-            return (original_input, None);
+            return StringsimileMessage::from_parts(original_input, message);
         };
 
         let UnwrappedFields {
@@ -257,7 +257,7 @@ impl StringProcessor {
                     "Input parsing error!\nError: {:?}\nOriginal input: {}",
                     error, original_input
                 );
-                return (original_input, None);
+                return StringsimileMessage::from_parts(original_input, None);
             }
         };
 
@@ -275,7 +275,7 @@ impl StringProcessor {
                 .map(|(_name, results)| results)
                 .any(StringGroupMatchResult::has_matches)
         {
-            (original_input, None)
+            StringsimileMessage::from_parts(original_input, None)
         } else {
             let mut inner_data = Map::default();
             inner_data.insert(
@@ -304,7 +304,7 @@ impl StringProcessor {
                 ),
             );
             map.insert("stringsimile".to_string(), Value::Object(inner_data));
-            (original_input, Some(Value::Object(map)))
+            StringsimileMessage::from_parts(original_input, Some(Value::Object(map)))
         }
     }
 }
