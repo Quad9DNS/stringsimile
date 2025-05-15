@@ -1,0 +1,19 @@
+FROM debian:bookworm-slim AS builder
+
+ARG CARGO_TARGET_DIR="target"
+ARG CARGO_BUILD_TARGET="."
+
+COPY ./$CARGO_TARGET_DIR/$CARGO_BUILD_TARGET/debian/stringsimile_*_*.deb .
+
+RUN dpkg -i ./stringsimile_*_*.deb
+
+FROM debian:bookworm-slim
+
+COPY --from=builder /usr/bin/stringsimile /usr/bin/stringsimile
+COPY --from=builder /etc/stringsimile /etc/stringsimile
+COPY --from=builder /var/lib/stringsimile /var/lib/stringsimile
+
+# Smoke test
+RUN ["stringsimile", "--version"]
+
+ENTRYPOINT ["/usr/bin/stringsimile"]

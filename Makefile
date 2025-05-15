@@ -11,12 +11,34 @@ RULEDIR?=/var/lib/stringsimile
 
 VERSION?=$(shell cat bin/stringsimile-service/Cargo.toml | grep version | cut -f 3 -d " " | cut -f2 -d '"' || echo unknown)
 
+# Override the container tool. Tries docker first and then tries podman.
+export CONTAINER_TOOL ?= auto
+ifeq ($(CONTAINER_TOOL),auto)
+	ifeq ($(shell docker version >/dev/null 2>&1 && echo docker), docker)
+		override CONTAINER_TOOL = docker
+	else ifeq ($(shell podman version >/dev/null 2>&1 && echo podman), podman)
+		override CONTAINER_TOOL = podman
+	else
+		override CONTAINER_TOOL = unknown
+	endif
+endif
+
 DOCS := $(addprefix target/man/,\
 	stringsimile.1 \
 	stringsimile-config.5 \
 	stringsimile-rule-config.5)
 
 all: $(DOCS) all-deb all-rpm target/default/release/stringsimile target/basic/release/stringsimile
+
+container-debian-static: deb
+	$(CONTAINER_TOOL) build --build-arg CARGO_TARGET_DIR="target/default" -f distribution/container/Containerfile.debian-static .
+
+container-debian-dynamic: deb-dynamic
+	$(CONTAINER_TOOL) build --build-arg CARGO_TARGET_DIR="target/default" -f distribution/container/Containerfile.debian .
+
+container-alpine:
+	CARGO_TARGET_DIR="target/default" CARGO_BUILD_TARGET="x86_64-unknown-linux-musl" cargo build --release
+	$(CONTAINER_TOOL) build --build-arg CARGO_TARGET_DIR="target/default" --build-arg CARGO_BUILD_TARGET="x86_64-unknown-linux-musl" -f distribution/container/Containerfile.alpine .
 
 target/%/release/stringsimile:
 	CARGO_TARGET_DIR="target/$*" cargo build --release --no-default-features --features $*
@@ -104,4 +126,4 @@ uninstall:
 	$(RMDIR_IF_EMPTY) $(DESTDIR)$(MANDIR)/man5
 	$(RMDIR_IF_EMPTY) $(DESTDIR)$(MANDIR)
 
-.PHONY: all deb rpm doc clean install uninstall debug
+.PHONY: all all-deb deb deb-dynamic deb-basic all-rpm rpm rpm-dynamic rpm-basic container-debian-static container-debian-dynamic container-alpine doc clean install uninstall debug

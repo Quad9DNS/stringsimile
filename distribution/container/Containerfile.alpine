@@ -1,0 +1,11 @@
+FROM alpine:3.21
+
+ARG CARGO_TARGET_DIR="target"
+ARG CARGO_BUILD_TARGET="."
+
+COPY ./$CARGO_TARGET_DIR/$CARGO_BUILD_TARGET/release/stringsimile /usr/local/bin/stringsimile
+
+# Smoke test
+RUN ["stringsimile", "--version"]
+
+ENTRYPOINT ["/usr/local/bin/stringsimile"]
