@@ -1,8 +1,8 @@
-use std::collections::HashMap;
 use std::hash::Hash;
+use std::{collections::HashMap, time::Duration};
 
 use rdkafka::{
-    ClientConfig, Message,
+    ClientConfig, Message, TopicPartitionList,
     consumer::{CommitMode, Consumer, StreamConsumer},
 };
 use serde::{Deserialize, Serialize};
@@ -19,9 +19,16 @@ pub struct KafkaInputConfig {
     port: usize,
     topics: Vec<String>,
     identifier: String,
-    pointer: usize,
+    pointer: Option<KafkaPointer>,
     #[serde(default)]
     librdkafka_options: HashMap<String, String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(untagged)]
+enum KafkaPointer {
+    Offset(u32),
+    String(String),
 }
 
 impl Hash for KafkaInputConfig {
@@ -69,6 +76,27 @@ impl InputStreamBuilder for KafkaInputStream {
         let consumer: StreamConsumer = config.create()?;
         let topics: Vec<&str> = self.config.topics.iter().map(|t| t.as_str()).collect();
         consumer.subscribe(&topics)?;
+        if let Some(pointer_config) = self.config.pointer {
+            let mut topic_offsets = TopicPartitionList::with_capacity(topics.len());
+            topics.iter().for_each(|t| {
+                topic_offsets.add_topic_unassigned(t);
+            });
+            match pointer_config {
+                KafkaPointer::Offset(offset) => {
+                    topic_offsets.set_all_offsets(rdkafka::Offset::OffsetTail(offset as i64))?
+                }
+                KafkaPointer::String(string) if string == "now" || string == "end" => {
+                    topic_offsets.set_all_offsets(rdkafka::Offset::End)?
+                }
+                KafkaPointer::String(string) if string == "begin" || string == "start" => {
+                    topic_offsets.set_all_offsets(rdkafka::Offset::Beginning)?
+                }
+                KafkaPointer::String(special) => {
+                    warn!("Unsupported kafka pointer value: {}", special);
+                }
+            }
+            consumer.seek_partitions(topic_offsets, Duration::from_secs(30))?;
+        }
 
         consumer.into_stream().await
     }

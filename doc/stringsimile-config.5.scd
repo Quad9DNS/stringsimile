@@ -30,7 +30,7 @@ Configuration file uses YAML format with the following keys:
 	    - identifier
 	    Kafka identifier for input data
 	    - pointer
-	    Kafka pointer for input data
+	    Kafka pointer for input data (either offset from end as a number, or a string "end" or "begin"). By default, stored  offset will be used
 	    - librdkafka_options
 	    Key value pairs of options to pass to librdkafka
 - output
