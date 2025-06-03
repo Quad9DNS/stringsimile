@@ -1,4 +1,5 @@
 #![allow(missing_docs)]
+use std::io;
 use std::time::{Instant, SystemTime, UNIX_EPOCH};
 use std::{process::ExitStatus, time::Duration};
 
@@ -64,6 +65,7 @@ impl Service<InitState> {
                 .with_file(false)
                 .with_target(false)
                 .with_max_level(Level::INFO)
+                .with_writer(io::stderr)
                 .init();
             error!(message = "Configuration error.", error = %err);
             exitcode::USAGE
@@ -84,6 +86,7 @@ impl Service<InitState> {
             .with_target(false)
             .with_max_level(config.process.log_level)
             .with_span_events(FmtSpan::FULL)
+            .with_writer(io::stderr)
             .init();
 
         let metrics_recorder = PrometheusBuilder::new().build_recorder();
