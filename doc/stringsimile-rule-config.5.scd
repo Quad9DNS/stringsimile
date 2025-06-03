@@ -26,6 +26,10 @@ Currently the following rules are supported:
 - IDN Confusables
 - Damerau-Levenshtein
 - Hamming
+- Soundex
+- Metaphone
+- NYSIIS
+- Match Rating
 
 Each of the rules has specific values that can be used to configure it:
 - Levenshtein
