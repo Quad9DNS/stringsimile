@@ -105,7 +105,7 @@ clean:
 	cargo clean
 
 install: $(DOCS) target/default/release/stringsimile
-	mkdir -m755 -p $(DESTDIR)$(BINDIR) $(DESTDIR)$(MANDIR)/man1 $(DESTDIR)$(MANDIR)/man5 $(CONFDIR) ($RULEDIR)
+	mkdir -m755 -p $(DESTDIR)$(BINDIR) $(DESTDIR)$(MANDIR)/man1 $(DESTDIR)$(MANDIR)/man5 $(CONFDIR) $(RULEDIR)
 	install -m755 target/default/release/stringsimile $(DESTDIR)$(BINDIR)/stringsimile
 	install -m644 target/man/stringsimile.1 $(DESTDIR)$(MANDIR)/man1/stringsimile.1
 	install -m644 target/man/stringsimile-config.5 $(DESTDIR)$(MANDIR)/man5/stringsimile-config.5
