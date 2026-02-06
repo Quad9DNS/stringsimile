@@ -97,11 +97,11 @@ Download `binary` release with your selected feature set and run it. This build 
 ### From source
 
 The repository provides a `Makefile` that will install the binary and the documentation, as well as default configuration and rulesets:
-```
-git clone https://github.com/Quad9DNS/stringsimile/
-cd stringsimile
-make
-make install
+```shell-session
+$ git clone https://github.com/Quad9DNS/stringsimile/
+$ cd stringsimile
+$ make
+# make install
 ```
 
 ## License

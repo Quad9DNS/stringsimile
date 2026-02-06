@@ -28,7 +28,11 @@ DOCS := $(addprefix target/man/,\
 	stringsimile-config.5 \
 	stringsimile-rule-config.5)
 
-all: $(DOCS) all-deb all-rpm target/default/release/stringsimile target/basic/release/stringsimile
+all: $(DOCS) target/default/release/stringsimile
+	cp target/default/release/stringsimile target/stringsimile
+
+basic: $(DOCS) target/basic/release/stringsimile
+	cp target/basic/release/stringsimile target/stringsimile
 
 container-debian-static: deb
 	$(CONTAINER_TOOL) build --build-arg CARGO_TARGET_DIR="target/default" -f distribution/container/Containerfile.debian-static .
@@ -106,7 +110,7 @@ clean:
 
 install: $(DOCS) target/default/release/stringsimile
 	mkdir -m755 -p $(DESTDIR)$(BINDIR) $(DESTDIR)$(MANDIR)/man1 $(DESTDIR)$(MANDIR)/man5 $(CONFDIR) $(RULEDIR)
-	install -m755 target/default/release/stringsimile $(DESTDIR)$(BINDIR)/stringsimile
+	install -m755 target/stringsimile $(DESTDIR)$(BINDIR)/stringsimile
 	install -m644 target/man/stringsimile.1 $(DESTDIR)$(MANDIR)/man1/stringsimile.1
 	install -m644 target/man/stringsimile-config.5 $(DESTDIR)$(MANDIR)/man5/stringsimile-config.5
 	install -m644 target/man/stringsimile-rule-config.5 $(DESTDIR)$(MANDIR)/man5/stringsimile-rule-config.5
