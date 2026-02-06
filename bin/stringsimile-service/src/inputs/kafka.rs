@@ -1,6 +1,7 @@
 use std::hash::Hash;
 use std::{collections::HashMap, time::Duration};
 
+use futures::StreamExt;
 use rdkafka::{
     ClientConfig, Message, TopicPartitionList,
     consumer::{Consumer, StreamConsumer},
@@ -115,8 +116,9 @@ impl InputStreamBuilder for StreamConsumer {
     {
         let metrics = InputMetrics::for_input_type("kafka");
         Ok(Box::pin(async_stream::stream! {
+            let mut stream = self.stream();
             loop {
-                match self.recv().await {
+                match stream.next().await.expect("kafka streams never terminate") {
                     Err(e) => {
                         metrics.read_errors.increment(1);
                         warn!("Kafka error: {}", e)
