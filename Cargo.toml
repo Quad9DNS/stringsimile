@@ -21,11 +21,12 @@ confusables = { version = "0.1.0" }
 criterion = { version = "0.5.1" }
 exitcode = { version = "1.1.2" }
 futures = { version = "0.3.31" }
-rdkafka = { version = "0.37.0" }
-rphonetic = { version = "3.0.3" }
+lazy_static = { version = "1.5.0" }
 metrics = { version = "0.24.2" }
 metrics-exporter-prometheus = { version = "0.17.0" }
 metrics-util = { version = "0.19.1" }
+rdkafka = { version = "0.37.0" }
+rphonetic = { version = "3.0.3" }
 serde = { version = "1.0.219" }
 serde_json = { version = "1.0.140" }
 serde_yaml = { version = "0.9.34" } # Look for replacement

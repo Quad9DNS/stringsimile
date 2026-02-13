@@ -26,14 +26,14 @@ impl RuleSetConfig {
     pub fn into_rule_set(self) -> Result<RuleSet, Error> {
         Ok(RuleSet {
             name: self.name,
-            string_match: self.string_match,
             split_target: self.split_target,
             ignore_tld: self.ignore_tld,
             rules: self
                 .match_rules
                 .iter()
-                .map(RuleConfig::build)
+                .map(|r| r.build(&self.string_match))
                 .collect::<Result<Vec<_>, _>>()?,
+            string_match: self.string_match,
         })
     }
 }

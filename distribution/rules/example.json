@@ -61,6 +61,9 @@
 						"values": {
 							"maximum_distance": 3
 						}
+					},
+					{
+						"rule_type": "bitflip"
 					}
 				]
 			},

@@ -5,6 +5,7 @@ use stringsimile_matcher::{
     Error,
     rule::{GenericMatcherRule, IntoGenericMatcherRule},
     rules::{
+        bitflip::BitflipRule,
         confusables::ConfusablesRule,
         damerau_levenshtein::DamerauLevenshteinRule,
         hamming::HammingRule,
@@ -42,6 +43,8 @@ pub enum RuleConfig {
     Nysiis(NysiisConfig),
     /// Configuration for Match Rating rule
     MatchRating,
+    /// Configuration for Bitflip rule
+    Bitflip,
 }
 
 /// Errors for rule configuration
@@ -80,7 +83,7 @@ pub enum RuleConfigError {
 
 impl RuleConfig {
     /// Generates a rule implementation from this config
-    pub fn build(&self) -> Result<Box<dyn GenericMatcherRule>, Error> {
+    pub fn build(&self, target_str: &str) -> Result<Box<dyn GenericMatcherRule>, Error> {
         Ok(match self {
             RuleConfig::Levenshtein(levenshtein_config) => {
                 Box::new(levenshtein_config.build()?.into_generic_matcher())
@@ -106,6 +109,9 @@ impl RuleConfig {
                 Box::new(nysiis_config.build()?.into_generic_matcher())
             }
             RuleConfig::MatchRating => Box::new(MatchRatingConfig.build()?.into_generic_matcher()),
+            RuleConfig::Bitflip => {
+                Box::new(BitflipConfig.build(target_str)?.into_generic_matcher())
+            }
         })
     }
 }
@@ -284,6 +290,16 @@ pub struct MatchRatingConfig;
 impl MatchRatingConfig {
     fn build(&self) -> Result<MatchRatingRule, Error> {
         Ok(MatchRatingRule)
+    }
+}
+
+/// Configuration for Biflip rule
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BitflipConfig;
+
+impl BitflipConfig {
+    fn build(&self, target_str: &str) -> Result<BitflipRule, Error> {
+        Ok(BitflipRule::new(target_str))
     }
 }
 
@@ -577,6 +593,19 @@ mod tests {
 
         let RuleConfig::MatchRating = serde_json::from_str(json).unwrap() else {
             panic!("Expected Match Rating config");
+        };
+    }
+
+    #[test]
+    fn test_parse_bitflip() {
+        let json = r#"
+        {
+            "rule_type": "bitflip"
+        }
+            "#;
+
+        let RuleConfig::Bitflip = serde_json::from_str(json).unwrap() else {
+            panic!("Expected Biflip config");
         };
     }
 }

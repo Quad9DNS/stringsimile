@@ -44,6 +44,7 @@ Stringsimile supports different inputs, outputs and rules to use when comparing 
 - Metaphone
 - NYSIIS
 - Match Rating
+- Bitflip
 
 Check out the [example rules file](./distribution/rules/example.json) to see how they can be defined. You can also check out the included man pages (`man 5 stringsimile-rule-config`).
 

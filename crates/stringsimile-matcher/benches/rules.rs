@@ -2,6 +2,7 @@ use criterion::{Criterion, criterion_group, criterion_main};
 use stringsimile_matcher::{
     rule::MatcherRule,
     rules::{
+        bitflip::BitflipRule,
         confusables::ConfusablesRule,
         damerau_levenshtein::DamerauLevenshteinRule,
         hamming::HammingRule,
@@ -230,6 +231,20 @@ bench_rule! {
     }
 }
 
+bench_rule! {
+    name = bitflip_precompiled;
+    builder {
+        BitflipRule::new(TARGET_STR)
+    }
+}
+
+bench_rule! {
+    name = bitflip_empty_cache;
+    builder {
+        BitflipRule::new("")
+    }
+}
+
 criterion_group!(
     benches,
     confusables,
@@ -245,5 +260,7 @@ criterion_group!(
     nysiis_strict,
     soundex,
     soundex_refined,
+    bitflip_precompiled,
+    bitflip_empty_cache
 );
 criterion_main!(benches);
