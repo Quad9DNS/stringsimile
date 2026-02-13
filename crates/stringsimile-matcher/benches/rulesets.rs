@@ -2,6 +2,7 @@ use criterion::{Criterion, criterion_group, criterion_main};
 use stringsimile_matcher::{
     rule::IntoGenericMatcherRule,
     rules::{
+        bitflip::BitflipRule,
         confusables::ConfusablesRule,
         damerau_levenshtein::DamerauLevenshteinRule,
         hamming::HammingRule,
@@ -171,6 +172,7 @@ bench_ruleset! {
                 Box::new(NysiisRule::new(true).into_generic_matcher()),
                 Box::new(SoundexRule { soundex_type: SoundexRuleType::Normal, minimum_similarity: 5 }.into_generic_matcher()),
                 Box::new(SoundexRule { soundex_type: SoundexRuleType::Refined, minimum_similarity: 5 }.into_generic_matcher()),
+                Box::new(BitflipRule::new("test.string.to.match")),
             ]
         }])
     }
@@ -198,6 +200,7 @@ bench_ruleset! {
                 Box::new(NysiisRule::new(true).into_generic_matcher()),
                 Box::new(SoundexRule { soundex_type: SoundexRuleType::Normal, minimum_similarity: 5 }.into_generic_matcher()),
                 Box::new(SoundexRule { soundex_type: SoundexRuleType::Refined, minimum_similarity: 5 }.into_generic_matcher()),
+                Box::new(BitflipRule::new("test.string.to.match")),
             ]
         }])
     }
@@ -225,6 +228,7 @@ bench_ruleset! {
                 Box::new(NysiisRule::new(true).into_generic_matcher()),
                 Box::new(SoundexRule { soundex_type: SoundexRuleType::Normal, minimum_similarity: 5 }.into_generic_matcher()),
                 Box::new(SoundexRule { soundex_type: SoundexRuleType::Refined, minimum_similarity: 5 }.into_generic_matcher()),
+                Box::new(BitflipRule::new("test.string.to.match")),
             ]
         }])
     }

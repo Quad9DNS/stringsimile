@@ -7,7 +7,7 @@ license.workspace = true
 
 [features]
 default = ["all"]
-all = ["rules-levenshtein", "rules-hamming", "rules-jaro", "rules-jaro-winkler", "rules-confusables", "rules-damerau-levenshtein", "rules-soundex", "rules-metaphone", "rules-nysiis", "rules-match-rating"]
+all = ["rules-levenshtein", "rules-hamming", "rules-jaro", "rules-jaro-winkler", "rules-confusables", "rules-damerau-levenshtein", "rules-soundex", "rules-metaphone", "rules-nysiis", "rules-match-rating", "rules-bitflip"]
 rules-levenshtein = ["dep:triple_accel"]
 rules-hamming = ["dep:triple_accel"]
 rules-jaro = ["dep:strsim"]
@@ -18,14 +18,16 @@ rules-soundex = ["dep:rphonetic"]
 rules-metaphone = ["dep:rphonetic"]
 rules-nysiis = ["dep:rphonetic"]
 rules-match-rating = ["dep:rphonetic"]
+rules-bitflip = ["dep:lazy_static"]
 
 [dependencies]
 confusables = { workspace = true, optional = true }
+lazy_static = { workspace = true, optional = true }
+metrics.workspace = true
 rphonetic = { workspace = true, optional = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json.workspace = true
 snafu.workspace = true
-metrics.workspace = true
 strsim = { workspace = true, optional = true }
 tracing.workspace = true
 triple_accel = { workspace = true, optional = true }

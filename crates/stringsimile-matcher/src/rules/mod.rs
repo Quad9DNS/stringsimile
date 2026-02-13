@@ -1,5 +1,7 @@
 //! Collection of rule implementations
 
+#[cfg(feature = "rules-bitflip")]
+pub mod bitflip;
 #[cfg(feature = "rules-confusables")]
 pub mod confusables;
 #[cfg(feature = "rules-damerau-levenshtein")]
