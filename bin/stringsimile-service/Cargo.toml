@@ -92,6 +92,7 @@ outputs-kafka = ["dep:rdkafka"]
 stringsimile-matcher.workspace = true
 stringsimile-config.workspace = true
 
+arc-swap.workspace = true
 async-stream.workspace = true
 clap = { workspace = true, features = ["derive"] }
 exitcode.workspace = true

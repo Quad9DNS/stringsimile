@@ -88,7 +88,7 @@ pub trait IntoGenericMatcherRule {
 }
 
 /// Generic matcher rule. Works for all matchers by converting their metadata into JSON value.
-pub trait GenericMatcherRule: Send + 'static {
+pub trait GenericMatcherRule: Send + Sync + 'static {
     /// Name of the rule
     fn name(&self) -> &str;
 
@@ -102,7 +102,7 @@ pub trait GenericMatcherRule: Send + 'static {
 
 impl<T> GenericMatcherRule for T
 where
-    T: MatcherRule + Clone + Send,
+    T: MatcherRule + Clone + Send + Sync,
 {
     fn match_rule_generic(&self, input_str: &str, target_str: &str) -> GenericMatcherResult {
         let _ = trace_span!(

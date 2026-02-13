@@ -4,9 +4,10 @@ use std::{
     io::{BufReader, Seek},
     panic,
     path::PathBuf,
-    sync::{Arc, Mutex},
+    sync::Arc,
 };
 
+use arc_swap::ArcSwap;
 use futures::{TryFutureExt, stream::FusedStream};
 use metrics::counter;
 use serde_json::{Map, Value};
@@ -34,14 +35,14 @@ use crate::{
 
 pub struct StringProcessor {
     config: ServiceConfig,
-    rules: Arc<Mutex<Vec<StringGroup>>>,
+    rules: ArcSwap<Vec<StringGroup>>,
 }
 
 impl StringProcessor {
     pub fn from_config(config: ServiceConfig) -> Self {
         Self {
             config,
-            rules: Arc::default(),
+            rules: ArcSwap::default(),
         }
     }
 
@@ -95,7 +96,7 @@ impl StringProcessor {
             .collect::<Result<Vec<StringGroup>, _>>()
             .context(RuleParsingSnafu)?;
         built_rules.export_metrics();
-        *self.rules.lock().expect("mutex poisoned") = built_rules;
+        self.rules.store(Arc::new(built_rules));
         Ok(())
     }
 
@@ -140,7 +141,7 @@ impl StringProcessor {
                 return;
             }
         };
-        let rules = Arc::clone(&self.rules);
+        let rules = self.rules.load_full();
         let report_all = self.config.matcher.report_all;
 
         let mut output_tasks = JoinSet::new();
@@ -162,7 +163,7 @@ impl StringProcessor {
         let mut transform_futures = futures::StreamExt::buffer_unordered(
             input_streams.map(|(input_name, message)| {
                 tokio::spawn(Self::process_input_data(
-                    rules.lock().expect("mutex poisoned").clone(),
+                    Arc::clone(&rules),
                     report_all,
                     input_field.clone(),
                     input_name,
@@ -235,7 +236,7 @@ impl StringProcessor {
     }
 
     async fn process_input_data(
-        rules: Vec<StringGroup>,
+        rules: Arc<Vec<StringGroup>>,
         report_all: bool,
         input_field: FieldAccessor,
         input_name: String,
