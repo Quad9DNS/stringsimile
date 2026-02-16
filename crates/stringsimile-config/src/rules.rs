@@ -109,7 +109,7 @@ impl RuleConfig {
                 Box::new(metaphone_config.build(target_str)?.into_generic_matcher())
             }
             RuleConfig::Nysiis(nysiis_config) => {
-                Box::new(nysiis_config.build()?.into_generic_matcher())
+                Box::new(nysiis_config.build(target_str)?.into_generic_matcher())
             }
             RuleConfig::MatchRating => {
                 Box::new(MatchRatingConfig.build(target_str)?.into_generic_matcher())
@@ -285,8 +285,8 @@ const fn default_nysiis_strict_mode() -> bool {
 }
 
 impl NysiisConfig {
-    fn build(&self) -> Result<NysiisRule, Error> {
-        Ok(NysiisRule::new(self.strict))
+    fn build(&self, target_str: &str) -> Result<NysiisRule, Error> {
+        Ok(NysiisRule::new(self.strict, target_str))
     }
 }
 

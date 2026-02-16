@@ -244,7 +244,7 @@ bench_rule! {
     single_match = "random_string_to_fined";
     single_mismatch = "some different stringy";
     builder {
-        NysiisRule::new(false)
+        NysiisRule::new(false, TARGET_STR)
     }
 }
 
@@ -253,7 +253,7 @@ bench_rule! {
     single_match = "random_string_to_fined";
     single_mismatch = "some different stringy";
     builder {
-        NysiisRule::new(true)
+        NysiisRule::new(true, TARGET_STR)
     }
 }
 

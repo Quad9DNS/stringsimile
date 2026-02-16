@@ -169,8 +169,8 @@ bench_ruleset! {
                     Box::new(MatchRatingRule::new(target_str).into_generic_matcher()),
                     Box::new(MetaphoneRule::new(MetaphoneRuleType::Normal, Some(4), target_str).into_generic_matcher()),
                     Box::new(MetaphoneRule::new(MetaphoneRuleType::Double, Some(4), target_str).into_generic_matcher()),
-                    Box::new(NysiisRule::new(false).into_generic_matcher()),
-                    Box::new(NysiisRule::new(true).into_generic_matcher()),
+                    Box::new(NysiisRule::new(false, target_str).into_generic_matcher()),
+                    Box::new(NysiisRule::new(true, target_str).into_generic_matcher()),
                     Box::new(SoundexRule::new(SoundexRuleType::Normal, 5, target_str).into_generic_matcher()),
                     Box::new(SoundexRule::new(SoundexRuleType::Refined, 5, target_str).into_generic_matcher()),
                 ]
@@ -199,8 +199,8 @@ bench_ruleset! {
                     Box::new(MatchRatingRule::new(target_str).into_generic_matcher()),
                     Box::new(MetaphoneRule::new(MetaphoneRuleType::Normal, Some(4), target_str).into_generic_matcher()),
                     Box::new(MetaphoneRule::new(MetaphoneRuleType::Double, Some(4), target_str).into_generic_matcher()),
-                    Box::new(NysiisRule::new(false).into_generic_matcher()),
-                    Box::new(NysiisRule::new(true).into_generic_matcher()),
+                    Box::new(NysiisRule::new(false, target_str).into_generic_matcher()),
+                    Box::new(NysiisRule::new(true, target_str).into_generic_matcher()),
                     Box::new(SoundexRule::new(SoundexRuleType::Normal, 5, target_str).into_generic_matcher()),
                     Box::new(SoundexRule::new(SoundexRuleType::Refined, 5, target_str).into_generic_matcher()),
                 ]
@@ -229,8 +229,8 @@ bench_ruleset! {
                     Box::new(MatchRatingRule::new(target_str).into_generic_matcher()),
                     Box::new(MetaphoneRule::new(MetaphoneRuleType::Normal, Some(4), target_str).into_generic_matcher()),
                     Box::new(MetaphoneRule::new(MetaphoneRuleType::Double, Some(4), target_str).into_generic_matcher()),
-                    Box::new(NysiisRule::new(false).into_generic_matcher()),
-                    Box::new(NysiisRule::new(true).into_generic_matcher()),
+                    Box::new(NysiisRule::new(false, target_str).into_generic_matcher()),
+                    Box::new(NysiisRule::new(true, target_str).into_generic_matcher()),
                     Box::new(SoundexRule::new(SoundexRuleType::Normal, 5, target_str).into_generic_matcher()),
                     Box::new(SoundexRule::new(SoundexRuleType::Refined, 5, target_str).into_generic_matcher()),
                 ]
