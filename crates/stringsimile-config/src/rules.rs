@@ -76,6 +76,12 @@ pub enum RuleConfigError {
         /// Value that was provided to the rule
         input_value: usize,
     },
+
+    /// Metaphone rule configuration error
+    #[snafu(display(
+        "Invalid target string for Metaphone rule. The string_match must be ASCII for metaphone rule.",
+    ))]
+    MetaphoneNonAsciiTargetError,
 }
 
 impl RuleConfig {
@@ -100,7 +106,7 @@ impl RuleConfig {
                 Box::new(soundex_config.build(target_str)?.into_generic_matcher())
             }
             RuleConfig::Metaphone(metaphone_config) => {
-                Box::new(metaphone_config.build()?.into_generic_matcher())
+                Box::new(metaphone_config.build(target_str)?.into_generic_matcher())
             }
             RuleConfig::Nysiis(nysiis_config) => {
                 Box::new(nysiis_config.build()?.into_generic_matcher())
@@ -254,11 +260,15 @@ const fn default_metaphone_max_code_length() -> Option<usize> {
 }
 
 impl MetaphoneConfig {
-    fn build(&self) -> Result<MetaphoneRule, Error> {
-        Ok(MetaphoneRule {
-            max_code_length: self.max_code_length,
-            metaphone_type: self.metaphone_type,
-        })
+    fn build(&self, target_str: &str) -> Result<MetaphoneRule, Error> {
+        if !target_str.is_ascii() {
+            return Err(Box::new(RuleConfigError::MetaphoneNonAsciiTargetError));
+        }
+        Ok(MetaphoneRule::new(
+            self.metaphone_type,
+            self.max_code_length,
+            target_str,
+        ))
     }
 }
 

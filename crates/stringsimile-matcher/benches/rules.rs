@@ -226,7 +226,7 @@ bench_rule! {
     single_match = "random_stryng_to_find";
     single_mismatch = "some different string";
     builder {
-        MetaphoneRule { metaphone_type: MetaphoneRuleType::Normal, max_code_length: Some(4) }
+        MetaphoneRule::new(MetaphoneRuleType::Normal, Some(4), TARGET_STR)
     }
 }
 
@@ -235,7 +235,7 @@ bench_rule! {
     single_match = "random_stryng_to_find";
     single_mismatch = "some different string";
     builder {
-        MetaphoneRule { metaphone_type: MetaphoneRuleType::Double, max_code_length: Some(4) }
+        MetaphoneRule::new(MetaphoneRuleType::Double, Some(4), TARGET_STR)
     }
 }
 
