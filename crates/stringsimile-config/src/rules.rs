@@ -80,7 +80,7 @@ pub enum RuleConfigError {
 
 impl RuleConfig {
     /// Generates a rule implementation from this config
-    pub fn build(&self) -> Result<Box<dyn GenericMatcherRule>, Error> {
+    pub fn build(&self, target_str: &str) -> Result<Box<dyn GenericMatcherRule>, Error> {
         Ok(match self {
             RuleConfig::Levenshtein(levenshtein_config) => {
                 Box::new(levenshtein_config.build()?.into_generic_matcher())
@@ -97,7 +97,7 @@ impl RuleConfig {
                 Box::new(damerau_levenshtein_config.build()?.into_generic_matcher())
             }
             RuleConfig::Soundex(soundex_config) => {
-                Box::new(soundex_config.build()?.into_generic_matcher())
+                Box::new(soundex_config.build(target_str)?.into_generic_matcher())
             }
             RuleConfig::Metaphone(metaphone_config) => {
                 Box::new(metaphone_config.build()?.into_generic_matcher())
@@ -220,7 +220,7 @@ pub struct SoundexConfig {
 }
 
 impl SoundexConfig {
-    fn build(&self) -> Result<SoundexRule, Error> {
+    fn build(&self, target_str: &str) -> Result<SoundexRule, Error> {
         if self.soundex_type == SoundexRuleType::Normal && self.minimum_similarity > 4 {
             return Err(RuleConfigError::SoundexConfigSimilarityError {
                 input_value: self.minimum_similarity,
@@ -228,10 +228,11 @@ impl SoundexConfig {
             .into());
         }
 
-        Ok(SoundexRule {
-            minimum_similarity: self.minimum_similarity,
-            soundex_type: self.soundex_type,
-        })
+        Ok(SoundexRule::new(
+            self.soundex_type,
+            self.minimum_similarity,
+            target_str,
+        ))
     }
 }
 

@@ -262,7 +262,7 @@ bench_rule! {
     single_match = "random_stryng_to_find";
     single_mismatch = "some different string";
     builder {
-        SoundexRule { soundex_type: SoundexRuleType::Normal, minimum_similarity: 5 }
+        SoundexRule::new(SoundexRuleType::Normal, 5, TARGET_STR)
     }
 }
 
@@ -271,7 +271,7 @@ bench_rule! {
     single_match = "random_stryng_to_find";
     single_mismatch = "some different string";
     builder {
-        SoundexRule { soundex_type: SoundexRuleType::Refined, minimum_similarity: 5 }
+        SoundexRule::new(SoundexRuleType::Refined, 5, TARGET_STR)
     }
 }
 

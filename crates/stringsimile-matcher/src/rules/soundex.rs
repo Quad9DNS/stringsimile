@@ -14,9 +14,22 @@ use crate::{
 #[derive(Debug, Clone)]
 pub struct SoundexRule {
     /// Type of soundex (normal or refined)
-    pub soundex_type: SoundexRuleType,
+    soundex_type: SoundexRuleType,
     /// Minimum similarity value to consider rule matched
-    pub minimum_similarity: usize,
+    minimum_similarity: usize,
+    /// Pre-encoded target string
+    encoded_target: String,
+}
+
+impl SoundexRule {
+    /// Creates an instance of soundex rule with pre-computed target string encoding
+    pub fn new(soundex_type: SoundexRuleType, minimum_similarity: usize, target_str: &str) -> Self {
+        Self {
+            soundex_type,
+            minimum_similarity,
+            encoded_target: soundex_type.build_soundex().encode(target_str),
+        }
+    }
 }
 
 /// Type of Soundex (normal or refined)
@@ -49,7 +62,6 @@ impl SoundexRuleType {
 /// metadata
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SoundexMetadata {
-    #[allow(unused)]
     similarity: usize,
     soundex_type: &'static str,
 }
@@ -62,12 +74,21 @@ impl MatcherRule for SoundexRule {
     fn match_rule(
         &self,
         input_str: &str,
-        target_str: &str,
+        _target_str: &str,
     ) -> MatcherResult<Self::OutputMetadata, Self::Error> {
-        let res = self
-            .soundex_type
-            .build_soundex()
-            .difference(input_str, target_str);
+        let mut res = 0usize;
+        if !self.encoded_target.is_empty() {
+            let soundex = self.soundex_type.build_soundex();
+            let input = soundex.encode(input_str);
+            if !input.is_empty() {
+                res = input
+                    .chars()
+                    .zip(self.encoded_target.chars())
+                    .filter(|(l, r)| l == r)
+                    .count();
+            }
+        };
+
         let metadata = SoundexMetadata {
             similarity: res,
             soundex_type: self.soundex_type.as_str(),
@@ -92,10 +113,7 @@ mod tests {
 
     #[test]
     fn simple_example_normal() {
-        let rule = SoundexRule {
-            soundex_type: SoundexRuleType::Normal,
-            minimum_similarity: 3,
-        };
+        let rule = SoundexRule::new(SoundexRuleType::Normal, 3, "Smythers");
 
         let result = rule.match_rule("Smithers", "Smythers");
         assert!(result.is_match());
@@ -106,10 +124,7 @@ mod tests {
 
     #[test]
     fn simple_example_refined() {
-        let rule = SoundexRule {
-            soundex_type: SoundexRuleType::Refined,
-            minimum_similarity: 3,
-        };
+        let rule = SoundexRule::new(SoundexRuleType::Refined, 3, "Smythers");
 
         let result = rule.match_rule("Smithers", "Smythers");
         assert!(result.is_match());
