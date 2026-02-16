@@ -172,7 +172,7 @@ bench_ruleset! {
                 Box::new(NysiisRule::new(true).into_generic_matcher()),
                 Box::new(SoundexRule { soundex_type: SoundexRuleType::Normal, minimum_similarity: 5 }.into_generic_matcher()),
                 Box::new(SoundexRule { soundex_type: SoundexRuleType::Refined, minimum_similarity: 5 }.into_generic_matcher()),
-                Box::new(BitflipRule::new("test.string.to.match")),
+                Box::new(BitflipRule::new_dns("test.string.to.match", true)),
             ]
         }])
     }
@@ -200,7 +200,7 @@ bench_ruleset! {
                 Box::new(NysiisRule::new(true).into_generic_matcher()),
                 Box::new(SoundexRule { soundex_type: SoundexRuleType::Normal, minimum_similarity: 5 }.into_generic_matcher()),
                 Box::new(SoundexRule { soundex_type: SoundexRuleType::Refined, minimum_similarity: 5 }.into_generic_matcher()),
-                Box::new(BitflipRule::new("test.string.to.match")),
+                Box::new(BitflipRule::new_dns("test.string.to.match", true)),
             ]
         }])
     }
@@ -228,7 +228,7 @@ bench_ruleset! {
                 Box::new(NysiisRule::new(true).into_generic_matcher()),
                 Box::new(SoundexRule { soundex_type: SoundexRuleType::Normal, minimum_similarity: 5 }.into_generic_matcher()),
                 Box::new(SoundexRule { soundex_type: SoundexRuleType::Refined, minimum_similarity: 5 }.into_generic_matcher()),
-                Box::new(BitflipRule::new("test.string.to.match")),
+                Box::new(BitflipRule::new_dns("test.string.to.match", true)),
             ]
         }])
     }

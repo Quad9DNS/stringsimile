@@ -234,14 +234,42 @@ bench_rule! {
 bench_rule! {
     name = bitflip_precompiled;
     builder {
-        BitflipRule::new(TARGET_STR)
+        BitflipRule::new_dns(TARGET_STR, true)
+    }
+}
+
+bench_rule! {
+    name = bitflip_precompiled_case_insensitive;
+    builder {
+        BitflipRule::new_dns(TARGET_STR, false)
     }
 }
 
 bench_rule! {
     name = bitflip_empty_cache;
     builder {
-        BitflipRule::new("")
+        BitflipRule::new_dns("", true)
+    }
+}
+
+bench_rule! {
+    name = bitflip_precompiled_ascii_printable;
+    builder {
+        BitflipRule::new_ascii_printable(TARGET_STR, true)
+    }
+}
+
+bench_rule! {
+    name = bitflip_precompiled_ascii_printable_case_insensitive;
+    builder {
+        BitflipRule::new_ascii_printable(TARGET_STR, false)
+    }
+}
+
+bench_rule! {
+    name = bitflip_empty_cache_ascii_printable;
+    builder {
+        BitflipRule::new_ascii_printable("", true)
     }
 }
 
@@ -261,6 +289,10 @@ criterion_group!(
     soundex,
     soundex_refined,
     bitflip_precompiled,
-    bitflip_empty_cache
+    bitflip_precompiled_case_insensitive,
+    bitflip_empty_cache,
+    bitflip_precompiled_ascii_printable,
+    bitflip_precompiled_ascii_printable_case_insensitive,
+    bitflip_empty_cache_ascii_printable
 );
 criterion_main!(benches);

@@ -63,7 +63,11 @@
 						}
 					},
 					{
-						"rule_type": "bitflip"
+						"rule_type": "bitflip",
+						"values": {
+							"char_subset": "dns",
+							"case_sensitive": true
+						}
 					}
 				]
 			},

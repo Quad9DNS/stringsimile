@@ -1,6 +1,5 @@
 //! Bitflip rule implementation
 
-use lazy_static::lazy_static;
 use std::{
     collections::{HashMap, HashSet},
     fmt::Debug,
@@ -14,69 +13,94 @@ use crate::{
     rule::{MatcherResultRuleMetadataExt, MatcherRule, RuleMetadata},
 };
 
-lazy_static! {
-    static ref VALID_CHARS: Vec<u8> = {
-        let mut chars = Vec::new();
-        for i in 0..u8::MAX {
-            let c = char::from(i);
-            if c.is_ascii_alphanumeric() || c == '.' || c == '_' || c == '-' {
-                chars.push(i);
-            }
+const BITFLIP_PATTERNS: [u8; 8] = [
+    0b10000000, 0b01000000, 0b00100000, 0b00010000, 0b00001000, 0b00000100, 0b00000010, 0b00000001,
+];
+
+/// Rule
+#[derive(Debug, Clone)]
+pub struct BitflipRule {
+    bitflips: HashMap<u8, Vec<u8>>,
+    matches_cache: HashSet<String>,
+    for_target: String,
+    case_sensitive: bool,
+}
+
+impl BitflipRule {
+    /// Creates a new instance of [`BitflipRule`], with cached bitflips for the target string.
+    ///
+    /// Bitflips are limited to provided valid characters.
+    pub fn new(valid_chars: &Vec<u8>, target_str: &str, case_sensitive: bool) -> Self {
+        let bitflips = Self::calculate_bitflips_for_chars(valid_chars);
+        let cache = Self::matches_for_target(target_str, &bitflips, case_sensitive).collect();
+        Self {
+            bitflips,
+            matches_cache: cache,
+            for_target: target_str.to_string(),
+            case_sensitive,
         }
-        chars
-    };
-    static ref BITFLIP_PATTERNS: Vec<u8> = {
-        let mut patterns = Vec::new();
-        for i in 0..8 {
-            patterns.push(1 << i);
-        }
-        patterns
-    };
-    static ref BITFLIPS: HashMap<u8, Vec<u8>> = {
+    }
+
+    /// Creates a new instance of [`BitflipRule`], with cached bitflips for the target string.
+    ///
+    /// Bitflips are limited to chars valid in DNS context (a-z,A-Z,0-9,-,.).
+    pub fn new_dns(target_str: &str, case_sensitive: bool) -> Self {
+        let valid_chars = ('a'..='z')
+            .chain('A'..='Z')
+            .chain('0'..='9')
+            .chain(['-', '.'])
+            .map(|c| u8::try_from(c).expect("DNS character out of ASCII range"))
+            .collect();
+        Self::new(&valid_chars, target_str, case_sensitive)
+    }
+
+    /// Creates a new instance of [`BitflipRule`], with cached bitflips for the target string.
+    ///
+    /// Bitflips are limited to printable ASCII characters.
+    pub fn new_ascii_printable(target_str: &str, case_sensitive: bool) -> Self {
+        let valid_chars = (0x21..=0x7E).collect();
+        Self::new(&valid_chars, target_str, case_sensitive)
+    }
+
+    #[cfg(test)]
+    pub(crate) fn dns_without_cache(case_sensitive: bool) -> Self {
+        Self::new_dns(&String::default(), case_sensitive)
+    }
+
+    fn calculate_bitflips_for_chars(valid_chars: &Vec<u8>) -> HashMap<u8, Vec<u8>> {
         let mut flips = HashMap::<u8, Vec<u8>>::new();
-        for c in VALID_CHARS.iter() {
+        for c in valid_chars {
             for p in BITFLIP_PATTERNS.iter() {
                 let flipped = c ^ p;
-                if VALID_CHARS.contains(&flipped) {
+                if valid_chars.contains(&flipped) {
                     flips.entry(*c).or_default().push(flipped);
                 }
             }
         }
         flips
-    };
-}
-
-/// Rule
-#[derive(Debug, Clone)]
-pub struct BitflipRule {
-    matches_cache: HashSet<String>,
-    for_target: String,
-}
-
-impl BitflipRule {
-    /// Creates a new instance of [`BitflipRule`], with cached bitflips for the target string
-    pub fn new(target_str: &str) -> Self {
-        let cache = Self::matches_for_target(target_str).collect();
-        Self {
-            matches_cache: cache,
-            for_target: target_str.to_string(),
-        }
     }
 
-    fn matches_for_target(target_str: &str) -> impl Iterator<Item = String> {
+    fn matches_for_target(
+        target_str: &str,
+        bitflips: &HashMap<u8, Vec<u8>>,
+        case_sensitive: bool,
+    ) -> impl Iterator<Item = String> {
         target_str
             .chars()
             .enumerate()
             .filter(|(_i, c)| c.is_ascii())
-            .flat_map(|(i, c)| {
+            .flat_map(move |(i, c)| {
                 let string = target_str.to_owned();
-                BITFLIPS
+                bitflips
                     .get(&(c.try_into().unwrap()))
                     .into_iter()
                     .flatten()
                     .map(move |c| {
                         let mut new_str = string.clone();
                         new_str.replace_range(i..=i, &char::from(*c).to_string());
+                        if !case_sensitive {
+                            new_str = new_str.to_lowercase();
+                        }
                         new_str
                     })
             })
@@ -97,9 +121,19 @@ impl MatcherRule for BitflipRule {
         target_str: &str,
     ) -> MatcherResult<Self::OutputMetadata, Self::Error> {
         let matches = if target_str == self.for_target {
-            self.matches_cache.contains(input_str)
+            if self.case_sensitive {
+                self.matches_cache.contains(input_str)
+            } else {
+                self.matches_cache.contains(&input_str.to_lowercase())
+            }
         } else {
-            Self::matches_for_target(target_str).any(|f| f == input_str)
+            Self::matches_for_target(target_str, &self.bitflips, self.case_sensitive).any(|f| {
+                if self.case_sensitive {
+                    f == input_str
+                } else {
+                    f == input_str.to_lowercase()
+                }
+            })
         };
         if matches {
             MatcherResult::new_match(BitflipMetadata)
@@ -121,7 +155,7 @@ mod tests {
 
     #[test]
     fn simple_example() {
-        let rule = BitflipRule::new("www.google.com");
+        let rule = BitflipRule::new_dns("www.google.com", true);
 
         let result = rule.match_rule("wwwngoogle.com", "www.google.com");
         assert!(result.is_match());
@@ -130,8 +164,38 @@ mod tests {
     }
 
     #[test]
+    fn simple_example_case_insensitive() {
+        let rule = BitflipRule::new_dns("www.google.com", false);
+
+        let result = rule.match_rule("WWWNGOOGLE.COM", "www.google.com");
+        assert!(result.is_match());
+        let result = rule.match_rule("licrosoft", "microsoft");
+        assert!(result.is_match());
+    }
+
+    #[test]
+    fn simple_example_custom_charset() {
+        let rule = BitflipRule::new(&vec![b'.', b'n'], "www.google.com", true);
+
+        let result = rule.match_rule("wwwngoogle.com", "www.google.com");
+        assert!(result.is_match());
+        let result = rule.match_rule("licrosoft", "microsoft");
+        assert!(!result.is_match());
+    }
+
+    #[test]
     fn mismatch() {
-        let rule = BitflipRule::new("test");
+        let rule = BitflipRule::new_dns("test", true);
+
+        let result = rule.match_rule("tset", "test");
+        assert!(!result.is_match());
+        let result = rule.match_rule("unrelated", "microsoft");
+        assert!(!result.is_match());
+    }
+
+    #[test]
+    fn no_cache() {
+        let rule = BitflipRule::dns_without_cache(true);
 
         let result = rule.match_rule("tset", "test");
         assert!(!result.is_match());

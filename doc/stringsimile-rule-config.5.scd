@@ -53,7 +53,10 @@ Each of the rules has specific values that can be used to configure it:
 - NYSIIS
   - strict - can be set to false to disable strict mode and allow NYSIIS codes over 6 characters long - defaults to true
 - Match Rating - no additional values (values field may be skipped)
-- Bitflip - no additional values (values field may be skipped)
+- Bitflip - optional values (values field may be skipped - defaults to "dns" char subset with case sensitive matching)
+  - case_sensitive - can be set to false to make comparison case insensitive
+  - char_subset - char subset of valid characters to use for bitlips ("dns", "printable", "custom")
+  - custom_char_subset - if "custom" char subset is configured, this represents a string of valid characters to consider for bitflips
 
 Single string group object has the following keys:
 - name
