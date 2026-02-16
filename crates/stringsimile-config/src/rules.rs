@@ -105,7 +105,9 @@ impl RuleConfig {
             RuleConfig::Nysiis(nysiis_config) => {
                 Box::new(nysiis_config.build()?.into_generic_matcher())
             }
-            RuleConfig::MatchRating => Box::new(MatchRatingConfig.build()?.into_generic_matcher()),
+            RuleConfig::MatchRating => {
+                Box::new(MatchRatingConfig.build(target_str)?.into_generic_matcher())
+            }
         })
     }
 }
@@ -283,8 +285,8 @@ impl NysiisConfig {
 pub struct MatchRatingConfig;
 
 impl MatchRatingConfig {
-    fn build(&self) -> Result<MatchRatingRule, Error> {
-        Ok(MatchRatingRule)
+    fn build(&self, target_str: &str) -> Result<MatchRatingRule, Error> {
+        Ok(MatchRatingRule::new(target_str))
     }
 }
 

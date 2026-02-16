@@ -217,7 +217,7 @@ bench_rule! {
     single_match = "random_sztring_to_find";
     single_mismatch = "some different stringy";
     builder {
-        MatchRatingRule
+        MatchRatingRule::new(TARGET_STR)
     }
 }
 
