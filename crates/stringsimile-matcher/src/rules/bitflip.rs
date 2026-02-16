@@ -20,9 +20,7 @@ const BITFLIP_PATTERNS: [u8; 8] = [
 /// Rule
 #[derive(Debug, Clone)]
 pub struct BitflipRule {
-    bitflips: HashMap<u8, Vec<u8>>,
     matches_cache: HashSet<String>,
-    for_target: String,
     case_sensitive: bool,
 }
 
@@ -34,9 +32,7 @@ impl BitflipRule {
         let bitflips = Self::calculate_bitflips_for_chars(valid_chars);
         let cache = Self::matches_for_target(target_str, &bitflips, case_sensitive).collect();
         Self {
-            bitflips,
             matches_cache: cache,
-            for_target: target_str.to_string(),
             case_sensitive,
         }
     }
@@ -60,11 +56,6 @@ impl BitflipRule {
     pub fn new_ascii_printable(target_str: &str, case_sensitive: bool) -> Self {
         let valid_chars = (0x21..=0x7E).collect();
         Self::new(&valid_chars, target_str, case_sensitive)
-    }
-
-    #[cfg(test)]
-    pub(crate) fn dns_without_cache(case_sensitive: bool) -> Self {
-        Self::new_dns(&String::default(), case_sensitive)
     }
 
     fn calculate_bitflips_for_chars(valid_chars: &Vec<u8>) -> HashMap<u8, Vec<u8>> {
@@ -118,22 +109,12 @@ impl MatcherRule for BitflipRule {
     fn match_rule(
         &self,
         input_str: &str,
-        target_str: &str,
+        _target_str: &str,
     ) -> MatcherResult<Self::OutputMetadata, Self::Error> {
-        let matches = if target_str == self.for_target {
-            if self.case_sensitive {
-                self.matches_cache.contains(input_str)
-            } else {
-                self.matches_cache.contains(&input_str.to_lowercase())
-            }
+        let matches = if self.case_sensitive {
+            self.matches_cache.contains(input_str)
         } else {
-            Self::matches_for_target(target_str, &self.bitflips, self.case_sensitive).any(|f| {
-                if self.case_sensitive {
-                    f == input_str
-                } else {
-                    f == input_str.to_lowercase()
-                }
-            })
+            self.matches_cache.contains(&input_str.to_lowercase())
         };
         if matches {
             MatcherResult::new_match(BitflipMetadata)
@@ -186,16 +167,6 @@ mod tests {
     #[test]
     fn mismatch() {
         let rule = BitflipRule::new_dns("test", true);
-
-        let result = rule.match_rule("tset", "test");
-        assert!(!result.is_match());
-        let result = rule.match_rule("unrelated", "microsoft");
-        assert!(!result.is_match());
-    }
-
-    #[test]
-    fn no_cache() {
-        let rule = BitflipRule::dns_without_cache(true);
 
         let result = rule.match_rule("tset", "test");
         assert!(!result.is_match());
