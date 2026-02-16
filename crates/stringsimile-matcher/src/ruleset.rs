@@ -12,7 +12,7 @@ use crate::{GenericMatchResult, rule::GenericMatcherRule};
 pub struct RuleSet {
     /// Name of the rule set
     pub name: String,
-    /// String to match against
+    /// String to match agains
     pub string_match: String,
     // TODO: extract this into something more generic, like a pre-processor
     /// If set to true, will split the string into domain parts before processing
@@ -101,12 +101,7 @@ impl RuleSet {
 
         for rule in &self.rules {
             let rule_metrics = metrics.get(rule.name()).expect("Missing metrics for rule");
-            for (index, part) in parts
-                .iter()
-                .enumerate()
-                // Ignore exactly equal matches, we don't care about these
-                .filter(|(_, p)| **p != self.string_match)
-            {
+            for (index, part) in parts.iter().enumerate() {
                 match rule.match_rule_generic(part, &self.string_match) {
                     Ok(mut result) => {
                         if self.split_target {
