@@ -1,7 +1,11 @@
 //! Bitflip rule implementation
 
 use lazy_static::lazy_static;
-use std::{collections::HashMap, fmt::Debug, io::Error};
+use std::{
+    collections::{HashMap, HashSet},
+    fmt::Debug,
+    io::Error,
+};
 
 use serde::{Deserialize, Serialize};
 
@@ -45,7 +49,7 @@ lazy_static! {
 /// Rule
 #[derive(Debug, Clone)]
 pub struct BitflipRule {
-    matches_cache: Vec<String>,
+    matches_cache: HashSet<String>,
     for_target: String,
 }
 
@@ -93,7 +97,7 @@ impl MatcherRule for BitflipRule {
         target_str: &str,
     ) -> MatcherResult<Self::OutputMetadata, Self::Error> {
         let matches = if target_str == self.for_target {
-            self.matches_cache.iter().any(|f| f == input_str)
+            self.matches_cache.contains(input_str)
         } else {
             Self::matches_for_target(target_str).any(|f| f == input_str)
         };
