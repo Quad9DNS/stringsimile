@@ -103,7 +103,7 @@ jobs:
           tool: 'cargo'
           output-file-path: benchmark.txt
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          auto-push: true
+          auto-push: ${{ github.event_name != 'pull_request' }}
           comment-on-alert: true
           fail-on-alert: true
           summary-always: true
