@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes" />
+    <style>
+      html {
+        font-family: BlinkMacSystemFont,-apple-system,"Segoe UI",Roboto,Oxygen,Ubuntu,Cantarell,"Fira Sans","Droid Sans","Helvetica Neue",Helvetica,Arial,sans-serif;
+        -webkit-font-smoothing: antialiased;
+        background-color: #fff;
+        font-size: 16px;
+      }
+      body {
+        color: #4a4a4a;
+        margin: 8px;
+        font-size: 1em;
+        font-weight: 400;
+      }
+      header {
+        margin-bottom: 8px;
+        display: flex;
+        flex-direction: column;
+      }
+      main {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+      }
+      a {
+        color: #3273dc;
+        cursor: pointer;
+        text-decoration: none;
+      }
+      a:hover {
+        color: #000;
+      }
+      button {
+        color: #fff;
+        background-color: #3298dc;
+        border-color: transparent;
+        cursor: pointer;
+        text-align: center;
+      }
+      button:hover {
+        background-color: #2793da;
+        flex: none;
+      }
+      .spacer {
+        flex: auto;
+      }
+      .small {
+        font-size: 0.75rem;
+      }
+      footer {
+        margin-top: 16px;
+        display: flex;
+        align-items: center;
+      }
+      .header-label {
+        margin-right: 4px;
+      }
+      table, th, td {
+        border: 1px solid black;
+        padding: 2px;
+      }
+      .benchmark-set {
+        margin: 8px 0;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+      }
+      .benchmark-title {
+        font-size: 3rem;
+        font-weight: 600;
+        word-break: break-word;
+        text-align: center;
+      }
+      .benchmark-table {
+        justify-content: space-around;
+        align-items: center;
+        text-align: center;
+        margin: auto;
+        width: 50%;
+      }
+    </style>
+    <title>Benchmarks</title>
+  </head>
+
+  <body>
+    <header id="header">
+      <div class="header-item">
+        <strong class="header-label">Last Update:</strong>
+        <span id="last-update"></span>
+      </div>
+      <div class="header-item">
+        <strong class="header-label">Repository:</strong>
+        <a id="repository-link" rel="noopener"></a>
+      </div>
+      <div class="header-item">
+        <a href="dev/bench">
+          <strong class="header-label">Open full benchmark overview</strong>
+        </a>
+      </div>
+    </header>
+    <main id="main"></main>
+    <footer>
+      <button id="dl-button">Download data as JSON</button>
+      <div class="spacer"></div>
+      <div class="small">Powered by <a rel="noopener" href="https://github.com/marketplace/actions/continuous-benchmark">github-action-benchmark</a></div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.2/dist/Chart.min.js"></script>
+    <script src="dev/bench/data.js"></script>
+    <script id="main-script">
+      'use strict';
+      (function() {
+        function init() {
+          function collectBenchesPerTestCase(entries) {
+            const map = new Map();
+            const entry = entries[entries.length - 1];
+            const {commit, date, tool, benches} = entry;
+            for (const bench of benches) {
+              // Only rule benchmarks have this
+              if (!bench.name.includes('single_match') && !bench.name.includes('single_mismatch')) {
+                continue;
+              }
+              const ruleName = bench.name.split("/")[0];
+              if (map.get(ruleName) === undefined) {
+                map.set(ruleName, {'match': null, 'mismatch': null});
+              }
+              const arr = map.get(ruleName);
+              if (bench.name.includes('single_match')) {
+                arr['match'] = bench;
+              } else {
+                arr['mismatch'] = bench;
+              }
+            }
+            return map;
+          }
+
+          const data = window.BENCHMARK_DATA;
+
+          // Render header
+          document.getElementById('last-update').textContent = new Date(data.lastUpdate).toString();
+          const repoLink = document.getElementById('repository-link');
+          repoLink.href = data.repoUrl;
+          repoLink.textContent = data.repoUrl;
+
+          // Render footer
+          document.getElementById('dl-button').onclick = () => {
+            const dataUrl = 'data:,' + JSON.stringify(data, null, 2);
+            const a = document.createElement('a');
+            a.href = dataUrl;
+            a.download = 'benchmark_data.json';
+            a.click();
+          };
+
+          // Prepare data points for charts
+          return Object.keys(data.entries).map(name => ({
+            name,
+            dataSet: collectBenchesPerTestCase(data.entries[name]),
+          }));
+        }
+
+        function renderTable(dataSets) {
+
+          console.log(dataSets);
+
+          function renderBenchSet(name, benchSet, main) {
+            const setElem = document.createElement('div');
+            setElem.className = 'benchmark-set';
+            main.appendChild(setElem);
+
+            const nameElem = document.createElement('h1');
+            nameElem.className = 'benchmark-title';
+            nameElem.textContent = "Rules";
+            setElem.appendChild(nameElem);
+
+            const table = document.createElement('table');
+            table.className = 'benchmark-table';
+            table.innerHTML = `
+              <tr>
+                <th>Rule name</th>
+                <th>Single match duration</th>
+                <th>Single match duration range</th>
+                <th>Single mismatch duration</th>
+                <th>Single mismatch duration range</th>
+              </tr>
+            `;
+            setElem.appendChild(table)
+
+            for (const [benchName, benches] of benchSet.entries()) {
+              table.insertAdjacentHTML('beforeend', `
+                <tr>
+                  <td>${benchName}</td>
+                  <td>${benches['match'].value} ${benches['match'].unit}</td>
+                  <td>${benches['match'].range}</td>
+                  <td>${benches['mismatch'].value} ${benches['mismatch'].unit}</td>
+                  <td>${benches['mismatch'].range}</td>
+                </tr>
+              `);
+            }
+          }
+
+          const main = document.getElementById('main');
+          for (const {name, dataSet} of dataSets) {
+            console.log(name);
+            renderBenchSet(name, dataSet, main);
+          }
+        }
+
+        renderTable(init()); // Start
+      })();
+    </script>
+  </body>
+</html>
