@@ -27,12 +27,10 @@ jobs:
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           target: ${{ matrix.target }}
+          components: rustfmt, clippy, deny
 
-      - name: Formatting
+      - name: Run checks
         run: make check-all
-
-      - name: Lint
-        run: make lint
 
       - name: Run tests
         run: make test
