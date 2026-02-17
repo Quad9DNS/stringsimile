@@ -27,7 +27,9 @@ jobs:
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           target: ${{ matrix.target }}
-          components: rustfmt, clippy, cargo-deny
+
+      - name: Setup cargo deny
+        run: cargo install cargo-deny
 
       - name: Run checks
         run: make check-all
