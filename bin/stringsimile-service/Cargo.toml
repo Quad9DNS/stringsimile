@@ -122,6 +122,7 @@ bench = false
 [[bin]]
 name = "stringsimile"
 path = "src/main.rs"
+bench = false
 
 [[bench]]
 name = "service"
