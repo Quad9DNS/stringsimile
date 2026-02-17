@@ -1,6 +1,9 @@
 //! Group of related rules
 
-use std::collections::{BTreeMap, HashMap};
+use std::{
+    collections::{BTreeMap, HashMap},
+    ops::Deref,
+};
 
 use metrics::{Counter, counter};
 use serde_json::{Map, Value};
@@ -89,45 +92,58 @@ impl RuleSet {
         );
         let mut matches: Vec<GenericMatchResult> = Vec::default();
 
-        let mut parts = Vec::default();
         if self.split_target {
-            parts.extend(name.split(".").map(|s| s.to_string()));
-            if self.ignore_tld {
-                parts.remove(parts.len() - 1);
-            }
-        } else {
-            parts.push(name.to_string());
-        }
-
-        for rule in &self.rules {
-            let rule_metrics = metrics.get(rule.name()).expect("Missing metrics for rule");
-            for (index, part) in parts.iter().enumerate() {
-                match rule.match_rule_generic(part, &self.string_match) {
-                    Ok(mut result) => {
-                        if self.split_target {
-                            result
-                                .metadata
-                                .insert("split_string".to_string(), Value::String(part.clone()));
-                            result
-                                .metadata
-                                .insert("split_position".to_string(), Value::Number(index.into()));
-                        }
-                        if result.matched {
-                            rule_metrics.matches.increment(1);
-                        } else {
-                            rule_metrics.misses.increment(1);
-                        }
-                        matches.push(result.into_full_metadata());
-                    }
-                    Err(err) => {
-                        rule_metrics.errors.increment(1);
-                        warn!(message = "Matcher failed", error = ?err);
-                    }
+            for rule in &self.rules {
+                let rule_metrics = metrics.get(rule.name()).expect("Missing metrics for rule");
+                for it in name
+                    .split('.')
+                    .rev()
+                    .skip(if self.ignore_tld { 1 } else { 0 })
+                    .enumerate()
+                {
+                    self.generate_match(&mut matches, rule.deref(), it, rule_metrics);
                 }
             }
-        }
+        } else {
+            for rule in &self.rules {
+                let rule_metrics = metrics.get(rule.name()).expect("Missing metrics for rule");
+                self.generate_match(&mut matches, rule.deref(), (0, name), rule_metrics);
+            }
+        };
 
         matches
+    }
+
+    fn generate_match(
+        &self,
+        matches: &mut Vec<GenericMatchResult>,
+        rule: &dyn GenericMatcherRule,
+        (index, part): (usize, &str),
+        rule_metrics: &RuleMetrics,
+    ) {
+        match rule.match_rule_generic(part, &self.string_match) {
+            Ok(mut result) => {
+                if self.split_target {
+                    result.metadata.insert(
+                        "split_string".to_string(),
+                        Value::String(part.to_string().clone()),
+                    );
+                    result
+                        .metadata
+                        .insert("split_position".to_string(), Value::Number(index.into()));
+                }
+                if result.matched {
+                    rule_metrics.matches.increment(1);
+                } else {
+                    rule_metrics.misses.increment(1);
+                }
+                matches.push(result.into_full_metadata());
+            }
+            Err(err) => {
+                rule_metrics.errors.increment(1);
+                warn!(message = "Matcher failed", error = ?err);
+            }
+        }
     }
 }
 

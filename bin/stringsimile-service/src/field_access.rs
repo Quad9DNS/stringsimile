@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use serde_json::{Map, Value};
+use serde_json::Value;
 use snafu::Snafu;
 
 #[derive(Debug, Snafu)]
@@ -74,7 +74,7 @@ pub struct FieldAccessorConfig(pub String);
 
 impl FieldAccessorConfig {
     pub fn build(&self) -> crate::Result<FieldAccessor> {
-        let input_field = self.0.clone();
+        let input_field = &self.0;
         let mut parse_steps = Vec::new();
 
         let mut chunk_start = 0;
@@ -144,19 +144,22 @@ impl FieldAccessorConfig {
         }
 
         Ok(FieldAccessor {
-            input_field,
+            input_field: input_field.to_string(),
             parse_steps,
         })
     }
 }
 
 impl FieldAccessor {
-    pub fn access_field(&self, object: Value) -> crate::Result<UnwrappedFields> {
+    pub fn access_field<'a>(&self, object: &'a Value) -> crate::Result<&'a str> {
         if !object.is_object() {
-            return Err(FieldAccessError::NotAJsonObject { value: object }.into());
+            return Err(FieldAccessError::NotAJsonObject {
+                value: object.clone(),
+            }
+            .into());
         };
 
-        let mut current_value = &object;
+        let mut current_value = object;
         for step in &self.parse_steps {
             match step {
                 ParseStep::FieldAccess { field_name } => {
@@ -190,21 +193,8 @@ impl FieldAccessor {
             }
             .into());
         };
-
-        let name = name.clone();
-        let Value::Object(map) = object else {
-            unreachable!("Input object should be confirmed by now");
-        };
-        Ok(UnwrappedFields {
-            input_object_map: map,
-            input_field_value: name,
-        })
+        Ok(name)
     }
-}
-
-pub struct UnwrappedFields {
-    pub input_object_map: Map<String, Value>,
-    pub input_field_value: String,
 }
 
 #[cfg(test)]
@@ -225,9 +215,8 @@ mod tests {
         assert_eq!(
             "value",
             built
-                .access_field(object)
+                .access_field(&object)
                 .expect("Failed accessing default field")
-                .input_field_value
         );
     }
 
@@ -243,9 +232,8 @@ mod tests {
         assert_eq!(
             "value",
             built
-                .access_field(object)
+                .access_field(&object)
                 .expect("Failed accessing field without dot prefix")
-                .input_field_value
         );
     }
 
@@ -261,9 +249,8 @@ mod tests {
         assert_eq!(
             "value",
             built
-                .access_field(object)
+                .access_field(&object)
                 .expect("Failed accessing field with indexing")
-                .input_field_value
         );
     }
 
@@ -283,9 +270,8 @@ mod tests {
         assert_eq!(
             "value",
             built
-                .access_field(object)
+                .access_field(&object)
                 .expect("Failed accessing nested field")
-                .input_field_value
         );
     }
 
@@ -312,9 +298,8 @@ mod tests {
         assert_eq!(
             "value",
             built
-                .access_field(object)
+                .access_field(&object)
                 .expect("Failed accessing nested field")
-                .input_field_value
         );
     }
 
