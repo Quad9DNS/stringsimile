@@ -140,7 +140,30 @@ macro_rules! bench_ruleset {
             group.bench_function(stringify!($rule_name), |b| {
                 b.iter(|| {
                     INPUT_DATA.iter().for_each(|input| {
-                        let _ = string_group.generate_matches(input);
+                        let _ = string_group.generate_matches(input, false);
+                    })
+                });
+            });
+            group.finish();
+
+            let mut group = c.benchmark_group(stringify!($rule_name).to_owned() + "/report_all");
+            group.throughput(criterion::Throughput::Bytes(
+                string_group
+                    .rule_sets
+                    .iter()
+                    .map(|rule_set| {
+                        INPUT_DATA
+                            .iter()
+                            .map(|input| input.len() as u64)
+                            .sum::<u64>()
+                            * rule_set.rules.len() as u64
+                    })
+                    .sum(),
+            ));
+            group.bench_function(stringify!($rule_name), |b| {
+                b.iter(|| {
+                    INPUT_DATA.iter().for_each(|input| {
+                        let _ = string_group.generate_matches(input, true);
                     })
                 });
             });
