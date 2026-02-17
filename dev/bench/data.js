@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1771330685883,
+  "lastUpdate": 1771330689351,
   "repoUrl": "https://github.com/Quad9DNS/stringsimile",
   "entries": {
     "Benchmark": [
@@ -125,6 +125,132 @@ window.BENCHMARK_DATA = {
             "name": "stringsimile_service/processor",
             "value": 2983,
             "range": "± 11",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "dev@ensarsarajcic.com",
+            "name": "Ensar Sarajčić",
+            "username": "esensar"
+          },
+          "committer": {
+            "email": "dev@ensarsarajcic.com",
+            "name": "Ensar Sarajčić",
+            "username": "esensar"
+          },
+          "distinct": true,
+          "id": "1e4b55d74df666e78e9a63a539026567e9ec98d6",
+          "message": "Disable benchmark CI results autopush on PRs",
+          "timestamp": "2026-02-17T13:13:34+01:00",
+          "tree_id": "d01f60bfd1bc8b0887fae218a82dee861034dfeb",
+          "url": "https://github.com/Quad9DNS/stringsimile/commit/1e4b55d74df666e78e9a63a539026567e9ec98d6"
+        },
+        "date": 1771330688848,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "confusables/confusables",
+            "value": 88770,
+            "range": "± 201",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "levenshtein/levenshtein",
+            "value": 118470,
+            "range": "± 265",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "damerau_levenshtein/damerau_levenshtein",
+            "value": 134091,
+            "range": "± 1272",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "hamming/hamming",
+            "value": 1474,
+            "range": "± 70",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "jaro/jaro",
+            "value": 100454,
+            "range": "± 367",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "jaro_winkler/jaro_winkler",
+            "value": 100031,
+            "range": "± 1440",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "match_rating/match_rating",
+            "value": 346308,
+            "range": "± 1188",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "metaphone_normal/metaphone_normal",
+            "value": 47400,
+            "range": "± 391",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "metaphone_double/metaphone_double",
+            "value": 124145,
+            "range": "± 495",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "nysiis/nysiis",
+            "value": 260967,
+            "range": "± 1462",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "nysiis_strict/nysiis_strict",
+            "value": 267192,
+            "range": "± 2847",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "soundex/soundex",
+            "value": 155112,
+            "range": "± 1431",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "soundex_refined/soundex_refined",
+            "value": 159096,
+            "range": "± 464",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "all_rules_split_target_all/all_rules_split_target_all",
+            "value": 9578652,
+            "range": "± 127161",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "all_rules_split_target_skip_tld/all_rules_split_target_skip_tld",
+            "value": 9479347,
+            "range": "± 48189",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "all_rules_no_split_target/all_rules_no_split_target",
+            "value": 9458721,
+            "range": "± 72728",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "stringsimile_service/processor",
+            "value": 3640,
+            "range": "± 17",
             "unit": "ns/iter"
           }
         ]
