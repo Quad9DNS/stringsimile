@@ -2,7 +2,7 @@
 
 use std::{fmt::Debug, io::Error};
 
-use rphonetic::{RefinedSoundex, Soundex, SoundexCommons};
+use rphonetic::{Encoder, RefinedSoundex, Soundex, SoundexCommons};
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -14,7 +14,7 @@ use crate::{
 #[derive(Debug, Clone)]
 pub struct SoundexRule {
     /// Type of soundex (normal or refined)
-    soundex_type: SoundexRuleType,
+    soundex: BuiltSoundex,
     /// Minimum similarity value to consider rule matched
     minimum_similarity: usize,
     /// Pre-encoded target string
@@ -24,10 +24,44 @@ pub struct SoundexRule {
 impl SoundexRule {
     /// Creates an instance of soundex rule with pre-computed target string encoding
     pub fn new(soundex_type: SoundexRuleType, minimum_similarity: usize, target_str: &str) -> Self {
+        let soundex = soundex_type.build_soundex();
         Self {
-            soundex_type,
+            encoded_target: soundex.encode(target_str),
+            soundex,
             minimum_similarity,
-            encoded_target: soundex_type.build_soundex().encode(target_str),
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+enum BuiltSoundex {
+    Normal(Soundex),
+    Refined(RefinedSoundex),
+}
+
+impl BuiltSoundex {
+    fn as_str(&self) -> &'static str {
+        match self {
+            BuiltSoundex::Normal(_) => "normal",
+            BuiltSoundex::Refined(_) => "refined",
+        }
+    }
+}
+
+impl Encoder for BuiltSoundex {
+    fn encode(&self, s: &str) -> String {
+        match self {
+            BuiltSoundex::Normal(soundex) => soundex.encode(s),
+            BuiltSoundex::Refined(refined_soundex) => refined_soundex.encode(s),
+        }
+    }
+}
+
+impl SoundexCommons for BuiltSoundex {
+    fn difference(&self, value1: &str, value2: &str) -> usize {
+        match self {
+            BuiltSoundex::Normal(soundex) => soundex.difference(value1, value2),
+            BuiltSoundex::Refined(refined_soundex) => refined_soundex.difference(value1, value2),
         }
     }
 }
@@ -44,17 +78,10 @@ pub enum SoundexRuleType {
 }
 
 impl SoundexRuleType {
-    fn as_str(&self) -> &'static str {
+    fn build_soundex(&self) -> BuiltSoundex {
         match self {
-            SoundexRuleType::Normal => "normal",
-            SoundexRuleType::Refined => "refined",
-        }
-    }
-
-    fn build_soundex(&self) -> Box<dyn SoundexCommons> {
-        match self {
-            SoundexRuleType::Normal => Box::new(Soundex::default()),
-            SoundexRuleType::Refined => Box::new(RefinedSoundex::default()),
+            SoundexRuleType::Normal => BuiltSoundex::Normal(Soundex::default()),
+            SoundexRuleType::Refined => BuiltSoundex::Refined(RefinedSoundex::default()),
         }
     }
 }
@@ -78,8 +105,7 @@ impl MatcherRule for SoundexRule {
     ) -> MatcherResult<Self::OutputMetadata, Self::Error> {
         let mut res = 0usize;
         if !self.encoded_target.is_empty() {
-            let soundex = self.soundex_type.build_soundex();
-            let input = soundex.encode(input_str);
+            let input = self.soundex.encode(input_str);
             if !input.is_empty() {
                 res = input
                     .chars()
@@ -91,7 +117,7 @@ impl MatcherRule for SoundexRule {
 
         let metadata = SoundexMetadata {
             similarity: res,
-            soundex_type: self.soundex_type.as_str(),
+            soundex_type: self.soundex.as_str(),
         };
         if res >= self.minimum_similarity {
             MatcherResult::new_match(metadata)
