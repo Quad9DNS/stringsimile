@@ -27,7 +27,7 @@ jobs:
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           target: ${{ matrix.target }}
-          components: rustfmt, clippy, deny
+          components: rustfmt, clippy, cargo-deny
 
       - name: Run checks
         run: make check-all
