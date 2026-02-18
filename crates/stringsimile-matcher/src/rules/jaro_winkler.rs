@@ -24,7 +24,6 @@ pub struct JaroWinklerMetadata {
     match_percent: f64,
 }
 
-// TODO replace with custom error
 impl MatcherRule for JaroWinklerRule {
     type OutputMetadata = JaroWinklerMetadata;
     type Error = Error;

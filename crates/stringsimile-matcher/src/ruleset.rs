@@ -83,6 +83,7 @@ impl RuleSet {
         &self,
         name: &str,
         metrics: &HashMap<String, RuleMetrics>,
+        full_metadata_for_all: bool,
     ) -> Vec<GenericMatchResult> {
         let _ = trace_span!("ruleset", input = name, ruleset = self.name).enter();
         debug!(
@@ -101,13 +102,25 @@ impl RuleSet {
                     .skip(if self.ignore_tld { 1 } else { 0 })
                     .enumerate()
                 {
-                    self.generate_match(&mut matches, rule.deref(), it, rule_metrics);
+                    self.generate_match(
+                        &mut matches,
+                        rule.deref(),
+                        it,
+                        rule_metrics,
+                        full_metadata_for_all,
+                    );
                 }
             }
         } else {
             for rule in &self.rules {
                 let rule_metrics = metrics.get(rule.name()).expect("Missing metrics for rule");
-                self.generate_match(&mut matches, rule.deref(), (0, name), rule_metrics);
+                self.generate_match(
+                    &mut matches,
+                    rule.deref(),
+                    (0, name),
+                    rule_metrics,
+                    full_metadata_for_all,
+                );
             }
         };
 
@@ -120,24 +133,29 @@ impl RuleSet {
         rule: &dyn GenericMatcherRule,
         (index, part): (usize, &str),
         rule_metrics: &RuleMetrics,
+        full_metadata_for_all: bool,
     ) {
-        match rule.match_rule_generic(part, &self.string_match) {
+        match rule.match_rule_generic(part, &self.string_match, full_metadata_for_all) {
             Ok(mut result) => {
-                if self.split_target {
-                    result.metadata.insert(
-                        "split_string".to_string(),
-                        Value::String(part.to_string().clone()),
-                    );
-                    result
-                        .metadata
-                        .insert("split_position".to_string(), Value::Number(index.into()));
-                }
                 if result.matched {
                     rule_metrics.matches.increment(1);
                 } else {
                     rule_metrics.misses.increment(1);
                 }
-                matches.push(result.into_full_metadata());
+                if result.matched || full_metadata_for_all {
+                    if self.split_target {
+                        result.metadata.insert(
+                            "split_string".to_string(),
+                            Value::String(part.to_string().clone()),
+                        );
+                        result
+                            .metadata
+                            .insert("split_position".to_string(), Value::Number(index.into()));
+                    }
+                    matches.push(result.into_full_metadata());
+                } else {
+                    matches.push(result);
+                }
             }
             Err(err) => {
                 rule_metrics.errors.increment(1);
@@ -175,7 +193,11 @@ impl StringGroup {
     }
 
     /// Matches the value to this string group and generates matches with metadata
-    pub fn generate_matches(&self, input: &str) -> BTreeMap<String, Vec<GenericMatchResult>> {
+    pub fn generate_matches(
+        &self,
+        input: &str,
+        full_metadata_for_all: bool,
+    ) -> BTreeMap<String, Vec<GenericMatchResult>> {
         let _ = trace_span!("string group", input = input, group = self.name).enter();
         debug!(message = format!("Generating matches for string group: {}", self.name), input = ?input);
         let mut matches: BTreeMap<String, Vec<GenericMatchResult>> = BTreeMap::default();
@@ -186,6 +208,7 @@ impl StringGroup {
                 self.metrics
                     .get(&rule_set.name)
                     .expect("Missing rule set metrics"),
+                full_metadata_for_all,
             );
             matches.insert(rule_set.name.clone(), rule_set_matches);
         }

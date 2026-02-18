@@ -24,7 +24,6 @@ pub struct LevenshteinMetadata {
     distance: u32,
 }
 
-// TODO: replace with custom errors
 impl MatcherRule for LevenshteinRule {
     type OutputMetadata = LevenshteinMetadata;
     type Error = Error;

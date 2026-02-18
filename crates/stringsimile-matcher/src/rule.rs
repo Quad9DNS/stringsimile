@@ -3,6 +3,7 @@
 use std::fmt::Debug;
 
 use serde::Serialize;
+use serde_json::Map;
 use tracing::{debug, trace_span};
 
 use crate::{GenericMatcherResult, MatchResult, MatcherResult};
@@ -94,7 +95,12 @@ pub trait GenericMatcherRule: Send + Sync + 'static {
 
     /// Tries to match input string to target string using this rule, turning result into a generic
     /// value.
-    fn match_rule_generic(&self, input_str: &str, target_str: &str) -> GenericMatcherResult;
+    fn match_rule_generic(
+        &self,
+        input_str: &str,
+        target_str: &str,
+        full_metadata_for_all: bool,
+    ) -> GenericMatcherResult;
 
     /// Clones this generic matcher
     fn clone_dyn(&self) -> Box<dyn GenericMatcherRule>;
@@ -104,7 +110,12 @@ impl<T> GenericMatcherRule for T
 where
     T: MatcherRule + Clone + Send + Sync,
 {
-    fn match_rule_generic(&self, input_str: &str, target_str: &str) -> GenericMatcherResult {
+    fn match_rule_generic(
+        &self,
+        input_str: &str,
+        target_str: &str,
+        full_metadata_for_all: bool,
+    ) -> GenericMatcherResult {
         let _ = trace_span!(
             "rule",
             input = input_str,
@@ -118,9 +129,16 @@ where
             target = target_str,
             rule = T::OutputMetadata::RULE_NAME
         );
-        self.match_rule(input_str, target_str)
-            .map_err(Box::new)?
-            .try_into_generic_result()
+        let result = self.match_rule(input_str, target_str).map_err(Box::new)?;
+        if result.matched || full_metadata_for_all {
+            result.try_into_generic_result()
+        } else {
+            Ok(MatchResult {
+                rule_type: result.rule_type,
+                matched: result.matched,
+                metadata: Map::default(),
+            })
+        }
     }
 
     fn name(&self) -> &str {
@@ -189,12 +207,12 @@ mod tests {
 
         assert!(
             generic_rule
-                .match_rule_generic("test string", "test")
+                .match_rule_generic("test string", "test", false)
                 .is_match()
         );
         assert!(
             !generic_rule
-                .match_rule_generic("some other string", "test")
+                .match_rule_generic("some other string", "test", false)
                 .is_match()
         );
     }

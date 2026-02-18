@@ -2,6 +2,9 @@ name: Build binaries
 
 on: workflow_dispatch
 
+env:
+  RUSTFLAGS: "-C target-cpu=x86-64-v3"
+
 jobs:
   build:
     name: Build

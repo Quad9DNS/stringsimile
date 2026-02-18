@@ -266,7 +266,7 @@ impl StringProcessor {
         let mut matches = Vec::default();
         {
             for rule in rules.iter() {
-                let match_results = rule.generate_matches(name);
+                let match_results = rule.generate_matches(&name, report_all);
                 matches.push((rule.name.clone(), match_results));
             }
         }

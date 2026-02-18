@@ -217,7 +217,7 @@ bench_rule! {
     single_match = "random_sztring_to_find";
     single_mismatch = "some different stringy";
     builder {
-        MatchRatingRule
+        MatchRatingRule::new(TARGET_STR)
     }
 }
 
@@ -226,7 +226,7 @@ bench_rule! {
     single_match = "random_stryng_to_find";
     single_mismatch = "some different string";
     builder {
-        MetaphoneRule { metaphone_type: MetaphoneRuleType::Normal, max_code_length: Some(4) }
+        MetaphoneRule::new(MetaphoneRuleType::Normal, Some(4), TARGET_STR)
     }
 }
 
@@ -235,7 +235,7 @@ bench_rule! {
     single_match = "random_stryng_to_find";
     single_mismatch = "some different string";
     builder {
-        MetaphoneRule { metaphone_type: MetaphoneRuleType::Double, max_code_length: Some(4) }
+        MetaphoneRule::new(MetaphoneRuleType::Double, Some(4), TARGET_STR)
     }
 }
 
@@ -244,7 +244,7 @@ bench_rule! {
     single_match = "random_string_to_fined";
     single_mismatch = "some different stringy";
     builder {
-        NysiisRule::new(false)
+        NysiisRule::new(false, TARGET_STR)
     }
 }
 
@@ -253,7 +253,7 @@ bench_rule! {
     single_match = "random_string_to_fined";
     single_mismatch = "some different stringy";
     builder {
-        NysiisRule::new(true)
+        NysiisRule::new(true, TARGET_STR)
     }
 }
 
@@ -262,7 +262,7 @@ bench_rule! {
     single_match = "random_stryng_to_find";
     single_mismatch = "some different string";
     builder {
-        SoundexRule { soundex_type: SoundexRuleType::Normal, minimum_similarity: 5 }
+        SoundexRule::new(SoundexRuleType::Normal, 5, TARGET_STR)
     }
 }
 
@@ -271,7 +271,7 @@ bench_rule! {
     single_match = "random_stryng_to_find";
     single_mismatch = "some different string";
     builder {
-        SoundexRule { soundex_type: SoundexRuleType::Refined, minimum_similarity: 5 }
+        SoundexRule::new(SoundexRuleType::Refined, 5, TARGET_STR)
     }
 }
 
