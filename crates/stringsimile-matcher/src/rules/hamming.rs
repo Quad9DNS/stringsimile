@@ -24,7 +24,6 @@ pub struct HammingMetadata {
     distance: Option<u32>,
 }
 
-// TODO: replace with custom errors
 impl MatcherRule for HammingRule {
     type OutputMetadata = HammingMetadata;
     type Error = Error;

@@ -76,6 +76,12 @@ pub enum RuleConfigError {
         /// Value that was provided to the rule
         input_value: usize,
     },
+
+    /// Metaphone rule configuration error
+    #[snafu(display(
+        "Invalid target string for Metaphone rule. The string_match must be ASCII for metaphone rule.",
+    ))]
+    MetaphoneNonAsciiTargetError,
 }
 
 impl RuleConfig {
@@ -85,6 +91,7 @@ impl RuleConfig {
     /// cost of missing metadata for mismatches.
     pub fn build(
         &self,
+        target_str: &str,
         ignore_mismatch_metadata: bool,
     ) -> Result<Box<dyn GenericMatcherRule>, Error> {
         Ok(match self {
@@ -105,15 +112,17 @@ impl RuleConfig {
                 Box::new(damerau_levenshtein_config.build(ignore_mismatch_metadata)?)
             }
             RuleConfig::Soundex(soundex_config) => {
-                Box::new(soundex_config.build()?.into_generic_matcher())
+                Box::new(soundex_config.build(target_str)?.into_generic_matcher())
             }
             RuleConfig::Metaphone(metaphone_config) => {
-                Box::new(metaphone_config.build()?.into_generic_matcher())
+                Box::new(metaphone_config.build(target_str)?.into_generic_matcher())
             }
             RuleConfig::Nysiis(nysiis_config) => {
-                Box::new(nysiis_config.build()?.into_generic_matcher())
+                Box::new(nysiis_config.build(target_str)?.into_generic_matcher())
             }
-            RuleConfig::MatchRating => Box::new(MatchRatingConfig.build()?.into_generic_matcher()),
+            RuleConfig::MatchRating => {
+                Box::new(MatchRatingConfig.build(target_str)?.into_generic_matcher())
+            }
         })
     }
 }
@@ -230,7 +239,7 @@ pub struct SoundexConfig {
 }
 
 impl SoundexConfig {
-    fn build(&self) -> Result<SoundexRule, Error> {
+    fn build(&self, target_str: &str) -> Result<SoundexRule, Error> {
         if self.soundex_type == SoundexRuleType::Normal && self.minimum_similarity > 4 {
             return Err(RuleConfigError::SoundexConfigSimilarityError {
                 input_value: self.minimum_similarity,
@@ -238,10 +247,11 @@ impl SoundexConfig {
             .into());
         }
 
-        Ok(SoundexRule {
-            minimum_similarity: self.minimum_similarity,
-            soundex_type: self.soundex_type,
-        })
+        Ok(SoundexRule::new(
+            self.soundex_type,
+            self.minimum_similarity,
+            target_str,
+        ))
     }
 }
 
@@ -261,11 +271,15 @@ const fn default_metaphone_max_code_length() -> Option<usize> {
 }
 
 impl MetaphoneConfig {
-    fn build(&self) -> Result<MetaphoneRule, Error> {
-        Ok(MetaphoneRule {
-            max_code_length: self.max_code_length,
-            metaphone_type: self.metaphone_type,
-        })
+    fn build(&self, target_str: &str) -> Result<MetaphoneRule, Error> {
+        if !target_str.is_ascii() {
+            return Err(Box::new(RuleConfigError::MetaphoneNonAsciiTargetError));
+        }
+        Ok(MetaphoneRule::new(
+            self.metaphone_type,
+            self.max_code_length,
+            target_str,
+        ))
     }
 }
 
@@ -282,8 +296,8 @@ const fn default_nysiis_strict_mode() -> bool {
 }
 
 impl NysiisConfig {
-    fn build(&self) -> Result<NysiisRule, Error> {
-        Ok(NysiisRule::new(self.strict))
+    fn build(&self, target_str: &str) -> Result<NysiisRule, Error> {
+        Ok(NysiisRule::new(self.strict, target_str))
     }
 }
 
@@ -292,8 +306,8 @@ impl NysiisConfig {
 pub struct MatchRatingConfig;
 
 impl MatchRatingConfig {
-    fn build(&self) -> Result<MatchRatingRule, Error> {
-        Ok(MatchRatingRule)
+    fn build(&self, target_str: &str) -> Result<MatchRatingRule, Error> {
+        Ok(MatchRatingRule::new(target_str))
     }
 }
 

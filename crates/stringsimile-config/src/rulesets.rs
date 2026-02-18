@@ -29,14 +29,14 @@ impl RuleSetConfig {
     pub fn into_rule_set(self, ignore_mismatch_metadata: bool) -> Result<RuleSet, Error> {
         Ok(RuleSet {
             name: self.name,
-            string_match: self.string_match,
             split_target: self.split_target,
             ignore_tld: self.ignore_tld,
             rules: self
                 .match_rules
                 .iter()
-                .map(|r| r.build(ignore_mismatch_metadata))
+                .map(|r| r.build(&self.string_match, ignore_mismatch_metadata))
                 .collect::<Result<Vec<_>, _>>()?,
+            string_match: self.string_match,
         })
     }
 }
@@ -97,13 +97,13 @@ mod tests {
                         "string_match": "wikilearning",
                         "match_rules": [
                             {
-                                "rule_type": "levenshtein",
+                                "rule_type": "hamming",
                                 "values": {
                                     "maximum_distance": 3
                                 }
                             },
                             {
-                                "rule_type": "jaro",
+                                "rule_type": "jaro_winkler",
                                 "values": {
                                     "match_percent_threshold": 85
                                 }
@@ -129,6 +129,23 @@ mod tests {
         };
         assert_eq!(3, set_1_rule_1.maximum_distance);
 
-        // let set_2 = wikimedia_group.rule_sets[1];
+        let RuleConfig::Jaro(set_1_rule_2) = &set_1.match_rules[1] else {
+            panic!("Expected jaro rule");
+        };
+        assert_eq!(85.0, set_1_rule_2.match_percent_threshold);
+
+        let set_2 = &wikimedia_group.rule_sets[1];
+        assert_eq!("wikipedia learning brand name", &set_2.name);
+        assert_eq!("wikilearning", &set_2.string_match);
+        assert_eq!(2, set_2.match_rules.len());
+
+        let RuleConfig::Hamming(set_2_rule_1) = &set_2.match_rules[0] else {
+            panic!("Expected hamming rule");
+        };
+        assert_eq!(3, set_2_rule_1.maximum_distance);
+        let RuleConfig::JaroWinkler(set_2_rule_2) = &set_2.match_rules[1] else {
+            panic!("Expected jaro winkler rule");
+        };
+        assert_eq!(85.0, set_2_rule_2.match_percent_threshold);
     }
 }
