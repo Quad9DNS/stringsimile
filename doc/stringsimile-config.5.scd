@@ -16,6 +16,8 @@ Configuration file uses YAML format with the following keys:
   rules. No inputs are used by default.
 	- file_path
 	  Path to file that should be used as input.
+	- pipe_path
+	  Path to pipe that should be used as input.
 	- stdin
 	  Set to true if stdin should be used as input.
 	- kafka
@@ -37,7 +39,7 @@ Configuration file uses YAML format with the following keys:
   Configuration for inputs, where processed objects with match metadata should
   be output to. No outputs are used by default.
 	- file_path
-	  Path to file that should be used as output.
+	  Path to file (or pipe) that should be used as output.
 	- stdout
 	  Set to true if stdout should be used as output.
 	- kafka
@@ -106,6 +108,7 @@ The following example shows default configuration values:
 ```
 input:
   file_path: null
+  pipe_path: null
   stdin: false
   kafka: null
 output:

@@ -48,7 +48,7 @@ impl OutputBuilder for Output {
             Output::Stdout => "stdout".to_string(),
             Output::File(path_buf) => {
                 let file_name = path_buf.to_string_lossy();
-                format!("file{file_name}")
+                format!("file({file_name})")
             }
             #[cfg(feature = "outputs-kafka")]
             Output::Kafka(kafka_output_config) => {

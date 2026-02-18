@@ -29,6 +29,10 @@ pub struct CliArgs {
     #[clap(long, default_value_t = false)]
     pub input_from_stdin: bool,
 
+    /// Optionally set pipe to read input data from.
+    #[clap(long)]
+    pub input_pipe: Option<PathBuf>,
+
     /// Optionally set file to write output data to.
     #[clap(long)]
     pub output_file: Option<PathBuf>,

@@ -45,6 +45,8 @@ struct InputConfig {
     #[serde(default)]
     file_path: Option<PathBuf>,
     #[serde(default)]
+    pipe_path: Option<PathBuf>,
+    #[serde(default)]
     stdin: bool,
     #[cfg(feature = "inputs-kafka")]
     #[serde(default)]
@@ -56,6 +58,9 @@ impl InputConfig {
         let mut result = HashSet::default();
         if let Some(file_path) = &self.file_path {
             result.insert(Input::File(file_path.clone()));
+        }
+        if let Some(pipe_path) = &self.pipe_path {
+            result.insert(Input::Pipe(pipe_path.clone()));
         }
         if self.stdin {
             result.insert(Input::Stdin);
@@ -353,6 +358,12 @@ impl TryFrom<CliArgs> for ServiceConfig {
             new_inputs.insert(Input::File(input_file.clone()));
             // TODO: For now allow just one file config, maybe it would be okay to have multiple?
             base_config.inputs.retain(|i| !matches!(i, Input::File(_)));
+        }
+
+        if let Some(input_pipe) = &value.input_pipe {
+            new_inputs.insert(Input::Pipe(input_pipe.clone()));
+            // TODO: For now allow just one pipe config, maybe it would be okay to have multiple?
+            base_config.inputs.retain(|i| !matches!(i, Input::Pipe(_)));
         }
 
         let mut new_outputs = HashSet::default();

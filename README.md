@@ -24,6 +24,7 @@ Stringsimile supports different inputs, outputs and rules to use when comparing 
 
 - stdin
 - file
+- pipe (unix named pipes, aka FIFO)
 - kafka (when built with kafka support)
 
 ### Supported outputs
