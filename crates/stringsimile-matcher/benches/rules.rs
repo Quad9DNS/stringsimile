@@ -2,6 +2,7 @@ use criterion::{Criterion, criterion_group, criterion_main};
 use stringsimile_matcher::{
     rule::MatcherRule,
     rules::{
+        bitflip::BitflipRule,
         confusables::ConfusablesRule,
         damerau_levenshtein::DamerauLevenshteinRule,
         hamming::HammingRule,
@@ -293,6 +294,42 @@ bench_rule! {
     }
 }
 
+bench_rule! {
+    name = bitflip;
+    single_match = "randomWstring_to_find";
+    single_mismatch = "some different string";
+    builder {
+        BitflipRule::new_dns(TARGET_STR, true)
+    }
+}
+
+bench_rule! {
+    name = bitflip_case_insensitive;
+    single_match = "randomwstring_to_find";
+    single_mismatch = "some different string";
+    builder {
+        BitflipRule::new_dns(TARGET_STR, false)
+    }
+}
+
+bench_rule! {
+    name = bitflip_ascii_printable;
+    single_match = "random[string_to_find";
+    single_mismatch = "some different string";
+    builder {
+        BitflipRule::new_ascii_printable(TARGET_STR, true)
+    }
+}
+
+bench_rule! {
+    name = bitflip_ascii_printable_case_insensitive;
+    single_match = "RANDOM[STRING_TO_FIND";
+    single_mismatch = "some different string";
+    builder {
+        BitflipRule::new_ascii_printable(TARGET_STR, false)
+    }
+}
+
 criterion_group!(
     benches,
     confusables,
@@ -310,5 +347,9 @@ criterion_group!(
     nysiis_strict,
     soundex,
     soundex_refined,
+    bitflip,
+    bitflip_case_insensitive,
+    bitflip_ascii_printable,
+    bitflip_ascii_printable_case_insensitive,
 );
 criterion_main!(benches);

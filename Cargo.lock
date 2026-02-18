@@ -1841,6 +1841,7 @@ version = "0.1.0"
 dependencies = [
  "confusables",
  "criterion",
+ "lazy_static",
  "metrics",
  "rphonetic",
  "serde",

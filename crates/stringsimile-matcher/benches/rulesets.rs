@@ -2,6 +2,7 @@ use criterion::{Criterion, criterion_group, criterion_main};
 use stringsimile_matcher::{
     rule::IntoGenericMatcherRule,
     rules::{
+        bitflip::BitflipRule,
         confusables::ConfusablesRule,
         damerau_levenshtein::DamerauLevenshteinRule,
         hamming::HammingRule,
@@ -196,6 +197,7 @@ bench_ruleset! {
                     Box::new(NysiisRule::new(true, target_str).into_generic_matcher()),
                     Box::new(SoundexRule::new(SoundexRuleType::Normal, 5, target_str).into_generic_matcher()),
                     Box::new(SoundexRule::new(SoundexRuleType::Refined, 5, target_str).into_generic_matcher()),
+                    Box::new(BitflipRule::new_dns(target_str, true)),
                 ]
             }])
         }
@@ -226,6 +228,7 @@ bench_ruleset! {
                     Box::new(NysiisRule::new(true, target_str).into_generic_matcher()),
                     Box::new(SoundexRule::new(SoundexRuleType::Normal, 5, target_str).into_generic_matcher()),
                     Box::new(SoundexRule::new(SoundexRuleType::Refined, 5, target_str).into_generic_matcher()),
+                    Box::new(BitflipRule::new_dns(target_str, true)),
                 ]
             }])
         }
@@ -256,6 +259,7 @@ bench_ruleset! {
                     Box::new(NysiisRule::new(true, target_str).into_generic_matcher()),
                     Box::new(SoundexRule::new(SoundexRuleType::Normal, 5, target_str).into_generic_matcher()),
                     Box::new(SoundexRule::new(SoundexRuleType::Refined, 5, target_str).into_generic_matcher()),
+                    Box::new(BitflipRule::new_dns(target_str, true)),
                 ]
             }])
         }

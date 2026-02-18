@@ -5,6 +5,7 @@ use stringsimile_matcher::{
     Error,
     rule::{GenericMatcherRule, IntoGenericMatcherRule},
     rules::{
+        bitflip::BitflipRule,
         confusables::ConfusablesRule,
         damerau_levenshtein::DamerauLevenshteinRule,
         hamming::HammingRule,
@@ -42,6 +43,8 @@ pub enum RuleConfig {
     Nysiis(NysiisConfig),
     /// Configuration for Match Rating rule
     MatchRating,
+    /// Configuration for Bitflip rule
+    Bitflip(Option<BitflipConfig>),
 }
 
 /// Errors for rule configuration
@@ -82,6 +85,19 @@ pub enum RuleConfigError {
         "Invalid target string for Metaphone rule. The string_match must be ASCII for metaphone rule.",
     ))]
     MetaphoneNonAsciiTargetError,
+
+    /// Bitflip rule configuration error
+    #[snafu(display(
+        "Invalid char subset for Bitflip rule. Only ASCII chars are allowed. Non-ASCII char at byte index {} in \"{}\"",
+        input_str,
+        index
+    ))]
+    BitflipNonAsciiCharError {
+        /// Value that was provided in custom_char_subset field of the rule.
+        input_str: String,
+        /// Position at which non-ASCII char was found.
+        index: usize,
+    },
 }
 
 impl RuleConfig {
@@ -123,6 +139,13 @@ impl RuleConfig {
             RuleConfig::MatchRating => {
                 Box::new(MatchRatingConfig.build(target_str)?.into_generic_matcher())
             }
+            RuleConfig::Bitflip(bitflip_config) => Box::new(
+                bitflip_config
+                    .clone()
+                    .unwrap_or_default()
+                    .build(target_str)?
+                    .into_generic_matcher(),
+            ),
         })
     }
 }
@@ -283,6 +306,15 @@ impl MetaphoneConfig {
     }
 }
 
+impl Default for MetaphoneConfig {
+    fn default() -> Self {
+        Self {
+            max_code_length: default_metaphone_max_code_length(),
+            metaphone_type: Default::default(),
+        }
+    }
+}
+
 /// Configuration for Nysiis rule
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NysiisConfig {
@@ -301,13 +333,91 @@ impl NysiisConfig {
     }
 }
 
+impl Default for NysiisConfig {
+    fn default() -> Self {
+        Self {
+            strict: default_nysiis_strict_mode(),
+        }
+    }
+}
+
 /// Configuration for Match Rating rule
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct MatchRatingConfig;
 
 impl MatchRatingConfig {
     fn build(&self, target_str: &str) -> Result<MatchRatingRule, Error> {
         Ok(MatchRatingRule::new(target_str))
+    }
+}
+
+/// Predefined type of char subset
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum BitflipCharSubset {
+    /// Chars valid in DNS context (a-z,A-Z,0-9,-,.).
+    #[default]
+    Dns,
+    /// All printable ASCII chars.
+    Printable,
+    /// Custom array of valid chars.
+    Custom,
+}
+
+/// Configuration for Biflip rule
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BitflipConfig {
+    /// Predefined char subset or "custom" to use [`BitflipConfig::custom_char_subset`].
+    #[serde(default)]
+    pub char_subset: BitflipCharSubset,
+    /// Custom char subset to use (list of valid characters).
+    #[serde(default)]
+    pub custom_char_subset: String,
+    /// Whether matching with bitflipped variants should be case sensitive.
+    #[serde(default = "default_bitflip_case_sensitive")]
+    pub case_sensitive: bool,
+}
+
+const fn default_bitflip_case_sensitive() -> bool {
+    true
+}
+
+impl BitflipConfig {
+    fn build(&self, target_str: &str) -> Result<BitflipRule, Error> {
+        match self.char_subset {
+            BitflipCharSubset::Dns => Ok(BitflipRule::new_dns(target_str, self.case_sensitive)),
+            BitflipCharSubset::Printable => Ok(BitflipRule::new_ascii_printable(
+                target_str,
+                self.case_sensitive,
+            )),
+            BitflipCharSubset::Custom => {
+                let valid_chars = self
+                    .custom_char_subset
+                    .chars()
+                    .enumerate()
+                    .map(|(i, c)| u8::try_from(c).map_err(|_| i))
+                    .collect::<Result<Vec<_>, _>>()
+                    .map_err(|index| RuleConfigError::BitflipNonAsciiCharError {
+                        input_str: self.custom_char_subset.clone(),
+                        index,
+                    })?;
+                Ok(BitflipRule::new(
+                    &valid_chars,
+                    target_str,
+                    self.case_sensitive,
+                ))
+            }
+        }
+    }
+}
+
+impl Default for BitflipConfig {
+    fn default() -> Self {
+        Self {
+            char_subset: Default::default(),
+            custom_char_subset: Default::default(),
+            case_sensitive: default_bitflip_case_sensitive(),
+        }
     }
 }
 
@@ -602,5 +712,94 @@ mod tests {
         let RuleConfig::MatchRating = serde_json::from_str(json).unwrap() else {
             panic!("Expected Match Rating config");
         };
+    }
+
+    #[test]
+    fn test_parse_bitflip_defaults() {
+        let json = r#"
+        {
+            "rule_type": "bitflip"
+        }
+            "#;
+
+        let RuleConfig::Bitflip(config) = serde_json::from_str(json).unwrap() else {
+            panic!("Expected Biflip config");
+        };
+        let config = config.unwrap_or_default();
+        assert!(config.case_sensitive);
+        assert!(config.custom_char_subset.is_empty());
+        assert!(matches!(config.char_subset, BitflipCharSubset::Dns));
+    }
+
+    #[test]
+    fn test_parse_bitflip_ascii_printable() {
+        let json = r#"
+        {
+            "rule_type": "bitflip",
+            "values": {
+                "char_subset": "printable",
+                "case_sensitive": false
+            }
+        }
+            "#;
+
+        let RuleConfig::Bitflip(config) = serde_json::from_str(json).unwrap() else {
+            panic!("Expected Biflip config");
+        };
+        let config = config.unwrap_or_default();
+        assert!(!config.case_sensitive);
+        assert!(config.custom_char_subset.is_empty());
+        assert!(matches!(config.char_subset, BitflipCharSubset::Printable));
+    }
+
+    #[test]
+    fn test_parse_bitflip_ascii_custom() {
+        let json = r#"
+        {
+            "rule_type": "bitflip",
+            "values": {
+                "char_subset": "custom",
+                "custom_char_subset": "abcdefhijkl",
+                "case_sensitive": true
+            }
+        }
+            "#;
+
+        let RuleConfig::Bitflip(config) = serde_json::from_str(json).unwrap() else {
+            panic!("Expected Biflip config");
+        };
+        let config = config.unwrap_or_default();
+        assert!(config.case_sensitive);
+        assert_eq!(config.custom_char_subset, "abcdefhijkl");
+        assert!(matches!(config.char_subset, BitflipCharSubset::Custom));
+    }
+
+    #[test]
+    fn test_parse_bitflip_non_ascii_chars() {
+        let json = r#"
+        {
+            "rule_type": "bitflip",
+            "values": {
+                "char_subset": "custom",
+                "custom_char_subset": "abcčćddžđ",
+                "case_sensitive": true
+            }
+        }
+            "#;
+
+        let RuleConfig::Bitflip(config) = serde_json::from_str(json).unwrap() else {
+            panic!("Expected Biflip config");
+        };
+        let config = config.unwrap_or_default();
+        let err = config
+            .build("test")
+            .expect_err("Expected Bitflip rule build to faile due to non ascii custom char subset");
+        let RuleConfigError::BitflipNonAsciiCharError { input_str, index } =
+            err.downcast_ref().unwrap()
+        else {
+            panic!("Expected bitflip rule build to fail");
+        };
+        assert_eq!(input_str, "abcčćddžđ");
+        assert_eq!(*index, 3);
     }
 }
