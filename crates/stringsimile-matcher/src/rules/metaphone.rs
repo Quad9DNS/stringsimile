@@ -15,9 +15,42 @@ use crate::{
 #[derive(Debug, Clone)]
 pub struct MetaphoneRule {
     /// Type of soundex (normal or refined)
-    pub metaphone_type: MetaphoneRuleType,
+    metaphone_type: MetaphoneRuleType,
     /// Max code length to generate using metaphone (None for unlimited)
-    pub max_code_length: Option<usize>,
+    max_code_length: Option<usize>,
+    /// Pre-encoded primary target string
+    target_primary: String,
+    /// Pre-encoded alternate target string (only valid for double metaphone)
+    target_alternate: String,
+}
+
+impl MetaphoneRule {
+    /// Creates an instance of metaphone rule with pre-computed target string encoding
+    pub fn new(
+        metaphone_type: MetaphoneRuleType,
+        max_code_length: Option<usize>,
+        target_str: &str,
+    ) -> Self {
+        let (target_primary, target_alternate) = match metaphone_type {
+            MetaphoneRuleType::Normal => (
+                Metaphone::new(max_code_length).encode(target_str),
+                Default::default(),
+            ),
+            MetaphoneRuleType::Double => {
+                let metaphone = DoubleMetaphone::new(max_code_length);
+                (
+                    metaphone.encode(target_str),
+                    metaphone.encode_alternate(target_str),
+                )
+            }
+        };
+        Self {
+            metaphone_type,
+            max_code_length,
+            target_primary,
+            target_alternate,
+        }
+    }
 }
 
 /// Type of Metaphone (normal or double)
@@ -40,13 +73,6 @@ pub enum MetaphoneError {
     NonAsciiInput {
         /// The value of the input string
         input: String,
-    },
-
-    /// Used when target string is not ASCII, since it can't be used with metaphone
-    #[snafu(display("Metaphone matcher failed. Non-ASCII target: {}", target))]
-    NonAsciiTarget {
-        /// The value of the target string
-        target: String,
     },
 }
 
@@ -75,7 +101,7 @@ impl MatcherRule for MetaphoneRule {
     fn match_rule(
         &self,
         input_str: &str,
-        target_str: &str,
+        _target_str: &str,
     ) -> MatcherResult<Self::OutputMetadata, Self::Error> {
         if !input_str.is_ascii() {
             return MatcherResult::new_error(MetaphoneError::NonAsciiInput {
@@ -83,18 +109,11 @@ impl MatcherRule for MetaphoneRule {
             });
         }
 
-        if !target_str.is_ascii() {
-            return MatcherResult::new_error(MetaphoneError::NonAsciiTarget {
-                target: target_str.to_string(),
-            });
-        }
-
         let (metadata, result) = match self.metaphone_type {
             MetaphoneRuleType::Normal => {
                 let metaphone = Metaphone::new(self.max_code_length);
                 let res_code = metaphone.encode(input_str);
-                let target_code = metaphone.encode(target_str);
-                let result = res_code == target_code;
+                let result = res_code == self.target_primary;
                 (
                     MetaphoneMetadata {
                         max_code_length: self.max_code_length,
@@ -109,9 +128,8 @@ impl MatcherRule for MetaphoneRule {
                 let metaphone = DoubleMetaphone::new(self.max_code_length);
                 let primary_code = metaphone.encode(input_str);
                 let alternate_code = metaphone.encode_alternate(input_str);
-                let target_primary = metaphone.encode(target_str);
-                let target_alternate = metaphone.encode_alternate(target_str);
-                let result = primary_code == target_primary || alternate_code == target_alternate;
+                let result =
+                    primary_code == self.target_primary || alternate_code == self.target_alternate;
                 (
                     MetaphoneMetadata {
                         max_code_length: self.max_code_length,
@@ -144,10 +162,7 @@ mod tests {
 
     #[test]
     fn simple_example_normal() {
-        let rule = MetaphoneRule {
-            metaphone_type: MetaphoneRuleType::Normal,
-            max_code_length: Some(4),
-        };
+        let rule = MetaphoneRule::new(MetaphoneRuleType::Normal, Some(4), "Selina");
 
         let result = rule.match_rule("Selena", "Selina");
         assert!(result.is_match());
@@ -160,10 +175,7 @@ mod tests {
 
     #[test]
     fn simple_example_double() {
-        let rule = MetaphoneRule {
-            metaphone_type: MetaphoneRuleType::Double,
-            max_code_length: Some(4),
-        };
+        let rule = MetaphoneRule::new(MetaphoneRuleType::Double, Some(4), "Bryan");
 
         let result = rule.match_rule("Brian", "Bryan");
         assert!(result.is_match());

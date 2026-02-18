@@ -3,6 +3,7 @@
 use std::fmt::Debug;
 
 use serde::Serialize;
+use serde_json::Map;
 use tracing::{debug, trace_span};
 
 use crate::{GenericMatcherResult, MatchResult, MatcherResult};
@@ -27,6 +28,12 @@ pub trait MatcherResultRuleMetadataExt<T: RuleMetadata, E> {
     fn new_match(metadata: T) -> Self;
     /// Creates a new successful no match result
     fn new_no_match(metadata: T) -> Self;
+}
+
+/// Helper functions for creating optimized rule matchers results, when metadata is not required
+pub trait MatcherResultRuleOptionMetadataExt<T: RuleMetadata, E> {
+    /// Creates a new successful no match result, without metadata
+    fn new_no_match_no_metadata() -> Self;
 }
 
 impl<T: Debug, E: Debug> MatcherResultExt<T, E> for MatcherResult<T, E> {
@@ -56,6 +63,30 @@ impl<T: RuleMetadata, E: Debug> MatcherResultRuleMetadataExt<T, E> for MatcherRe
     }
 }
 
+impl<T: RuleMetadata, E: Debug> MatcherResultRuleMetadataExt<T, E> for MatcherResult<Option<T>, E> {
+    fn new_match(metadata: T) -> Self {
+        Self::Ok(MatchResult::new_match(
+            T::RULE_NAME.to_string(),
+            Some(metadata),
+        ))
+    }
+
+    fn new_no_match(metadata: T) -> Self {
+        Self::Ok(MatchResult::new_no_match(
+            T::RULE_NAME.to_string(),
+            Some(metadata),
+        ))
+    }
+}
+
+impl<T: RuleMetadata, E: Debug> MatcherResultRuleOptionMetadataExt<T, E>
+    for MatcherResult<Option<T>, E>
+{
+    fn new_no_match_no_metadata() -> Self {
+        Self::Ok(MatchResult::new_no_match(T::RULE_NAME.to_string(), None))
+    }
+}
+
 /// Interface of a matcher rule.
 /// It defines outputs of the matcher and the actual implementation, since different matchers can
 /// produce different metadata, to give additional information on the match.
@@ -79,6 +110,10 @@ pub trait RuleMetadata: Debug + Serialize {
     const RULE_NAME: &str;
 }
 
+impl<T: RuleMetadata> RuleMetadata for Option<T> {
+    const RULE_NAME: &str = T::RULE_NAME;
+}
+
 /// Conversion trait for turning matcher into generic matchers, to make it easier to use them in
 /// collections.
 pub trait IntoGenericMatcherRule {
@@ -88,13 +123,18 @@ pub trait IntoGenericMatcherRule {
 }
 
 /// Generic matcher rule. Works for all matchers by converting their metadata into JSON value.
-pub trait GenericMatcherRule: Send + 'static {
+pub trait GenericMatcherRule: Send + Sync + 'static {
     /// Name of the rule
     fn name(&self) -> &str;
 
     /// Tries to match input string to target string using this rule, turning result into a generic
     /// value.
-    fn match_rule_generic(&self, input_str: &str, target_str: &str) -> GenericMatcherResult;
+    fn match_rule_generic(
+        &self,
+        input_str: &str,
+        target_str: &str,
+        full_metadata_for_all: bool,
+    ) -> GenericMatcherResult;
 
     /// Clones this generic matcher
     fn clone_dyn(&self) -> Box<dyn GenericMatcherRule>;
@@ -102,9 +142,14 @@ pub trait GenericMatcherRule: Send + 'static {
 
 impl<T> GenericMatcherRule for T
 where
-    T: MatcherRule + Clone + Send,
+    T: MatcherRule + Clone + Send + Sync,
 {
-    fn match_rule_generic(&self, input_str: &str, target_str: &str) -> GenericMatcherResult {
+    fn match_rule_generic(
+        &self,
+        input_str: &str,
+        target_str: &str,
+        full_metadata_for_all: bool,
+    ) -> GenericMatcherResult {
         let _ = trace_span!(
             "rule",
             input = input_str,
@@ -118,9 +163,16 @@ where
             target = target_str,
             rule = T::OutputMetadata::RULE_NAME
         );
-        self.match_rule(input_str, target_str)
-            .map_err(Box::new)?
-            .try_into_generic_result()
+        let result = self.match_rule(input_str, target_str).map_err(Box::new)?;
+        if result.matched || full_metadata_for_all {
+            result.try_into_generic_result()
+        } else {
+            Ok(MatchResult {
+                rule_type: result.rule_type,
+                matched: result.matched,
+                metadata: Map::default(),
+            })
+        }
     }
 
     fn name(&self) -> &str {
@@ -189,12 +241,12 @@ mod tests {
 
         assert!(
             generic_rule
-                .match_rule_generic("test string", "test")
+                .match_rule_generic("test string", "test", false)
                 .is_match()
         );
         assert!(
             !generic_rule
-                .match_rule_generic("some other string", "test")
+                .match_rule_generic("some other string", "test", false)
                 .is_match()
         );
     }

@@ -18,7 +18,6 @@ pub struct ConfusablesRule;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ConfusablesMetadata;
 
-// TODO replace with custom error
 impl MatcherRule for ConfusablesRule {
     type OutputMetadata = ConfusablesMetadata;
     type Error = Error;

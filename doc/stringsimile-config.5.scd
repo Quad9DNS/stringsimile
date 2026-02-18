@@ -69,7 +69,10 @@ Configuration file uses YAML format with the following keys:
 	  Any failures in matching will just pass through the object unmodified.
 	- report_all
 	  Set to true to put matching metadata in all objects, regardless of
-	  match result. Useful for debugging the rules.
+	  match result. Useful for debugging the rules. This affects performance
+	  - besides the cost of writing metadata for all rules, many rules are
+	  optimized to fail faster if metadata is not required for failed
+	  matches.
 - metrics
   Configuration for metrics exporters. Metrics exporters export metrics in
   Prometheus format.

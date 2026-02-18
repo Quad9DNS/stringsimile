@@ -15,6 +15,7 @@ homepage = "https://github.com/Quad9DNS/stringsimile"
 stringsimile-matcher = { path = "./crates/stringsimile-matcher" }
 stringsimile-config = { path = "./crates/stringsimile-config" }
 
+arc-swap = { version = "1.8.1" }
 async-stream = { version = "0.3.6" }
 clap = { version = "4.5.36" }
 confusables = { version = "0.1.0" }

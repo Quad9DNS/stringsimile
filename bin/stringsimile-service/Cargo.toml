@@ -92,6 +92,7 @@ outputs-kafka = ["dep:rdkafka"]
 stringsimile-matcher.workspace = true
 stringsimile-config.workspace = true
 
+arc-swap.workspace = true
 async-stream.workspace = true
 clap = { workspace = true, features = ["derive"] }
 exitcode.workspace = true
@@ -115,9 +116,13 @@ walkdir.workspace = true
 criterion.workspace = true
 tempfile.workspace = true
 
+[lib]
+bench = false
+
 [[bin]]
 name = "stringsimile"
 path = "src/main.rs"
+bench = false
 
 [[bench]]
 name = "service"

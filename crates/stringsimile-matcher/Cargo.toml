@@ -35,6 +35,9 @@ triple_accel = { workspace = true, optional = true }
 [dev-dependencies]
 criterion.workspace = true
 
+[lib]
+bench = false
+
 [[bench]]
 name = "rules"
 harness = false

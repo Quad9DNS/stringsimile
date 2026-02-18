@@ -121,7 +121,7 @@ const INPUT_DATA: [&str; 100] = [
 const TARGET_STR: &str = "random_string_to_find";
 
 macro_rules! bench_rule {
-    (name = $rule_name:ident; builder { $builder:expr }) => {
+    (name = $rule_name:ident; single_match = $single_match:expr; single_mismatch = $single_mismatch:expr; builder { $builder:expr }) => {
         fn $rule_name(c: &mut Criterion) {
             let rule = $builder;
             let mut group = c.benchmark_group(stringify!($rule_name));
@@ -136,12 +136,33 @@ macro_rules! bench_rule {
                 });
             });
             group.finish();
+
+            let mut group = c.benchmark_group(stringify!($rule_name).to_string() + "/single_match");
+            group.throughput(criterion::Throughput::Bytes($single_match.len() as u64));
+            group.bench_function(stringify!($rule_name), |b| {
+                b.iter(|| {
+                    let _ = rule.match_rule($single_match, TARGET_STR);
+                });
+            });
+            group.finish();
+
+            let mut group =
+                c.benchmark_group(stringify!($rule_name).to_string() + "/single_mismatch");
+            group.throughput(criterion::Throughput::Bytes($single_mismatch.len() as u64));
+            group.bench_function(stringify!($rule_name), |b| {
+                b.iter(|| {
+                    let _ = rule.match_rule($single_mismatch, TARGET_STR);
+                });
+            });
+            group.finish();
         }
     };
 }
 
 bench_rule! {
     name = confusables;
+    single_match = "random_string_to_fіnd";
+    single_mismatch = "some different string";
     builder {
         ConfusablesRule
     }
@@ -149,20 +170,44 @@ bench_rule! {
 
 bench_rule! {
     name = levenshtein;
+    single_match = "ranodm_string_to_find";
+    single_mismatch = "some different string";
     builder {
-        LevenshteinRule { maximum_distance: 5 }
+        LevenshteinRule { maximum_distance: 5, ignore_mismatch_metadata: false }
+    }
+}
+
+bench_rule! {
+    name = levenshtein_optimized_mismatch;
+    single_match = "ranodm_string_to_find";
+    single_mismatch = "some different string";
+    builder {
+        LevenshteinRule { maximum_distance: 5, ignore_mismatch_metadata: true }
     }
 }
 
 bench_rule! {
     name = damerau_levenshtein;
+    single_match = "ranodm_string_to_find";
+    single_mismatch = "some different string";
     builder {
-        DamerauLevenshteinRule { maximum_distance: 5 }
+        DamerauLevenshteinRule { maximum_distance: 5, ignore_mismatch_metadata: false }
+    }
+}
+
+bench_rule! {
+    name = damerau_levenshtein_optimized_mismatch;
+    single_match = "ranodm_string_to_find";
+    single_mismatch = "some different string";
+    builder {
+        DamerauLevenshteinRule { maximum_distance: 5, ignore_mismatch_metadata: true }
     }
 }
 
 bench_rule! {
     name = hamming;
+    single_match = "ranodm_string_to_find";
+    single_mismatch = "some different string";
     builder {
         HammingRule { maximum_distance: 5 }
     }
@@ -170,6 +215,8 @@ bench_rule! {
 
 bench_rule! {
     name = jaro;
+    single_match = "rendom_string_to_find";
+    single_mismatch = "some different string";
     builder {
         JaroRule { match_percent: 0.5 }
     }
@@ -177,6 +224,8 @@ bench_rule! {
 
 bench_rule! {
     name = jaro_winkler;
+    single_match = "rendom_string_to_find";
+    single_mismatch = "some different string";
     builder {
         JaroWinklerRule { match_percent: 0.5 }
     }
@@ -184,50 +233,64 @@ bench_rule! {
 
 bench_rule! {
     name = match_rating;
+    single_match = "random_sztring_to_find";
+    single_mismatch = "some different stringy";
     builder {
-        MatchRatingRule
+        MatchRatingRule::new(TARGET_STR)
     }
 }
 
 bench_rule! {
     name = metaphone_normal;
+    single_match = "random_stryng_to_find";
+    single_mismatch = "some different string";
     builder {
-        MetaphoneRule { metaphone_type: MetaphoneRuleType::Normal, max_code_length: Some(4) }
+        MetaphoneRule::new(MetaphoneRuleType::Normal, Some(4), TARGET_STR)
     }
 }
 
 bench_rule! {
     name = metaphone_double;
+    single_match = "random_stryng_to_find";
+    single_mismatch = "some different string";
     builder {
-        MetaphoneRule { metaphone_type: MetaphoneRuleType::Double, max_code_length: Some(4) }
+        MetaphoneRule::new(MetaphoneRuleType::Double, Some(4), TARGET_STR)
     }
 }
 
 bench_rule! {
     name = nysiis;
+    single_match = "random_string_to_fined";
+    single_mismatch = "some different stringy";
     builder {
-        NysiisRule::new(false)
+        NysiisRule::new(false, TARGET_STR)
     }
 }
 
 bench_rule! {
     name = nysiis_strict;
+    single_match = "random_string_to_fined";
+    single_mismatch = "some different stringy";
     builder {
-        NysiisRule::new(true)
+        NysiisRule::new(true, TARGET_STR)
     }
 }
 
 bench_rule! {
     name = soundex;
+    single_match = "random_stryng_to_find";
+    single_mismatch = "some different string";
     builder {
-        SoundexRule { soundex_type: SoundexRuleType::Normal, minimum_similarity: 5 }
+        SoundexRule::new(SoundexRuleType::Normal, 5, TARGET_STR)
     }
 }
 
 bench_rule! {
     name = soundex_refined;
+    single_match = "random_stryng_to_find";
+    single_mismatch = "some different string";
     builder {
-        SoundexRule { soundex_type: SoundexRuleType::Refined, minimum_similarity: 5 }
+        SoundexRule::new(SoundexRuleType::Refined, 5, TARGET_STR)
     }
 }
 
@@ -277,7 +340,9 @@ criterion_group!(
     benches,
     confusables,
     levenshtein,
+    levenshtein_optimized_mismatch,
     damerau_levenshtein,
+    damerau_levenshtein_optimized_mismatch,
     hamming,
     jaro,
     jaro_winkler,

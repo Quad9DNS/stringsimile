@@ -71,6 +71,10 @@ dev:
 fmt:
 	cargo fmt
 
+.PHONY: fmt-check
+fmt-check:
+	cargo fmt --check
+
 .PHONY: lint
 lint:
 	cargo clippy
@@ -82,7 +86,7 @@ check:
 	cargo check --no-default-features --features basic
 
 .PHONY: check-all
-check-all: check lint test check-deny
+check-all: check lint test check-deny fmt-check
 
 .PHONY: check-deny
 check-deny:

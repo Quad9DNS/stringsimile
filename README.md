@@ -105,6 +105,8 @@ $ make
 # make install
 ```
 
+For maximum efficiency, use `RUSTFLAGS="-C target-cpu=native"` when running make, if portability is not an issue.
+
 ## License
 Stringsimile - tool for comparing target strings from JSON-structured streams against a large set of other strings using rules such as Levenshtein, Jaro, Soundex, IDN Confusables and more.
 Copyright (C) 2025 Quad9 DNS

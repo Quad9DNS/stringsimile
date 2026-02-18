@@ -1,40 +1,49 @@
-name: Build binaries
+name: CI
 
-on: workflow_dispatch
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: write
+  deployments: write
 
 jobs:
-  build:
-    name: Build
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
 
     strategy:
       matrix:
-        variant: [default, all-dynamic, basic]
         target: [x86_64-unknown-linux-gnu, x86_64-unknown-linux-musl]
-        package: [deb, rpm, binary]
-        include:
-          - target: x86_64-unknown-linux-musl
-            needs-musl: true
-            output-file-name: musl
-          - target: x86_64-unknown-linux-gnu
-            output-file-name: gnu
-          - variant: all-dynamic
-            needs-librdkafka: true
-          - package: deb
-            needs-cargo-deb: true
-            build-deb: true
-            target-dir: debian
-          - package: rpm
-            needs-cargo-generate-rpm: true
-            needs-binary-build: true
-            build-rpm: true
-            target-dir: generate-rpm
-          - package: binary
-            needs-binary-build: true
-            target-dir: release/stringsimile
-        exclude:
-          - target: x86_64-unknown-linux-musl
-            variant: all-dynamic
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup rust toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          target: ${{ matrix.target }}
+
+      - name: Setup cargo deny
+        run: cargo install cargo-deny
+
+      - name: Run checks
+        run: make check-all
+
+      - name: Run tests
+        run: make test
+
+  build:
+    name: Try building the binary and docs
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        target: [x86_64-unknown-linux-gnu, x86_64-unknown-linux-musl]
 
     steps:
       - name: Checkout repo
@@ -62,35 +71,39 @@ jobs:
       - name: Build docs
         run: make doc
 
-      - name: Install cargo-deb
-        if: ${{ matrix.needs-cargo-deb }}
-        run: cargo install cargo-deb
+      - name: Build basic binary
+        run: make basic
 
-      - name: Install cargo-generate-rpm
-        if: ${{ matrix.needs-cargo-generate-rpm }}
-        run: cargo install cargo-generate-rpm
+      - name: Build full binary
+        run: make all
 
-      - name: Build binary
-        if: ${{ matrix.needs-binary-build }}
-        env:
-          CARGO_TARGET_DIR: "target/${{ matrix.variant }}"
-        run: |
-          cargo build --target "${{ matrix.target }}" --release --no-default-features --features "${{ matrix.variant }}"
+  bench:
+    name: Run all benchmarks
+    runs-on: ubuntu-latest
 
-      - name: Build deb
-        if: ${{ matrix.build-deb }}
-        env:
-          CARGO_TARGET_DIR: "target/${{ matrix.variant }}"
-        run: |
-          cargo deb --variant "${{ matrix.variant }}" --target "${{ matrix.target }}"
+    strategy:
+      matrix:
+        target: [x86_64-unknown-linux-gnu, x86_64-unknown-linux-musl]
 
-      - name: Build rpm
-        if: ${{ matrix.build-rpm }}
-        run: |
-          cargo generate-rpm -p bin/stringsimile-service --target-dir "target/${{ matrix.variant }}" --variant "${{ matrix.variant }}" --target "${{ matrix.target }}"
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
-      - name: Upload build files
-        uses: actions/upload-artifact@v4
+      - name: Setup rust toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
-          name: stringsimile-${{ matrix.variant }}-${{ matrix.output-file-name }}-${{ matrix.package }}
-          path: ./target/${{ matrix.variant }}/${{ matrix.target }}/${{ matrix.target-dir }}
+          target: ${{ matrix.target }}
+
+      - name: Run benchmarks
+        run: cargo bench -- --output-format bencher | tee benchmark.txt
+
+      - name: Store benchmark result
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          tool: 'cargo'
+          output-file-path: benchmark.txt
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: ${{ github.event_name != 'pull_request' }}
+          comment-on-alert: true
+          fail-on-alert: true
+          summary-always: true

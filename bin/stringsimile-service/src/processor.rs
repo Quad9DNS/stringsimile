@@ -4,9 +4,10 @@ use std::{
     io::{BufReader, Seek},
     panic,
     path::PathBuf,
-    sync::{Arc, Mutex},
+    sync::Arc,
 };
 
+use arc_swap::ArcSwap;
 use futures::{TryFutureExt, stream::FusedStream};
 use metrics::counter;
 use serde_json::{Map, Value};
@@ -24,7 +25,7 @@ use crate::{
         FileReadSnafu, InputConfigSnafu, InputParsingSnafu, RuleParsingSnafu,
         StringsimileServiceError,
     },
-    field_access::{FieldAccessor, UnwrappedFields},
+    field_access::FieldAccessor,
     inputs::{InputBuilder, InputStreamBuilder},
     message::StringsimileMessage,
     metrics::ExportMetrics,
@@ -34,14 +35,14 @@ use crate::{
 
 pub struct StringProcessor {
     config: ServiceConfig,
-    rules: Arc<Mutex<Vec<StringGroup>>>,
+    rules: ArcSwap<Vec<StringGroup>>,
 }
 
 impl StringProcessor {
     pub fn from_config(config: ServiceConfig) -> Self {
         Self {
             config,
-            rules: Arc::default(),
+            rules: ArcSwap::default(),
         }
     }
 
@@ -91,11 +92,11 @@ impl StringProcessor {
 
         let built_rules = parsed_rules
             .into_iter()
-            .map(|c| c.into_string_group())
+            .map(|c| c.into_string_group(self.config.matcher.report_all))
             .collect::<Result<Vec<StringGroup>, _>>()
             .context(RuleParsingSnafu)?;
         built_rules.export_metrics();
-        *self.rules.lock().expect("mutex poisoned") = built_rules;
+        self.rules.store(Arc::new(built_rules));
         Ok(())
     }
 
@@ -140,7 +141,7 @@ impl StringProcessor {
                 return;
             }
         };
-        let rules = Arc::clone(&self.rules);
+        let rules = self.rules.load_full();
         let report_all = self.config.matcher.report_all;
 
         let mut output_tasks = JoinSet::new();
@@ -162,7 +163,7 @@ impl StringProcessor {
         let mut transform_futures = futures::StreamExt::buffer_unordered(
             input_streams.map(|(input_name, message)| {
                 tokio::spawn(Self::process_input_data(
-                    rules.lock().expect("mutex poisoned").clone(),
+                    Arc::clone(&rules),
                     report_all,
                     input_field.clone(),
                     input_name,
@@ -235,7 +236,7 @@ impl StringProcessor {
     }
 
     async fn process_input_data(
-        rules: Vec<StringGroup>,
+        rules: Arc<Vec<StringGroup>>,
         report_all: bool,
         input_field: FieldAccessor,
         input_name: String,
@@ -247,10 +248,10 @@ impl StringProcessor {
             return StringsimileMessage::from_parts(original_input, message);
         };
 
-        let UnwrappedFields {
-            input_object_map: mut map,
-            input_field_value: name,
-        } = match input_field.access_field(message).context(InputParsingSnafu) {
+        let name = match input_field
+            .access_field(&message)
+            .context(InputParsingSnafu)
+        {
             Ok(fields) => fields,
             Err(error) => {
                 warn!(
@@ -265,7 +266,7 @@ impl StringProcessor {
         let mut matches = Vec::default();
         {
             for rule in rules.iter() {
-                let match_results = rule.generate_matches(&name);
+                let match_results = rule.generate_matches(name, report_all);
                 matches.push((rule.name.clone(), match_results));
             }
         }
@@ -303,6 +304,13 @@ impl StringProcessor {
                         .collect(),
                 ),
             );
+            let Value::Object(mut map) = message else {
+                warn!(
+                    "Input parsing error!\nExpected JSON object, but found: {}",
+                    original_input
+                );
+                return StringsimileMessage::from_parts(original_input, None);
+            };
             map.insert("stringsimile".to_string(), Value::Object(inner_data));
             StringsimileMessage::from_parts(original_input, Some(Value::Object(map)))
         }

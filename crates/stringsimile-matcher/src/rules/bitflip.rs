@@ -140,8 +140,11 @@ mod tests {
 
         let result = rule.match_rule("wwwngoogle.com", "www.google.com");
         assert!(result.is_match());
-        let result = rule.match_rule("licrosoft", "microsoft");
+        let result = rule.match_rule("www.googlu.com", "www.google.com");
         assert!(result.is_match());
+        let result = rule.match_rule("licrosoft", "microsoft");
+        // Usually would be match, but we cache the target string
+        assert!(!result.is_match());
     }
 
     #[test]
@@ -150,8 +153,11 @@ mod tests {
 
         let result = rule.match_rule("WWWNGOOGLE.COM", "www.google.com");
         assert!(result.is_match());
-        let result = rule.match_rule("licrosoft", "microsoft");
+        let result = rule.match_rule("WWW.GOOGLU.COM", "www.google.com");
         assert!(result.is_match());
+        let result = rule.match_rule("licrosoft", "microsoft");
+        // Usually would be match, but we cache the target string
+        assert!(!result.is_match());
     }
 
     #[test]
@@ -160,6 +166,8 @@ mod tests {
 
         let result = rule.match_rule("wwwngoogle.com", "www.google.com");
         assert!(result.is_match());
+        let result = rule.match_rule("www.googlu.com", "www.google.com");
+        assert!(!result.is_match());
         let result = rule.match_rule("licrosoft", "microsoft");
         assert!(!result.is_match());
     }

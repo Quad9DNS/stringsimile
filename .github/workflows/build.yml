@@ -1,0 +1,99 @@
+name: Build binaries
+
+on: workflow_dispatch
+
+env:
+  RUSTFLAGS: "-C target-cpu=x86-64-v3"
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        variant: [default, all-dynamic, basic]
+        target: [x86_64-unknown-linux-gnu, x86_64-unknown-linux-musl]
+        package: [deb, rpm, binary]
+        include:
+          - target: x86_64-unknown-linux-musl
+            needs-musl: true
+            output-file-name: musl
+          - target: x86_64-unknown-linux-gnu
+            output-file-name: gnu
+          - variant: all-dynamic
+            needs-librdkafka: true
+          - package: deb
+            needs-cargo-deb: true
+            build-deb: true
+            target-dir: debian
+          - package: rpm
+            needs-cargo-generate-rpm: true
+            needs-binary-build: true
+            build-rpm: true
+            target-dir: generate-rpm
+          - package: binary
+            needs-binary-build: true
+            target-dir: release/stringsimile
+        exclude:
+          - target: x86_64-unknown-linux-musl
+            variant: all-dynamic
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup rust toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          target: ${{ matrix.target }}
+
+      - name: Install librdkafka
+        if: ${{ matrix.needs-librdkafka }}
+        run: sudo apt-get update -y && sudo apt-get -y install librdkafka-dev
+
+      - name: Install musl-tools
+        if: ${{ matrix.needs-musl }}
+        run: |
+          sudo apt-get update -y && sudo apt-get -y install musl-tools g++
+          # HACK to resolve musl build - will probably cause an issue in the future
+          sudo ln -s /bin/g++ /bin/musl-g++
+
+      - name: Install scdoc
+        run: sudo apt-get update -y && sudo apt-get -y install scdoc
+
+      - name: Build docs
+        run: make doc
+
+      - name: Install cargo-deb
+        if: ${{ matrix.needs-cargo-deb }}
+        run: cargo install cargo-deb
+
+      - name: Install cargo-generate-rpm
+        if: ${{ matrix.needs-cargo-generate-rpm }}
+        run: cargo install cargo-generate-rpm
+
+      - name: Build binary
+        if: ${{ matrix.needs-binary-build }}
+        env:
+          CARGO_TARGET_DIR: "target/${{ matrix.variant }}"
+        run: |
+          cargo build --target "${{ matrix.target }}" --release --no-default-features --features "${{ matrix.variant }}"
+
+      - name: Build deb
+        if: ${{ matrix.build-deb }}
+        env:
+          CARGO_TARGET_DIR: "target/${{ matrix.variant }}"
+        run: |
+          cargo deb --variant "${{ matrix.variant }}" --target "${{ matrix.target }}"
+
+      - name: Build rpm
+        if: ${{ matrix.build-rpm }}
+        run: |
+          cargo generate-rpm -p bin/stringsimile-service --target-dir "target/${{ matrix.variant }}" --variant "${{ matrix.variant }}" --target "${{ matrix.target }}"
+
+      - name: Upload build files
+        uses: actions/upload-artifact@v4
+        with:
+          name: stringsimile-${{ matrix.variant }}-${{ matrix.output-file-name }}-${{ matrix.package }}
+          path: ./target/${{ matrix.variant }}/${{ matrix.target }}/${{ matrix.target-dir }}
