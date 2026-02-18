@@ -30,6 +30,12 @@ pub trait MatcherResultRuleMetadataExt<T: RuleMetadata, E> {
     fn new_no_match(metadata: T) -> Self;
 }
 
+/// Helper functions for creating optimized rule matchers results, when metadata is not required
+pub trait MatcherResultRuleOptionMetadataExt<T: RuleMetadata, E> {
+    /// Creates a new successful no match result, without metadata
+    fn new_no_match_no_metadata() -> Self;
+}
+
 impl<T: Debug, E: Debug> MatcherResultExt<T, E> for MatcherResult<T, E> {
     fn new_error(err: E) -> Self {
         Self::Err(err)
@@ -57,6 +63,30 @@ impl<T: RuleMetadata, E: Debug> MatcherResultRuleMetadataExt<T, E> for MatcherRe
     }
 }
 
+impl<T: RuleMetadata, E: Debug> MatcherResultRuleMetadataExt<T, E> for MatcherResult<Option<T>, E> {
+    fn new_match(metadata: T) -> Self {
+        Self::Ok(MatchResult::new_match(
+            T::RULE_NAME.to_string(),
+            Some(metadata),
+        ))
+    }
+
+    fn new_no_match(metadata: T) -> Self {
+        Self::Ok(MatchResult::new_no_match(
+            T::RULE_NAME.to_string(),
+            Some(metadata),
+        ))
+    }
+}
+
+impl<T: RuleMetadata, E: Debug> MatcherResultRuleOptionMetadataExt<T, E>
+    for MatcherResult<Option<T>, E>
+{
+    fn new_no_match_no_metadata() -> Self {
+        Self::Ok(MatchResult::new_no_match(T::RULE_NAME.to_string(), None))
+    }
+}
+
 /// Interface of a matcher rule.
 /// It defines outputs of the matcher and the actual implementation, since different matchers can
 /// produce different metadata, to give additional information on the match.
@@ -78,6 +108,10 @@ pub trait MatcherRule: 'static {
 pub trait RuleMetadata: Debug + Serialize {
     /// Name of the rule
     const RULE_NAME: &str;
+}
+
+impl<T: RuleMetadata> RuleMetadata for Option<T> {
+    const RULE_NAME: &str = T::RULE_NAME;
 }
 
 /// Conversion trait for turning matcher into generic matchers, to make it easier to use them in

@@ -172,7 +172,16 @@ bench_rule! {
     single_match = "ranodm_string_to_find";
     single_mismatch = "some different string";
     builder {
-        LevenshteinRule { maximum_distance: 5 }
+        LevenshteinRule { maximum_distance: 5, ignore_mismatch_metadata: false }
+    }
+}
+
+bench_rule! {
+    name = levenshtein_optimized_mismatch;
+    single_match = "ranodm_string_to_find";
+    single_mismatch = "some different string";
+    builder {
+        LevenshteinRule { maximum_distance: 5, ignore_mismatch_metadata: true }
     }
 }
 
@@ -181,7 +190,16 @@ bench_rule! {
     single_match = "ranodm_string_to_find";
     single_mismatch = "some different string";
     builder {
-        DamerauLevenshteinRule { maximum_distance: 5 }
+        DamerauLevenshteinRule { maximum_distance: 5, ignore_mismatch_metadata: false }
+    }
+}
+
+bench_rule! {
+    name = damerau_levenshtein_optimized_mismatch;
+    single_match = "ranodm_string_to_find";
+    single_mismatch = "some different string";
+    builder {
+        DamerauLevenshteinRule { maximum_distance: 5, ignore_mismatch_metadata: true }
     }
 }
 
@@ -279,7 +297,9 @@ criterion_group!(
     benches,
     confusables,
     levenshtein,
+    levenshtein_optimized_mismatch,
     damerau_levenshtein,
+    damerau_levenshtein_optimized_mismatch,
     hamming,
     jaro,
     jaro_winkler,

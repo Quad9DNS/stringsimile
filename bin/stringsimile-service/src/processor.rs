@@ -92,7 +92,7 @@ impl StringProcessor {
 
         let built_rules = parsed_rules
             .into_iter()
-            .map(|c| c.into_string_group())
+            .map(|c| c.into_string_group(self.config.matcher.report_all))
             .collect::<Result<Vec<StringGroup>, _>>()
             .context(RuleParsingSnafu)?;
         built_rules.export_metrics();
