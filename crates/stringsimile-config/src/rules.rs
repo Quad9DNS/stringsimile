@@ -170,6 +170,7 @@ impl DamerauLevenshteinConfig {
     fn build(&self, ignore_mismatch_metadata: bool) -> Result<DamerauLevenshteinRule, Error> {
         Ok(DamerauLevenshteinRule {
             maximum_distance: self.maximum_distance,
+            ignore_mismatch_metadata,
         })
     }
 }
