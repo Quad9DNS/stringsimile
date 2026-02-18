@@ -25,7 +25,7 @@ use crate::{
         FileReadSnafu, InputConfigSnafu, InputParsingSnafu, RuleParsingSnafu,
         StringsimileServiceError,
     },
-    field_access::{FieldAccessor, UnwrappedFields},
+    field_access::FieldAccessor,
     inputs::{InputBuilder, InputStreamBuilder},
     message::StringsimileMessage,
     metrics::ExportMetrics,
@@ -248,10 +248,10 @@ impl StringProcessor {
             return StringsimileMessage::from_parts(original_input, message);
         };
 
-        let UnwrappedFields {
-            input_object_map: mut map,
-            input_field_value: name,
-        } = match input_field.access_field(message).context(InputParsingSnafu) {
+        let name = match input_field
+            .access_field(&message)
+            .context(InputParsingSnafu)
+        {
             Ok(fields) => fields,
             Err(error) => {
                 warn!(
@@ -266,7 +266,7 @@ impl StringProcessor {
         let mut matches = Vec::default();
         {
             for rule in rules.iter() {
-                let match_results = rule.generate_matches(&name, report_all);
+                let match_results = rule.generate_matches(name, report_all);
                 matches.push((rule.name.clone(), match_results));
             }
         }
@@ -304,6 +304,13 @@ impl StringProcessor {
                         .collect(),
                 ),
             );
+            let Value::Object(mut map) = message else {
+                warn!(
+                    "Input parsing error!\nExpected JSON object, but found: {}",
+                    original_input
+                );
+                return StringsimileMessage::from_parts(original_input, None);
+            };
             map.insert("stringsimile".to_string(), Value::Object(inner_data));
             StringsimileMessage::from_parts(original_input, Some(Value::Object(map)))
         }

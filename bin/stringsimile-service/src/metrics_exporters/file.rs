@@ -47,7 +47,7 @@ impl MetricsExporterTaskBuilder for FileMetricsExporter {
                 .create(true)
                 .truncate(true)
                 .mode(self.config.mode)
-                .open(self.config.file_path.clone())
+                .open(&self.config.file_path)
                 .await
             {
                 Ok(file) => file,
