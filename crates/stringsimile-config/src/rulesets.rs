@@ -23,7 +23,10 @@ pub struct RuleSetConfig {
 
 impl RuleSetConfig {
     /// Convert into RuleSet that can be used for matching
-    pub fn into_rule_set(self) -> Result<RuleSet, Error> {
+    ///
+    /// `ignore_mismatch_metadata` flag can be enabled to potentially speed up some rules, at the
+    /// cost of missing metadata for mismatches.
+    pub fn into_rule_set(self, ignore_mismatch_metadata: bool) -> Result<RuleSet, Error> {
         Ok(RuleSet {
             name: self.name,
             string_match: self.string_match,
@@ -32,7 +35,7 @@ impl RuleSetConfig {
             rules: self
                 .match_rules
                 .iter()
-                .map(RuleConfig::build)
+                .map(|r| r.build(ignore_mismatch_metadata))
                 .collect::<Result<Vec<_>, _>>()?,
         })
     }
@@ -47,12 +50,15 @@ pub struct StringGroupConfig {
 
 impl StringGroupConfig {
     /// Convert into StringGroup that can be used for matching
-    pub fn into_string_group(self) -> Result<StringGroup, Error> {
+    ///
+    /// `ignore_mismatch_metadata` flag can be enabled to potentially speed up some rules, at the
+    /// cost of missing metadata for mismatches.
+    pub fn into_string_group(self, ignore_mismatch_metadata: bool) -> Result<StringGroup, Error> {
         Ok(StringGroup::new(
             self.name,
             self.rule_sets
                 .into_iter()
-                .map(RuleSetConfig::into_rule_set)
+                .map(|s| s.into_rule_set(ignore_mismatch_metadata))
                 .collect::<Result<Vec<_>, _>>()?,
         ))
     }

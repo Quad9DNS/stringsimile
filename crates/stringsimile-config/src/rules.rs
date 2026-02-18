@@ -80,11 +80,19 @@ pub enum RuleConfigError {
 
 impl RuleConfig {
     /// Generates a rule implementation from this config
-    pub fn build(&self) -> Result<Box<dyn GenericMatcherRule>, Error> {
+    ///
+    /// `ignore_mismatch_metadata` flag can be enabled to potentially speed up some rules, at the
+    /// cost of missing metadata for mismatches.
+    pub fn build(
+        &self,
+        ignore_mismatch_metadata: bool,
+    ) -> Result<Box<dyn GenericMatcherRule>, Error> {
         Ok(match self {
-            RuleConfig::Levenshtein(levenshtein_config) => {
-                Box::new(levenshtein_config.build()?.into_generic_matcher())
-            }
+            RuleConfig::Levenshtein(levenshtein_config) => Box::new(
+                levenshtein_config
+                    .build(ignore_mismatch_metadata)?
+                    .into_generic_matcher(),
+            ),
             RuleConfig::Hamming(hamming_config) => {
                 Box::new(hamming_config.build()?.into_generic_matcher())
             }
@@ -94,7 +102,7 @@ impl RuleConfig {
                 Box::new(jaro_winkler_config.build()?.into_generic_matcher())
             }
             RuleConfig::DamerauLevenshtein(damerau_levenshtein_config) => {
-                Box::new(damerau_levenshtein_config.build()?.into_generic_matcher())
+                Box::new(damerau_levenshtein_config.build(ignore_mismatch_metadata)?)
             }
             RuleConfig::Soundex(soundex_config) => {
                 Box::new(soundex_config.build()?.into_generic_matcher())
@@ -118,9 +126,10 @@ pub struct LevenshteinConfig {
 }
 
 impl LevenshteinConfig {
-    fn build(&self) -> Result<LevenshteinRule, Error> {
+    fn build(&self, ignore_mismatch_metadata: bool) -> Result<LevenshteinRule, Error> {
         Ok(LevenshteinRule {
             maximum_distance: self.maximum_distance,
+            ignore_mismatch_metadata,
         })
     }
 }
@@ -158,7 +167,7 @@ pub struct DamerauLevenshteinConfig {
 }
 
 impl DamerauLevenshteinConfig {
-    fn build(&self) -> Result<DamerauLevenshteinRule, Error> {
+    fn build(&self, ignore_mismatch_metadata: bool) -> Result<DamerauLevenshteinRule, Error> {
         Ok(DamerauLevenshteinRule {
             maximum_distance: self.maximum_distance,
         })
