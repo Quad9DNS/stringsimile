@@ -152,81 +152,90 @@ macro_rules! bench_ruleset {
 bench_ruleset! {
     name = all_rules_split_target_all;
     builder {
-        StringGroup::new("test_group".to_string(), vec![RuleSet {
-            name:"test_ruleset".to_string(),
-            string_match: "test.string.to.match".to_string(),
-            split_target: true,
-            ignore_tld: false,
-            rules: vec![
-                Box::new(ConfusablesRule.into_generic_matcher()),
-                Box::new(LevenshteinRule { maximum_distance: 5 }.into_generic_matcher()),
-                Box::new(DamerauLevenshteinRule { maximum_distance: 5 }.into_generic_matcher()),
-                Box::new(HammingRule { maximum_distance: 5 }.into_generic_matcher()),
-                Box::new(JaroRule { match_percent: 0.5 }.into_generic_matcher()),
-                Box::new(JaroWinklerRule { match_percent: 0.5 }.into_generic_matcher()),
-                Box::new(MatchRatingRule.into_generic_matcher()),
-                Box::new(MetaphoneRule { metaphone_type: MetaphoneRuleType::Normal, max_code_length: Some(4) }.into_generic_matcher()),
-                Box::new(MetaphoneRule { metaphone_type: MetaphoneRuleType::Double, max_code_length: Some(4) }.into_generic_matcher()),
-                Box::new(NysiisRule::new(false).into_generic_matcher()),
-                Box::new(NysiisRule::new(true).into_generic_matcher()),
-                Box::new(SoundexRule { soundex_type: SoundexRuleType::Normal, minimum_similarity: 5 }.into_generic_matcher()),
-                Box::new(SoundexRule { soundex_type: SoundexRuleType::Refined, minimum_similarity: 5 }.into_generic_matcher()),
-            ]
-        }])
+        {
+            let target_str = "test.string.to.match";
+            StringGroup::new("test_group".to_string(), vec![RuleSet {
+                name:"test_ruleset".to_string(),
+                string_match: target_str.to_string(),
+                split_target: true,
+                ignore_tld: false,
+                rules: vec![
+                    Box::new(ConfusablesRule.into_generic_matcher()),
+                    Box::new(LevenshteinRule { maximum_distance: 5 }.into_generic_matcher()),
+                    Box::new(DamerauLevenshteinRule { maximum_distance: 5 }.into_generic_matcher()),
+                    Box::new(HammingRule { maximum_distance: 5 }.into_generic_matcher()),
+                    Box::new(JaroRule { match_percent: 0.5 }.into_generic_matcher()),
+                    Box::new(JaroWinklerRule { match_percent: 0.5 }.into_generic_matcher()),
+                    Box::new(MatchRatingRule::new(target_str).into_generic_matcher()),
+                    Box::new(MetaphoneRule::new(MetaphoneRuleType::Normal, Some(4), target_str).into_generic_matcher()),
+                    Box::new(MetaphoneRule::new(MetaphoneRuleType::Double, Some(4), target_str).into_generic_matcher()),
+                    Box::new(NysiisRule::new(false, target_str).into_generic_matcher()),
+                    Box::new(NysiisRule::new(true, target_str).into_generic_matcher()),
+                    Box::new(SoundexRule::new(SoundexRuleType::Normal, 5, target_str).into_generic_matcher()),
+                    Box::new(SoundexRule::new(SoundexRuleType::Refined, 5, target_str).into_generic_matcher()),
+                ]
+            }])
+        }
     }
 }
 
 bench_ruleset! {
     name = all_rules_split_target_skip_tld;
     builder {
-        StringGroup::new("test_group".to_string(), vec![RuleSet {
-            name:"test_ruleset".to_string(),
-            string_match: "test.string.to.match".to_string(),
-            split_target: true,
-            ignore_tld: true,
-            rules: vec![
-                Box::new(ConfusablesRule.into_generic_matcher()),
-                Box::new(LevenshteinRule { maximum_distance: 5 }.into_generic_matcher()),
-                Box::new(DamerauLevenshteinRule { maximum_distance: 5 }.into_generic_matcher()),
-                Box::new(HammingRule { maximum_distance: 5 }.into_generic_matcher()),
-                Box::new(JaroRule { match_percent: 0.5 }.into_generic_matcher()),
-                Box::new(JaroWinklerRule { match_percent: 0.5 }.into_generic_matcher()),
-                Box::new(MatchRatingRule.into_generic_matcher()),
-                Box::new(MetaphoneRule { metaphone_type: MetaphoneRuleType::Normal, max_code_length: Some(4) }.into_generic_matcher()),
-                Box::new(MetaphoneRule { metaphone_type: MetaphoneRuleType::Double, max_code_length: Some(4) }.into_generic_matcher()),
-                Box::new(NysiisRule::new(false).into_generic_matcher()),
-                Box::new(NysiisRule::new(true).into_generic_matcher()),
-                Box::new(SoundexRule { soundex_type: SoundexRuleType::Normal, minimum_similarity: 5 }.into_generic_matcher()),
-                Box::new(SoundexRule { soundex_type: SoundexRuleType::Refined, minimum_similarity: 5 }.into_generic_matcher()),
-            ]
-        }])
+        {
+            let target_str = "test.string.to.match";
+            StringGroup::new("test_group".to_string(), vec![RuleSet {
+                name:"test_ruleset".to_string(),
+                string_match: target_str.to_string(),
+                split_target: true,
+                ignore_tld: true,
+                rules: vec![
+                    Box::new(ConfusablesRule.into_generic_matcher()),
+                    Box::new(LevenshteinRule { maximum_distance: 5 }.into_generic_matcher()),
+                    Box::new(DamerauLevenshteinRule { maximum_distance: 5 }.into_generic_matcher()),
+                    Box::new(HammingRule { maximum_distance: 5 }.into_generic_matcher()),
+                    Box::new(JaroRule { match_percent: 0.5 }.into_generic_matcher()),
+                    Box::new(JaroWinklerRule { match_percent: 0.5 }.into_generic_matcher()),
+                    Box::new(MatchRatingRule::new(target_str).into_generic_matcher()),
+                    Box::new(MetaphoneRule::new(MetaphoneRuleType::Normal, Some(4), target_str).into_generic_matcher()),
+                    Box::new(MetaphoneRule::new(MetaphoneRuleType::Double, Some(4), target_str).into_generic_matcher()),
+                    Box::new(NysiisRule::new(false, target_str).into_generic_matcher()),
+                    Box::new(NysiisRule::new(true, target_str).into_generic_matcher()),
+                    Box::new(SoundexRule::new(SoundexRuleType::Normal, 5, target_str).into_generic_matcher()),
+                    Box::new(SoundexRule::new(SoundexRuleType::Refined, 5, target_str).into_generic_matcher()),
+                ]
+            }])
+        }
     }
 }
 
 bench_ruleset! {
     name = all_rules_no_split_target;
     builder {
-        StringGroup::new("test_group".to_string(), vec![RuleSet {
-            name:"test_ruleset".to_string(),
-            string_match: "test.string.to.match".to_string(),
-            split_target: true,
-            ignore_tld: true,
-            rules: vec![
-                Box::new(ConfusablesRule.into_generic_matcher()),
-                Box::new(LevenshteinRule { maximum_distance: 5 }.into_generic_matcher()),
-                Box::new(DamerauLevenshteinRule { maximum_distance: 5 }.into_generic_matcher()),
-                Box::new(HammingRule { maximum_distance: 5 }.into_generic_matcher()),
-                Box::new(JaroRule { match_percent: 0.5 }.into_generic_matcher()),
-                Box::new(JaroWinklerRule { match_percent: 0.5 }.into_generic_matcher()),
-                Box::new(MatchRatingRule.into_generic_matcher()),
-                Box::new(MetaphoneRule { metaphone_type: MetaphoneRuleType::Normal, max_code_length: Some(4) }.into_generic_matcher()),
-                Box::new(MetaphoneRule { metaphone_type: MetaphoneRuleType::Double, max_code_length: Some(4) }.into_generic_matcher()),
-                Box::new(NysiisRule::new(false).into_generic_matcher()),
-                Box::new(NysiisRule::new(true).into_generic_matcher()),
-                Box::new(SoundexRule { soundex_type: SoundexRuleType::Normal, minimum_similarity: 5 }.into_generic_matcher()),
-                Box::new(SoundexRule { soundex_type: SoundexRuleType::Refined, minimum_similarity: 5 }.into_generic_matcher()),
-            ]
-        }])
+        {
+            let target_str = "test.string.to.match";
+            StringGroup::new("test_group".to_string(), vec![RuleSet {
+                name:"test_ruleset".to_string(),
+                string_match: target_str.to_string(),
+                split_target: true,
+                ignore_tld: true,
+                rules: vec![
+                    Box::new(ConfusablesRule.into_generic_matcher()),
+                    Box::new(LevenshteinRule { maximum_distance: 5 }.into_generic_matcher()),
+                    Box::new(DamerauLevenshteinRule { maximum_distance: 5 }.into_generic_matcher()),
+                    Box::new(HammingRule { maximum_distance: 5 }.into_generic_matcher()),
+                    Box::new(JaroRule { match_percent: 0.5 }.into_generic_matcher()),
+                    Box::new(JaroWinklerRule { match_percent: 0.5 }.into_generic_matcher()),
+                    Box::new(MatchRatingRule::new(target_str).into_generic_matcher()),
+                    Box::new(MetaphoneRule::new(MetaphoneRuleType::Normal, Some(4), target_str).into_generic_matcher()),
+                    Box::new(MetaphoneRule::new(MetaphoneRuleType::Double, Some(4), target_str).into_generic_matcher()),
+                    Box::new(NysiisRule::new(false, target_str).into_generic_matcher()),
+                    Box::new(NysiisRule::new(true, target_str).into_generic_matcher()),
+                    Box::new(SoundexRule::new(SoundexRuleType::Normal, 5, target_str).into_generic_matcher()),
+                    Box::new(SoundexRule::new(SoundexRuleType::Refined, 5, target_str).into_generic_matcher()),
+                ]
+            }])
+        }
     }
 }
 
