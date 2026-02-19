@@ -1826,7 +1826,7 @@ dependencies = [
 
 [[package]]
 name = "stringsimile-config"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -1837,7 +1837,7 @@ dependencies = [
 
 [[package]]
 name = "stringsimile-matcher"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "confusables",
  "criterion",
@@ -1854,7 +1854,7 @@ dependencies = [
 
 [[package]]
 name = "stringsimile-service"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "arc-swap",
  "async-stream",

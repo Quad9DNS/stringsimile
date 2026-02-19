@@ -10,6 +10,7 @@ repository = "https://github.com/Quad9DNS/stringsimile"
 license = "AGPL-3.0-or-later"
 readme = "README.md"
 homepage = "https://github.com/Quad9DNS/stringsimile"
+version = "0.2.0"
 
 [workspace.dependencies]
 stringsimile-matcher = { path = "./crates/stringsimile-matcher" }

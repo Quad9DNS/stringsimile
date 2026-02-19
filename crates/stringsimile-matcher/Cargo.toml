@@ -1,9 +1,9 @@
 [package]
 name = "stringsimile-matcher"
-version = "0.1.0"
 edition.workspace = true
 repository.workspace = true
 license.workspace = true
+version.workspace = true
 
 [features]
 default = ["all"]

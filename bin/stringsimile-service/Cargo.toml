@@ -5,7 +5,7 @@ description.workspace = true
 homepage.workspace = true
 readme.workspace = true
 license.workspace = true
-version = "0.1.0"
+version.workspace = true
 edition.workspace = true
 repository.workspace = true
 
