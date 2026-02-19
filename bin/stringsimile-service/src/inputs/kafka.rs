@@ -7,6 +7,8 @@ use rdkafka::{
     consumer::{Consumer, StreamConsumer},
 };
 use serde::{Deserialize, Serialize};
+use tokio::sync::broadcast::Receiver;
+use tokio_stream::wrappers::BroadcastStream;
 use tracing::warn;
 
 use crate::message::StringsimileMessage;
@@ -65,6 +67,7 @@ impl KafkaInputStream {
 impl InputStreamBuilder for KafkaInputStream {
     async fn into_stream(
         self,
+        shutdown: Receiver<()>,
     ) -> crate::Result<std::pin::Pin<Box<dyn futures::Stream<Item = StringsimileMessage> + Send>>>
     {
         let mut config = ClientConfig::new();
@@ -105,18 +108,20 @@ impl InputStreamBuilder for KafkaInputStream {
             consumer.seek_partitions(topic_offsets, Duration::from_secs(30))?;
         }
 
-        consumer.into_stream().await
+        consumer.into_stream(shutdown).await
     }
 }
 
 impl InputStreamBuilder for StreamConsumer {
     async fn into_stream(
         self,
+        shutdown: Receiver<()>,
     ) -> crate::Result<std::pin::Pin<Box<dyn futures::Stream<Item = StringsimileMessage> + Send>>>
     {
         let metrics = InputMetrics::for_input_type("kafka");
+        let shutdown = BroadcastStream::new(shutdown).into_future();
         Ok(Box::pin(async_stream::stream! {
-            let mut stream = self.stream();
+            let mut stream = self.stream().take_until(shutdown);
             loop {
                 match stream.next().await.expect("kafka streams never terminate") {
                     Err(e) => {

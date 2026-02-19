@@ -75,3 +75,7 @@
   ## Number of threads to use
   ## Defaults to number of available cores
   # threads: null
+
+  ## Graceful shutdown timeout in milliseconds
+  ## When SIGINT is received, stringsimile will allow time for processing to complete gracefully, before resorting to forceful shutdown
+  # shutdown_timeout_ms: 60000

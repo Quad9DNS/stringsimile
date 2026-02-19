@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use tokio::{fs::File, io::BufReader};
+use tokio::{fs::File, io::BufReader, sync::broadcast::Receiver};
 use tracing::error;
 
 use crate::message::StringsimileMessage;
@@ -12,6 +12,7 @@ pub struct FileStream(pub PathBuf);
 impl InputStreamBuilder for FileStream {
     async fn into_stream(
         self,
+        shutdown: Receiver<()>,
     ) -> crate::Result<std::pin::Pin<Box<dyn futures::Stream<Item = StringsimileMessage> + Send>>>
     {
         let file = match File::open(self.0).await {
@@ -25,7 +26,7 @@ impl InputStreamBuilder for FileStream {
             reader: BufReader::new(file),
             metrics: InputMetrics::for_input_type("file"),
         }
-        .into_stream()
+        .into_stream(shutdown)
         .await
     }
 }

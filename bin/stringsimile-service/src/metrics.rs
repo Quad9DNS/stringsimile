@@ -15,7 +15,7 @@ use tokio::{
 use tracing::{error, info};
 
 use crate::{
-    config::ServiceConfig, metrics_exporters::MetricsExporterTaskBuilder, signal::ServiceSignal,
+    config::ServiceConfig, metrics_exporters::MetricsExporterTaskBuilder,
     system_metrics::SystemMetrics,
 };
 
@@ -64,7 +64,7 @@ impl MetricsProcessor {
         }
     }
 
-    pub async fn run(self, mut signals: Receiver<ServiceSignal>, runtime_handle: Handle) {
+    pub async fn run(self, runtime_handle: Handle, mut shutdown: Receiver<()>) {
         let mut export_tasks = JoinSet::new();
 
         let uptime_metric = gauge!("process_uptime_secs");
@@ -115,7 +115,8 @@ impl MetricsProcessor {
                         }
                     }
                 },
-                Ok(ServiceSignal::Shutdown | ServiceSignal::Quit) = signals.recv() => {
+
+                _ = shutdown.recv() => {
                     info!("Stopping metrics processor...");
                     break;
                 }

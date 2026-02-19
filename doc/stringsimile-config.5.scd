@@ -101,6 +101,8 @@ Configuration file uses YAML format with the following keys:
 	  Valid levels are: "error", "warn", "info", "debug", "trace"
 	- threads
 	  Number of threads to use. Defaults to number of available cores.
+	- shutdown_timeout_ms
+	  Graceful shutdown timeout in milliseconds. Default to 60 seconds.
 
 # EXAMPLES
 
