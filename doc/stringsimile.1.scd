@@ -13,10 +13,10 @@ For more information use *--help* option.
 # OPTIONS
 
 *-r, --rules <path>*
-	Path to the directory (or file) containing the rules [default: /var/lib/stringsimile]
+	Path to the directory (or file) containing the rules. [default: /var/lib/stringsimile]
 
 *-c, --config <path>*
-	Path to the configuration file [default: /etc/stringsimile/stringsimile.yaml]
+	Path to the configuration file. [default: /etc/stringsimile/stringsimile.yaml]
 
 *-v, --verbose...*
 	Increase log verbosity. May be repeated for further increase.
@@ -27,29 +27,32 @@ For more information use *--help* option.
 *-t, --threads...*
 	Set number of threads to use. Defaults to number of cores.
 
-*--input-file <INPUT_FILE>*
-	Optionally set file to read input data from
+*--input-file <path>*
+	Optionally set file to read input data from.
+
+*--input-pipe <path>*
+	Optionally set pipe to read input data from.
 
 *--input-from-stdin*
-	Set to true to read input data from stdin
+	Set to true to read input data from stdin.
 
-*--output-file <OUTPUT_FILE>*
-	Optionally set file to write output data to
+*--output-file <path>*
+	Optionally set file to write output data to.
 
 *--output-to-stdout*
-	Set to true to write output data to stdout
+	Set to true to write output data to stdout.
 
-*--metrics-file <METRICS_FILE>*
-	Optionally set file to write metrics data to
+*--metrics-file <path>*
+	Optionally set file to write metrics data to.
 
 *--metrics-to-stdout*
-	Set to true to write metrics data to stdout
+	Set to true to write metrics data to stdout.
 
 *--metrics-name-prefix*
-	Prefix to add to all metrics names [default: stringsimile_]
+	Prefix to add to all metrics names. [default: stringsimile_]
 
-*--input-field <INPUT_FIELD>*
-	Field to take from input JSON object, to match against rules [default: .domain_name]
+*--input-field <string>*
+	Field to take from input JSON object, to match against rules. [default: .domain_name]
 
 *--report-all*
 	Set to true to always write match metadata in output, even for failed matches.

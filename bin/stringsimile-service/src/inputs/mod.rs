@@ -8,10 +8,11 @@ mod bufreader;
 mod file;
 #[cfg(feature = "inputs-kafka")]
 mod kafka;
+mod pipe;
 #[cfg(feature = "inputs-kafka")]
 pub use kafka::KafkaInputConfig;
 
-use crate::message::StringsimileMessage;
+use crate::{inputs::pipe::PipeStream, message::StringsimileMessage};
 mod metrics;
 mod stdin;
 
@@ -19,6 +20,7 @@ mod stdin;
 pub enum Input {
     Stdin,
     File(PathBuf),
+    Pipe(PathBuf),
     #[cfg(feature = "inputs-kafka")]
     Kafka(KafkaInputConfig),
 }
@@ -30,6 +32,7 @@ impl InputStreamBuilder for Input {
         match self {
             Input::Stdin => StdinStream.into_stream().await,
             Input::File(path_buf) => FileStream(path_buf).into_stream().await,
+            Input::Pipe(path_buf) => PipeStream(path_buf).into_stream().await,
             #[cfg(feature = "inputs-kafka")]
             Input::Kafka(kafka_input_config) => {
                 kafka::KafkaInputStream::new(kafka_input_config)
@@ -46,7 +49,11 @@ impl InputBuilder for Input {
             Input::Stdin => "stdin".to_string(),
             Input::File(path_buf) => {
                 let file_name = path_buf.to_string_lossy();
-                format!("file{file_name}")
+                format!("file({file_name})")
+            }
+            Input::Pipe(path_buf) => {
+                let pipe_name = path_buf.to_string_lossy();
+                format!("pipe({pipe_name})")
             }
             #[cfg(feature = "inputs-kafka")]
             Input::Kafka(kafka_input_config) => {
