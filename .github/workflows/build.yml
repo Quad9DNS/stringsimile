@@ -37,7 +37,7 @@ jobs:
             target-dir: generate-rpm
           - package: binary
             needs-binary-build: true
-            target-dir: release/stringsimile
+            target-dir: binary-package
         exclude:
           - target: x86_64-unknown-linux-musl
             variant: all-dynamic
@@ -84,6 +84,7 @@ jobs:
           cargo build --target "${{ matrix.target }}" --release --no-default-features --features "${{ matrix.variant }}"
           # Binary also needs docs and examples
           mkdir -p "target/${{ matrix.variant }}/${{ matrix.target }}/${{ matrix.target-dir }}/man"
+          cp "target/${{ matrix.variant }}/${{ matrix.target }}/release/stringsimile" "target/${{ matrix.variant }}/${{ matrix.target }}/${{ matrix.target-dir }}/stringsimile"
           cp target/man/* "target/${{ matrix.variant }}/${{ matrix.target }}/${{ matrix.target-dir }}/man"
           cp distribution/config.yaml "target/${{ matrix.variant }}/${{ matrix.target }}/${{ matrix.target-dir }}/config.yaml"
           mkdir -p "target/${{ matrix.variant }}/${{ matrix.target }}/${{ matrix.target-dir }}/rules"
