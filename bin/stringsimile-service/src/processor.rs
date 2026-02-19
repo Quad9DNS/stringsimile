@@ -8,14 +8,17 @@ use std::{
 };
 
 use arc_swap::ArcSwap;
-use futures::{TryFutureExt, stream::FusedStream};
+use futures::{StreamExt, TryFutureExt, stream::FusedStream};
 use metrics::counter;
 use serde_json::{Map, Value};
 use snafu::ResultExt;
 use stringsimile_config::rulesets::StringGroupConfig;
 use stringsimile_matcher::ruleset::{StringGroup, StringGroupMatchResult};
-use tokio::{sync::broadcast::Receiver, sync::mpsc, task::JoinSet};
-use tokio_stream::{StreamExt, StreamMap, wrappers::ReceiverStream};
+use tokio::{
+    sync::{broadcast::Receiver, mpsc},
+    task::JoinSet,
+};
+use tokio_stream::{StreamMap, wrappers::ReceiverStream};
 use tracing::{debug, error, info, warn};
 use walkdir::WalkDir;
 
@@ -100,31 +103,32 @@ impl StringProcessor {
         Ok(())
     }
 
-    pub async fn run(mut self, mut signals: Receiver<ServiceSignal>) {
+    pub async fn run(mut self, mut signals: Receiver<ServiceSignal>, mut shutdown: Receiver<()>) {
         // Initialize rules
         if let Err(err) = self.reload_rules().await {
             error!(message = "Loading rules has failed. Aborting...", error = %err);
             return;
         }
 
+        let (input_shutdown_tx, _) = tokio::sync::broadcast::channel::<()>(1);
+
         let mut input_streams = StreamMap::with_capacity(self.config.inputs.len());
 
         for input in self.config.inputs.clone() {
             let input_name = input.name();
-            let input_stream =
-                match input
-                    .into_stream()
-                    .await
-                    .map_err(|err| StringsimileServiceError::InputFail {
-                        input_name: input_name.clone(),
-                        source: err,
-                    }) {
-                    Ok(stream) => stream,
-                    Err(err) => {
-                        error!(message = "Input preparation failed!", error = %err);
-                        return;
-                    }
-                };
+            let input_stream = match input
+                .into_stream(input_shutdown_tx.subscribe())
+                .await
+                .map_err(|err| StringsimileServiceError::InputFail {
+                    input_name: input_name.clone(),
+                    source: err,
+                }) {
+                Ok(stream) => stream,
+                Err(err) => {
+                    error!(message = "Input preparation failed!", error = %err);
+                    return;
+                }
+            };
             input_streams.insert(input_name, input_stream);
         }
 
@@ -178,9 +182,25 @@ impl StringProcessor {
         let rule_matching_errors = counter!("process_errors", "type" => "rule_matching");
 
         let mut inputs_done = false;
+        let mut input_shutdown_tx = Some(input_shutdown_tx);
 
         loop {
             tokio::select! {
+
+                Ok(ServiceSignal::ReloadConfig) = signals.recv() => {
+                    if let Err(err) = self.reload_rules().await {
+                        rule_loading_errors.increment(1);
+                        error!(message = "Reloading rules has failed! Keeping previous rules.", error = %err);
+                    }
+                },
+
+                _ = shutdown.recv(), if input_shutdown_tx.is_some() => {
+                    info!("Stopping inputs because shutdown is received...");
+                    if let Some(input_shutdown_tx) = input_shutdown_tx.take() {
+                        let _ = input_shutdown_tx.send(());
+                    }
+                }
+
                 task = output_tasks.join_next() => {
                     match task {
                         Some(Ok(t)) => {
@@ -196,6 +216,7 @@ impl StringProcessor {
                         }
                     }
                 },
+
                 result = transform_futures.next(), if !inputs_done => {
                     match result {
                         Some(Ok(val)) => {
@@ -219,18 +240,6 @@ impl StringProcessor {
                         }
                     }
                 },
-                Ok(signal) = signals.recv() => match signal {
-                    ServiceSignal::ReloadConfig => {
-                        if let Err(err) = self.reload_rules().await {
-                            rule_loading_errors.increment(1);
-                            error!(message = "Reloading rules has failed! Keeping previous rules.", error = %err);
-                        }
-                    },
-                    ServiceSignal::Shutdown | ServiceSignal::Quit => {
-                        info!("Stopping strinsimile processor...");
-                        break;
-                    }
-                }
             }
         }
     }

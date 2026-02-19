@@ -1,4 +1,4 @@
-use std::{collections::HashSet, io::Write};
+use std::{collections::HashSet, io::Write, time::Duration};
 
 use criterion::{Criterion, criterion_group, criterion_main};
 use stringsimile_service::{
@@ -50,6 +50,7 @@ fn processor(c: &mut Criterion) {
         process: ValidatedProcessConfig {
             threads: 1,
             log_level: Level::INFO,
+            shutdown_timeout: Duration::from_secs(60),
         },
     };
 
@@ -58,6 +59,7 @@ fn processor(c: &mut Criterion) {
         .build()
         .expect("Building async runtime failed!");
     let (tx, _) = broadcast::channel(16);
+    let (shutdown_tx, _) = broadcast::channel(1);
 
     let mut group = c.benchmark_group("stringsimile_service");
     group.throughput(criterion::Throughput::Bytes(INPUT_DATA.len() as u64));
@@ -65,7 +67,7 @@ fn processor(c: &mut Criterion) {
     group.bench_function("processor", |b| {
         b.iter(|| {
             let processor = StringProcessor::from_config(config.clone());
-            runtime.spawn(processor.run(tx.subscribe()));
+            runtime.spawn(processor.run(tx.subscribe(), shutdown_tx.subscribe()));
         });
     });
 

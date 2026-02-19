@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use tokio::{io::BufReader, net::unix::pipe::OpenOptions};
+use tokio::{io::BufReader, net::unix::pipe::OpenOptions, sync::broadcast::Receiver};
 use tracing::error;
 
 use crate::message::StringsimileMessage;
@@ -12,6 +12,7 @@ pub struct PipeStream(pub PathBuf);
 impl InputStreamBuilder for PipeStream {
     async fn into_stream(
         self,
+        shutdown: Receiver<()>,
     ) -> crate::Result<std::pin::Pin<Box<dyn futures::Stream<Item = StringsimileMessage> + Send>>>
     {
         let receiver = OpenOptions::new()
@@ -22,7 +23,7 @@ impl InputStreamBuilder for PipeStream {
             reader: BufReader::new(receiver),
             metrics: InputMetrics::for_input_type("pipe"),
         }
-        .into_stream()
+        .into_stream(shutdown)
         .await
     }
 }

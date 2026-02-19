@@ -52,7 +52,7 @@ impl MetricsExporterTaskBuilder for FileMetricsExporter {
             {
                 Ok(file) => file,
                 Err(error) => {
-                    error!(message = "Opening output file failed!", error = %error);
+                    error!(message = "Opening metrics export file failed!", error = %error);
                     return Err(Box::new(error));
                 }
             };

@@ -1,6 +1,7 @@
 use std::{
     collections::HashSet,
     io::{Seek, Write},
+    time::Duration,
 };
 
 use serde_json::{Map, Value};
@@ -54,6 +55,7 @@ fn basic_file_test() {
         process: ValidatedProcessConfig {
             threads: 1,
             log_level: Level::INFO,
+            shutdown_timeout: Duration::from_secs(60),
         },
     };
 

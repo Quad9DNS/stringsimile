@@ -1,4 +1,4 @@
-use std::{collections::HashSet, fs::File, path::PathBuf};
+use std::{collections::HashSet, fs::File, path::PathBuf, time::Duration};
 
 use serde::{Deserialize, Serialize};
 use snafu::ResultExt;
@@ -185,6 +185,8 @@ pub struct ProcessConfig {
     threads: usize,
     #[serde(default = "default_log_level")]
     log_level: String,
+    #[serde(default = "default_shutdown_duration_ms")]
+    shutdown_timeout_ms: usize,
 }
 
 impl Default for ProcessConfig {
@@ -192,6 +194,7 @@ impl Default for ProcessConfig {
         Self {
             threads: default_thread_count(),
             log_level: default_log_level(),
+            shutdown_timeout_ms: default_shutdown_duration_ms(),
         }
     }
 }
@@ -201,6 +204,7 @@ impl ProcessConfig {
         Ok(ValidatedProcessConfig {
             threads: self.threads,
             log_level: self.log_level.parse()?,
+            shutdown_timeout: Duration::from_millis(self.shutdown_timeout_ms.try_into()?),
         })
     }
 }
@@ -225,6 +229,14 @@ fn default_thread_count() -> usize {
         .unwrap_or(1)
 }
 
+fn default_shutdown_duration_ms() -> usize {
+    60 * 1000
+}
+
+fn default_shutdown_duration() -> Duration {
+    Duration::from_secs(60)
+}
+
 fn default_metrics_prefix() -> String {
     "stringsimile".to_string()
 }
@@ -236,6 +248,10 @@ pub struct ValidatedProcessConfig {
     pub threads: usize,
     /// Internal logging level
     pub log_level: Level,
+    /// Graceful shutdown timeout. When shutdown is requested (SIGINT), the process will wait for
+    /// processing to complete for the given duration and will resort to forceful shutdown
+    /// afterwards.
+    pub shutdown_timeout: Duration,
 }
 
 impl ValidatedProcessConfig {
@@ -247,6 +263,11 @@ impl ValidatedProcessConfig {
                 other.threads
             },
             log_level: self.log_level.max(other.log_level),
+            shutdown_timeout: if other.shutdown_timeout == default_shutdown_duration() {
+                self.shutdown_timeout
+            } else {
+                other.shutdown_timeout
+            },
         }
     }
 }
@@ -384,6 +405,7 @@ impl TryFrom<CliArgs> for ServiceConfig {
             threads: value.threads.unwrap_or(default_thread_count()),
             // Any default for now, will be replaced with the calculated level
             log_level: Level::INFO,
+            shutdown_timeout: default_shutdown_duration(),
         };
 
         let mut new_metrics = HashSet::default();
@@ -400,6 +422,11 @@ impl TryFrom<CliArgs> for ServiceConfig {
                 export_interval_secs: 15,
                 mode: 0o644,
             }));
+            // TODO: For now allow just one file config, maybe it would be okay to have multiple?
+            base_config
+                .metrics
+                .exporters
+                .retain(|i| !matches!(i, MetricsExporter::File(_)));
         }
 
         let metrics_config = ValidatedMetricsConfig {

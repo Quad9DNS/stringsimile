@@ -1,7 +1,7 @@
 #![allow(missing_docs)]
 use std::io;
+use std::process::ExitStatus;
 use std::time::{Instant, SystemTime, UNIX_EPOCH};
-use std::{process::ExitStatus, time::Duration};
 
 use clap::Parser;
 use exitcode::ExitCode;
@@ -9,10 +9,10 @@ use metrics::gauge;
 use metrics_exporter_prometheus::PrometheusBuilder;
 use metrics_util::layers::{PrefixLayer, Stack};
 use tokio::runtime::Runtime;
-use tokio::sync::broadcast::Receiver;
+use tokio::sync::broadcast::{Receiver, Sender};
 use tokio::task::JoinHandle;
-use tokio::time::sleep;
-use tracing::{Level, error, info};
+use tokio::time::interval;
+use tracing::{Level, error, info, warn};
 use tracing_subscriber::fmt::format::FmtSpan;
 
 use crate::cli::CliArgs;
@@ -134,9 +134,12 @@ impl Service<InitState> {
                 },
         } = self;
 
-        let processor_handle = handle.spawn(processor.run(signals.handler.subscribe()));
+        let (shutdown_tx, _) = tokio::sync::broadcast::channel::<()>(1);
+
+        let processor_handle =
+            handle.spawn(processor.run(signals.handler.subscribe(), shutdown_tx.subscribe()));
         let metrics_handle =
-            handle.spawn(metrics_processor.run(signals.handler.subscribe(), handle.clone()));
+            handle.spawn(metrics_processor.run(handle.clone(), shutdown_tx.subscribe()));
 
         Ok(Service {
             config,
@@ -144,6 +147,7 @@ impl Service<InitState> {
                 signals,
                 processor_handle,
                 metrics_handle,
+                shutdown_tx,
             },
         })
     }
@@ -153,6 +157,7 @@ pub struct StartedState {
     pub signals: ServiceOsSignals,
     pub processor_handle: JoinHandle<()>,
     pub metrics_handle: JoinHandle<()>,
+    pub shutdown_tx: Sender<()>,
 }
 
 impl Service<StartedState> {
@@ -168,6 +173,7 @@ impl Service<StartedState> {
                     signals,
                     mut processor_handle,
                     metrics_handle,
+                    shutdown_tx,
                 },
         } = self;
 
@@ -189,15 +195,24 @@ impl Service<StartedState> {
                                 last_reload_signal.set(epoch_timestamp.as_secs_f64())
                             }
                         },
-                        Ok(signal @ ServiceSignal::Shutdown | signal @ ServiceSignal::Quit) => break signal,
+                        Ok(ServiceSignal::Shutdown) => {
+                            let _ = shutdown_tx.send(());
+                            info!("Starting graceful shutdown. ({} ms)", config.process.shutdown_timeout.as_millis());
+                            break ServiceSignal::Shutdown;
+                        }
+                        Ok(ServiceSignal::Quit) => {
+                            break ServiceSignal::Quit;
+                        }
                         Err(err) => {
                             error!(message = "Receiving OS signal failed!", error = %err);
                         }
                     }
                 }
+
                 _ = &mut processor_handle => {
                     break ServiceSignal::Shutdown;
                 }
+
                 else => unreachable!("Signal streams never end"),
             }
         };
@@ -224,7 +239,7 @@ pub struct FinishedState {
 impl Service<FinishedState> {
     pub async fn shutdown(self) -> ExitStatus {
         let Service {
-            config: _config,
+            config,
             state:
                 FinishedState {
                     signal,
@@ -236,7 +251,7 @@ impl Service<FinishedState> {
 
         match signal {
             ServiceSignal::Shutdown => {
-                Self::stop(processor_handle, metrics_handle, signal_receiver).await
+                Self::stop(config, processor_handle, metrics_handle, signal_receiver).await
             }
             ServiceSignal::Quit => Self::quit(),
             _ => unreachable!(),
@@ -244,22 +259,32 @@ impl Service<FinishedState> {
     }
 
     async fn stop(
+        config: ServiceConfig,
         processor_handle: JoinHandle<()>,
         metrics_handle: JoinHandle<()>,
         mut signal_rx: Receiver<ServiceSignal>,
     ) -> ExitStatus {
+        let mut graceful_timeout = interval(config.process.shutdown_timeout);
+        graceful_timeout.reset();
+
+        if processor_handle.is_finished() {
+            metrics_handle.abort();
+            let _ = metrics_handle.await;
+            return ExitStatus::from_raw(exitcode::OK);
+        }
+
         tokio::select! {
             _ = processor_handle, if !processor_handle.is_finished() => {
                 metrics_handle.abort();
                 let _ = metrics_handle.await;
-                ExitStatus::from_raw({
-                    exitcode::OK
-                })
+                ExitStatus::from_raw(exitcode::OK)
             }
-            // TODO: replace with active tasks graceful shutdown
-            _ = sleep(Duration::from_secs(1)) => ExitStatus::from_raw({
-                exitcode::OK
-            }), // Graceful shutdown finished
+
+            _ = graceful_timeout.tick() => {
+                warn!("Graceful shutdown timed out. Forcing shutdown.");
+                ExitStatus::from_raw(exitcode::OK)
+            }
+
             _ = signal_rx.recv() => Self::quit(),
         }
     }

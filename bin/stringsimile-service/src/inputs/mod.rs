@@ -11,6 +11,7 @@ mod kafka;
 mod pipe;
 #[cfg(feature = "inputs-kafka")]
 pub use kafka::KafkaInputConfig;
+use tokio::sync::broadcast::Receiver;
 
 use crate::{inputs::pipe::PipeStream, message::StringsimileMessage};
 mod metrics;
@@ -28,15 +29,16 @@ pub enum Input {
 impl InputStreamBuilder for Input {
     async fn into_stream(
         self,
+        shutdown: Receiver<()>,
     ) -> crate::Result<Pin<Box<dyn Stream<Item = StringsimileMessage> + Send>>> {
         match self {
-            Input::Stdin => StdinStream.into_stream().await,
-            Input::File(path_buf) => FileStream(path_buf).into_stream().await,
-            Input::Pipe(path_buf) => PipeStream(path_buf).into_stream().await,
+            Input::Stdin => StdinStream.into_stream(shutdown).await,
+            Input::File(path_buf) => FileStream(path_buf).into_stream(shutdown).await,
+            Input::Pipe(path_buf) => PipeStream(path_buf).into_stream(shutdown).await,
             #[cfg(feature = "inputs-kafka")]
             Input::Kafka(kafka_input_config) => {
                 kafka::KafkaInputStream::new(kafka_input_config)
-                    .into_stream()
+                    .into_stream(shutdown)
                     .await
             }
         }
@@ -67,6 +69,7 @@ impl InputBuilder for Input {
 pub(crate) trait InputStreamBuilder {
     async fn into_stream(
         self,
+        shutdown: Receiver<()>,
     ) -> crate::Result<Pin<Box<dyn Stream<Item = StringsimileMessage> + Send>>>;
 }
 
