@@ -82,6 +82,12 @@ jobs:
           CARGO_TARGET_DIR: "target/${{ matrix.variant }}"
         run: |
           cargo build --target "${{ matrix.target }}" --release --no-default-features --features "${{ matrix.variant }}"
+          # Binary also needs docs and examples
+          mkdir -p "target/${{ matrix.variant }}/${{ matrix.target }}/${{ matrix.target-dir }}/man"
+          cp target/man/* "target/${{ matrix.variant }}/${{ matrix.target }}/${{ matrix.target-dir }}/man"
+          cp distribution/config.yaml "target/${{ matrix.variant }}/${{ matrix.target }}/${{ matrix.target-dir }}/config.yaml"
+          mkdir -p "target/${{ matrix.variant }}/${{ matrix.target }}/${{ matrix.target-dir }}/rules"
+          cp distribution/rules/* "target/${{ matrix.variant }}/${{ matrix.target }}/${{ matrix.target-dir }}/rules/"
 
       - name: Build deb
         if: ${{ matrix.build-deb }}
