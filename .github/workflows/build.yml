@@ -1,6 +1,9 @@
 name: Build binaries
 
-on: workflow_dispatch
+on:
+  release:
+    types: [ created ]
+  workflow_dispatch:
 
 env:
   RUSTFLAGS: "-C target-cpu=x86-64-v3"
@@ -97,3 +100,11 @@ jobs:
         with:
           name: stringsimile-${{ matrix.variant }}-${{ matrix.output-file-name }}-${{ matrix.package }}
           path: ./target/${{ matrix.variant }}/${{ matrix.target }}/${{ matrix.target-dir }}
+
+      - name: Upload build files
+        uses: softprops/action-gh-release@v2
+        if: ${{ github.event_name == 'release' }}
+        with:
+          files: |
+            LICENSE
+            ./target/${{ matrix.variant }}/${{ matrix.target }}/${{ matrix.target-dir }}
