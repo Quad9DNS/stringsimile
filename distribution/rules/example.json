@@ -5,8 +5,12 @@
 			{
 				"name": "Test rule set",
 				"string_match": "test",
-				"split_target": true,
-				"ignore_tld": true,
+				"preprocessors": [
+					{
+						"preprocessor_type": "split_target",
+						"ignore_tld": true
+					}
+				],
 				"match_rules": [
 					{
 						"rule_type": "levenshtein",
@@ -73,8 +77,12 @@
 			},
 			{
 				"name": "Example rule set",
-				"split_target": true,
-				"ignore_tld": true,
+				"preprocessors": [
+					{
+						"preprocessor_type": "split_target",
+						"ignore_tld": true
+					}
+				],
 				"string_match": "example",
 				"match_rules": [
 					{

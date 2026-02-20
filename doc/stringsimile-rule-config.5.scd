@@ -70,12 +70,9 @@ Each rule set has the following keys:
 - string_match
   Target string to match all input strings against. This value will also appear
   in metadata to make it easy to find what matched.
-- split_target [optional]
-  If set to true, input string will be treated as a domain name and will be
-  split into domain name parts.
-- ignore_tld [optional]
-  This field is only valid if split_target is set to true. If this flag is set,
-  TLD part of the domain name will be ignored for matching.
+- preprocessors
+  List of preprocessors to apply to the input strings, before passing them to
+  rules.
 - match_rules
   List of rules to match against.
 
@@ -85,6 +82,14 @@ Each rule has the following keys:
 - values
   Object dependent on the rule_type used. Some rules don't have additional
   values and this field can be skipped for them.
+
+Each preprocessor has the following keys:
+- preprocessor_type
+  One of "split_target"
+
+Depending on the preprocessor_type, other keys may be used too:
+- ignore_tld [optional - used only for split_target]
+  If this flag is set, TLD part of the domain name will be ignored for matching.
 
 # EXAMPLES
 

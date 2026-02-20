@@ -9,19 +9,16 @@ use metrics::{Counter, counter};
 use serde_json::{Map, Value};
 use tracing::{debug, trace_span, warn};
 
-use crate::{GenericMatchResult, rule::GenericMatcherRule};
+use crate::{GenericMatchResult, preprocessors::Preprocessor, rule::GenericMatcherRule};
 
 /// Rule set
 pub struct RuleSet {
     /// Name of the rule set
     pub name: String,
-    /// String to match agains
+    /// String to match against
     pub string_match: String,
-    // TODO: extract this into something more generic, like a pre-processor
-    /// If set to true, will split the string into domain parts before processing
-    pub split_target: bool,
-    /// If set to true, will ignore TLD part of the split string
-    pub ignore_tld: bool,
+    /// Preprocessors to apply to input strings before passing them to rules
+    pub preprocessors: Vec<Preprocessor>,
     /// Rules to apply to this match
     pub rules: Vec<Box<dyn GenericMatcherRule>>,
 }
@@ -31,8 +28,7 @@ impl Clone for RuleSet {
         Self {
             name: self.name.clone(),
             string_match: self.string_match.clone(),
-            split_target: self.split_target,
-            ignore_tld: self.ignore_tld,
+            preprocessors: self.preprocessors.clone(),
             rules: self.rules.iter().map(|r| r.clone_dyn()).collect(),
         }
     }
@@ -93,36 +89,25 @@ impl RuleSet {
         );
         let mut matches: Vec<GenericMatchResult> = Vec::default();
 
-        if self.split_target {
-            for rule in &self.rules {
-                let rule_metrics = metrics.get(rule.name()).expect("Missing metrics for rule");
-                for it in name
-                    .split('.')
-                    .rev()
-                    .skip(if self.ignore_tld { 1 } else { 0 })
-                    .enumerate()
-                {
-                    self.generate_match(
-                        &mut matches,
-                        rule.deref(),
-                        it,
-                        rule_metrics,
-                        full_metadata_for_all,
-                    );
-                }
-            }
-        } else {
+        let input: Box<dyn Iterator<Item = &str>> = Box::new([name].into_iter());
+
+        let input = self
+            .preprocessors
+            .iter()
+            .fold(input, |acc, p| p.process(acc));
+
+        for it in input.enumerate() {
             for rule in &self.rules {
                 let rule_metrics = metrics.get(rule.name()).expect("Missing metrics for rule");
                 self.generate_match(
                     &mut matches,
                     rule.deref(),
-                    (0, name),
+                    it,
                     rule_metrics,
                     full_metadata_for_all,
                 );
             }
-        };
+        }
 
         matches
     }
@@ -143,15 +128,9 @@ impl RuleSet {
                     rule_metrics.misses.increment(1);
                 }
                 if result.matched || full_metadata_for_all {
-                    if self.split_target {
-                        result.metadata.insert(
-                            "split_string".to_string(),
-                            Value::String(part.to_string().clone()),
-                        );
-                        result
-                            .metadata
-                            .insert("split_position".to_string(), Value::Number(index.into()));
-                    }
+                    self.preprocessors
+                        .iter()
+                        .for_each(|p| p.add_metadata(&mut result.metadata, (index, part)));
                     matches.push(result.into_full_metadata());
                 } else {
                     matches.push(result);
@@ -250,5 +229,156 @@ impl StringGroupMatchResult for BTreeMap<String, Vec<GenericMatchResult>> {
             ))),
         );
         Value::Object(map)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{
+        preprocessors::SplitTargetConfig,
+        rule::IntoGenericMatcherRule,
+        rules::{bitflip::BitflipRule, levenshtein::LevenshteinRule},
+    };
+
+    use super::*;
+
+    #[test]
+    fn basic_example_no_preprocessing() {
+        let group = StringGroup::new(
+            "test".to_string(),
+            vec![RuleSet {
+                name: "test_ruleset".to_string(),
+                string_match: "www.test.com".to_string(),
+                preprocessors: Vec::default(),
+                rules: vec![
+                    Box::new(BitflipRule::new_dns("www.test.com", true).into_generic_matcher()),
+                    Box::new(
+                        LevenshteinRule {
+                            maximum_distance: 3,
+                            ignore_mismatch_metadata: false,
+                        }
+                        .into_generic_matcher(),
+                    ),
+                ],
+            }],
+        );
+
+        let matches = group.generate_matches("wwwntest.com", false);
+        let result = matches.get("test_ruleset").unwrap();
+
+        assert_eq!(result.len(), 2);
+        assert!(result[0].matched);
+        assert_eq!(result[0].rule_type, "bitflip");
+        assert!(result[1].matched);
+        assert_eq!(result[1].rule_type, "levenshtein");
+    }
+
+    #[test]
+    fn basic_example_split_target_preprocessing() {
+        let group = StringGroup::new(
+            "test".to_string(),
+            vec![RuleSet {
+                name: "test_ruleset".to_string(),
+                string_match: "test".to_string(),
+                preprocessors: vec![Preprocessor::SplitTarget(SplitTargetConfig {
+                    ignore_tld: true,
+                })],
+                rules: vec![
+                    Box::new(BitflipRule::new_dns("test", true).into_generic_matcher()),
+                    Box::new(
+                        LevenshteinRule {
+                            maximum_distance: 3,
+                            ignore_mismatch_metadata: false,
+                        }
+                        .into_generic_matcher(),
+                    ),
+                ],
+            }],
+        );
+
+        let matches = group.generate_matches("www.tset.com", true);
+        let result = matches.get("test_ruleset").unwrap();
+
+        assert_eq!(result.len(), 4);
+        assert!(!result[0].matched);
+        assert_eq!(result[0].rule_type, "bitflip");
+        assert_eq!(
+            result[0]
+                .metadata
+                .get("split_string")
+                .unwrap()
+                .as_str()
+                .unwrap(),
+            "www"
+        );
+        assert_eq!(
+            result[0]
+                .metadata
+                .get("split_position")
+                .unwrap()
+                .as_u64()
+                .unwrap(),
+            0
+        );
+        assert!(!result[1].matched);
+        assert_eq!(result[1].rule_type, "levenshtein");
+        assert_eq!(
+            result[1]
+                .metadata
+                .get("split_string")
+                .unwrap()
+                .as_str()
+                .unwrap(),
+            "www"
+        );
+        assert_eq!(
+            result[1]
+                .metadata
+                .get("split_position")
+                .unwrap()
+                .as_u64()
+                .unwrap(),
+            0
+        );
+        assert!(!result[2].matched);
+        assert_eq!(result[2].rule_type, "bitflip");
+        assert_eq!(
+            result[2]
+                .metadata
+                .get("split_string")
+                .unwrap()
+                .as_str()
+                .unwrap(),
+            "tset"
+        );
+        assert_eq!(
+            result[2]
+                .metadata
+                .get("split_position")
+                .unwrap()
+                .as_u64()
+                .unwrap(),
+            1
+        );
+        assert!(result[3].matched);
+        assert_eq!(result[3].rule_type, "levenshtein");
+        assert_eq!(
+            result[3]
+                .metadata
+                .get("split_string")
+                .unwrap()
+                .as_str()
+                .unwrap(),
+            "tset"
+        );
+        assert_eq!(
+            result[3]
+                .metadata
+                .get("split_position")
+                .unwrap()
+                .as_u64()
+                .unwrap(),
+            1
+        );
     }
 }

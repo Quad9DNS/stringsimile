@@ -3,6 +3,7 @@
 use serde::{Deserialize, Serialize};
 use stringsimile_matcher::{
     Error,
+    preprocessors::{Preprocessor, SplitTargetConfig},
     ruleset::{RuleSet, StringGroup},
 };
 
@@ -13,11 +14,8 @@ use crate::rules::RuleConfig;
 pub struct RuleSetConfig {
     name: String,
     string_match: String,
-    // TODO: extract this into something more generic, like a pre-processor
     #[serde(default)]
-    split_target: bool,
-    #[serde(default)]
-    ignore_tld: bool,
+    preprocessors: Vec<PreprocessorConfig>,
     match_rules: Vec<RuleConfig>,
 }
 
@@ -29,8 +27,11 @@ impl RuleSetConfig {
     pub fn into_rule_set(self, ignore_mismatch_metadata: bool) -> Result<RuleSet, Error> {
         Ok(RuleSet {
             name: self.name,
-            split_target: self.split_target,
-            ignore_tld: self.ignore_tld,
+            preprocessors: self
+                .preprocessors
+                .iter()
+                .map(|p| p.build())
+                .collect::<Result<Vec<_>, _>>()?,
             rules: self
                 .match_rules
                 .iter()
@@ -61,6 +62,30 @@ impl StringGroupConfig {
                 .map(|s| s.into_rule_set(ignore_mismatch_metadata))
                 .collect::<Result<Vec<_>, _>>()?,
         ))
+    }
+}
+
+/// Configuration for preprocessors
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "preprocessor_type", rename_all = "snake_case")]
+pub enum PreprocessorConfig {
+    /// Configuration for the split target preprocessor
+    SplitTarget {
+        /// If set to true, will ignore TLD part of the split string
+        #[serde(default)]
+        ignore_tld: bool,
+    },
+}
+
+impl PreprocessorConfig {
+    fn build(&self) -> Result<Preprocessor, Error> {
+        match self {
+            PreprocessorConfig::SplitTarget { ignore_tld } => {
+                Ok(Preprocessor::SplitTarget(SplitTargetConfig {
+                    ignore_tld: *ignore_tld,
+                }))
+            }
+        }
     }
 }
 
@@ -147,5 +172,58 @@ mod tests {
             panic!("Expected jaro winkler rule");
         };
         assert_eq!(85.0, set_2_rule_2.match_percent_threshold);
+    }
+
+    #[test]
+    fn test_parse_preprocessors() {
+        let json = r#"
+            {
+                "name": "Wikimedia",
+                "rule_sets": [
+                    {
+                        "name": "wikipedia main brand name",
+                        "string_match": "wikipedia",
+                        "preprocessors": [
+                            {
+                                "preprocessor_type": "split_target",
+                                "ignore_tld": true
+                            },
+                            {
+                                "preprocessor_type": "split_target"
+                            }
+                        ],
+                        "match_rules": [
+                            {
+                                "rule_type": "levenshtein",
+                                "values": {
+                                    "maximum_distance": 3
+                                }
+                            },
+                            {
+                                "rule_type": "jaro",
+                                "values": {
+                                    "match_percent_threshold": 85
+                                }
+                            }
+                        ]
+                    }
+                ]
+            }
+            "#;
+
+        let wikimedia_group: StringGroupConfig = serde_json::from_str(json).unwrap();
+
+        assert_eq!("Wikimedia", &wikimedia_group.name);
+
+        let set_1 = &wikimedia_group.rule_sets[0];
+        assert_eq!("wikipedia main brand name", &set_1.name);
+        assert_eq!("wikipedia", &set_1.string_match);
+        assert_eq!(2, set_1.preprocessors.len());
+
+        let PreprocessorConfig::SplitTarget { ignore_tld } = &set_1.preprocessors[0];
+        assert!(ignore_tld);
+
+        let PreprocessorConfig::SplitTarget { ignore_tld } = &set_1.preprocessors[1];
+        assert!(!ignore_tld);
     }
 }
