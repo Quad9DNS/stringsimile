@@ -73,11 +73,11 @@ features = ["basic"]
 
 [features]
 default = ["all-static"]
-all-static = ["all", "kafka-static"]
-all-dynamic = ["all", "kafka-dynamic"]
+all-static = ["all", "kafka-static", "jemalloc"]
+all-dynamic = ["all", "kafka-dynamic", "jemalloc"]
 all = ["all-inputs", "all-outputs"]
 
-basic = []
+basic = ["jemalloc"]
 
 kafka-static = ["rdkafka/cmake-build"]
 kafka-dynamic = ["rdkafka/dynamic-linking"]
@@ -87,6 +87,8 @@ inputs-kafka = ["dep:rdkafka"]
 
 all-outputs = ["outputs-kafka"]
 outputs-kafka = ["dep:rdkafka"]
+
+jemalloc = ["dep:tikv-jemallocator"]
 
 [dependencies]
 stringsimile-matcher.workspace = true
@@ -106,6 +108,7 @@ serde_json.workspace = true
 serde_yaml.workspace = true
 snafu.workspace = true
 sysinfo.workspace = true
+tikv-jemallocator = { workspace = true, optional = true }
 tokio = { workspace = true, features = ["full"] }
 tokio-stream = { workspace = true, features = ["io-util", "sync"] }
 tracing.workspace = true
