@@ -1,5 +1,6 @@
 use criterion::{Criterion, criterion_group, criterion_main};
 use stringsimile_matcher::{
+    preprocessors::{Preprocessor, SplitTargetConfig},
     rule::IntoGenericMatcherRule,
     rules::{
         bitflip::BitflipRule,
@@ -181,8 +182,9 @@ bench_ruleset! {
             StringGroup::new("test_group".to_string(), vec![RuleSet {
                 name:"test_ruleset".to_string(),
                 string_match: target_str.to_string(),
-                split_target: true,
-                ignore_tld: false,
+                preprocessors: vec![Preprocessor::SplitTarget(SplitTargetConfig {
+                    ignore_tld: false
+                })],
                 rules: vec![
                     Box::new(ConfusablesRule.into_generic_matcher()),
                     Box::new(LevenshteinRule { maximum_distance: 5, ignore_mismatch_metadata: true }.into_generic_matcher()),
@@ -212,8 +214,9 @@ bench_ruleset! {
             StringGroup::new("test_group".to_string(), vec![RuleSet {
                 name:"test_ruleset".to_string(),
                 string_match: target_str.to_string(),
-                split_target: true,
-                ignore_tld: true,
+                preprocessors: vec![Preprocessor::SplitTarget(SplitTargetConfig {
+                    ignore_tld: true
+                })],
                 rules: vec![
                     Box::new(ConfusablesRule.into_generic_matcher()),
                     Box::new(LevenshteinRule { maximum_distance: 5, ignore_mismatch_metadata: true }.into_generic_matcher()),
@@ -243,8 +246,9 @@ bench_ruleset! {
             StringGroup::new("test_group".to_string(), vec![RuleSet {
                 name:"test_ruleset".to_string(),
                 string_match: target_str.to_string(),
-                split_target: true,
-                ignore_tld: true,
+                preprocessors: vec![Preprocessor::SplitTarget(SplitTargetConfig {
+                    ignore_tld: true
+                })],
                 rules: vec![
                     Box::new(ConfusablesRule.into_generic_matcher()),
                     Box::new(LevenshteinRule { maximum_distance: 5, ignore_mismatch_metadata: true }.into_generic_matcher()),

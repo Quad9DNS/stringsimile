@@ -13,6 +13,7 @@
 
 use serde::Serialize;
 use serde_json::{Map, Value};
+pub mod preprocessors;
 pub mod rule;
 pub mod rules;
 pub mod ruleset;
