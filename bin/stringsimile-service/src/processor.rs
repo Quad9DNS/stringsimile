@@ -1,5 +1,5 @@
+use hashbrown::HashMap;
 use std::{
-    collections::HashMap,
     fs::File,
     io::{BufReader, Seek},
     panic,

@@ -1,10 +1,7 @@
 //! Bitflip rule implementation
 
-use std::{
-    collections::{HashMap, HashSet},
-    fmt::Debug,
-    io::Error,
-};
+use hashbrown::{HashMap, HashSet};
+use std::{fmt::Debug, io::Error};
 
 use serde::{Deserialize, Serialize};
 
@@ -83,7 +80,7 @@ impl BitflipRule {
             .flat_map(move |(i, c)| {
                 let string = target_str.to_owned();
                 bitflips
-                    .get(&(c.try_into().unwrap()))
+                    .get::<u8>(&(c.try_into().unwrap()))
                     .into_iter()
                     .flatten()
                     .map(move |c| {
