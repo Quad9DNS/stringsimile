@@ -13,7 +13,7 @@ use metrics::counter;
 use serde_json::{Map, Value};
 use snafu::ResultExt;
 use stringsimile_config::rulesets::StringGroupConfig;
-use stringsimile_matcher::ruleset::{StringGroup, StringGroupMatchResult};
+use stringsimile_matcher::ruleset::{StringGroup, StringGroupContext, StringGroupMatchResult};
 use tokio::{
     sync::{broadcast::Receiver, mpsc},
     task::JoinSet,
@@ -36,16 +36,18 @@ use crate::{
     signal::ServiceSignal,
 };
 
+type StringGroupState = (Vec<StringGroup>, HashMap<String, StringGroupContext>);
+
 pub struct StringProcessor {
     config: ServiceConfig,
-    rules: ArcSwap<Vec<StringGroup>>,
+    rules: Arc<ArcSwap<StringGroupState>>,
 }
 
 impl StringProcessor {
     pub fn from_config(config: ServiceConfig) -> Self {
         Self {
             config,
-            rules: ArcSwap::default(),
+            rules: Arc::default(),
         }
     }
 
@@ -99,7 +101,12 @@ impl StringProcessor {
             .collect::<Result<Vec<StringGroup>, _>>()
             .context(RuleParsingSnafu)?;
         built_rules.export_metrics();
-        self.rules.store(Arc::new(built_rules));
+
+        let contexts = built_rules
+            .iter()
+            .map(|s| (s.name.clone(), StringGroupContext::new(s)))
+            .collect();
+        self.rules.store(Arc::new((built_rules, contexts)));
         Ok(())
     }
 
@@ -145,7 +152,6 @@ impl StringProcessor {
                 return;
             }
         };
-        let rules = self.rules.load_full();
         let report_all = self.config.matcher.report_all;
 
         let mut output_tasks = JoinSet::new();
@@ -164,15 +170,23 @@ impl StringProcessor {
             );
         }
 
+        let rules = Arc::clone(&self.rules);
         let mut transform_futures = futures::StreamExt::buffer_unordered(
             input_streams.map(|(input_name, message)| {
-                tokio::spawn(Self::process_input_data(
-                    Arc::clone(&rules),
-                    report_all,
-                    input_field.clone(),
-                    input_name,
-                    message,
-                ))
+                let rules = Arc::clone(&rules);
+                let input_field = input_field.clone();
+                tokio::spawn(async move {
+                    let rules_contexts = rules.load();
+                    Self::process_input_data(
+                        &rules_contexts.0,
+                        &rules_contexts.1,
+                        report_all,
+                        input_field,
+                        input_name,
+                        message,
+                    )
+                    .await
+                })
             }),
             self.config.process.threads,
         );
@@ -245,7 +259,8 @@ impl StringProcessor {
     }
 
     async fn process_input_data(
-        rules: Arc<Vec<StringGroup>>,
+        rules: &[StringGroup],
+        contexts: &HashMap<String, StringGroupContext>,
         report_all: bool,
         input_field: FieldAccessor,
         input_name: String,
@@ -275,7 +290,14 @@ impl StringProcessor {
         let mut matches = Vec::default();
         {
             for rule in rules.iter() {
-                let match_results = rule.generate_matches(name, report_all);
+                let Some(context) = contexts.get(&rule.name) else {
+                    error!(
+                        "Missing context for string group: {}. Skipping string group.",
+                        rule.name
+                    );
+                    continue;
+                };
+                let match_results = rule.generate_matches(name, context, report_all);
                 matches.push((rule.name.clone(), match_results));
             }
         }

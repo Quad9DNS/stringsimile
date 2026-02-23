@@ -39,7 +39,6 @@ pub struct StringGroup {
     pub name: String,
     /// Rule sets that are in this group
     pub rule_sets: Vec<RuleSet>,
-    metrics: HashMap<String, HashMap<String, RuleMetrics>>,
 }
 
 #[derive(Clone)]
@@ -71,12 +70,51 @@ impl RuleMetrics {
     }
 }
 
+/// Context of a ruleset (external state)
+pub struct RulesetContext {
+    metrics: HashMap<String, RuleMetrics>,
+}
+
+/// Context of a string group (external state)
+pub struct StringGroupContext {
+    rulesets: HashMap<String, RulesetContext>,
+}
+
+impl StringGroupContext {
+    /// Creates a new string group context, with configured contextx for each rule set
+    pub fn new(string_group: &StringGroup) -> Self {
+        let name: &str = &string_group.name;
+        let rule_sets: &[RuleSet] = &string_group.rule_sets;
+        let rulesets = rule_sets
+            .iter()
+            .map(|rs| {
+                (
+                    rs.name.clone(),
+                    RulesetContext {
+                        metrics: rs
+                            .rules
+                            .iter()
+                            .map(|rule| {
+                                (
+                                    rule.name().to_string(),
+                                    RuleMetrics::new(name, &rs.name, rule.name()),
+                                )
+                            })
+                            .collect(),
+                    },
+                )
+            })
+            .collect();
+        Self { rulesets }
+    }
+}
+
 impl RuleSet {
     /// Matches the value to this rule set and generates matches with metadata
     fn generate_matches(
         &self,
         name: &str,
-        metrics: &HashMap<String, RuleMetrics>,
+        context: &RulesetContext,
         full_metadata_for_all: bool,
     ) -> Vec<GenericMatchResult> {
         let _ = trace_span!("ruleset", input = name, ruleset = self.name).enter();
@@ -96,7 +134,11 @@ impl RuleSet {
 
         for it in input.enumerate() {
             for rule in &self.rules {
-                let rule_metrics = metrics.get(rule.name()).expect("Missing metrics for rule");
+                let rule_metrics = context
+                    .metrics
+                    .get(rule.name())
+                    .expect("Missing metrics for rule");
+
                 self.generate_match(
                     &mut matches,
                     rule.deref(),
@@ -145,27 +187,9 @@ impl RuleSet {
 impl StringGroup {
     /// Creates a new string group with given name and rule sets
     pub fn new(name: String, rule_sets: Vec<RuleSet>) -> Self {
-        let metrics = rule_sets
-            .iter()
-            .map(|rs| {
-                (
-                    rs.name.clone(),
-                    rs.rules
-                        .iter()
-                        .map(|rule| {
-                            (
-                                rule.name().to_string(),
-                                RuleMetrics::new(&name, &rs.name, rule.name()),
-                            )
-                        })
-                        .collect(),
-                )
-            })
-            .collect();
         Self {
             name: name.clone(),
             rule_sets,
-            metrics,
         }
     }
 
@@ -173,6 +197,7 @@ impl StringGroup {
     pub fn generate_matches(
         &self,
         input: &str,
+        context: &StringGroupContext,
         full_metadata_for_all: bool,
     ) -> BTreeMap<String, Vec<GenericMatchResult>> {
         let _ = trace_span!("string group", input = input, group = self.name).enter();
@@ -182,9 +207,10 @@ impl StringGroup {
         for rule_set in &self.rule_sets {
             let rule_set_matches = rule_set.generate_matches(
                 input,
-                self.metrics
+                context
+                    .rulesets
                     .get(&rule_set.name)
-                    .expect("Missing rule set metrics"),
+                    .expect("Missing rule set context"),
                 full_metadata_for_all,
             );
             matches.insert(rule_set.name.clone(), rule_set_matches);
@@ -261,7 +287,8 @@ mod tests {
             }],
         );
 
-        let matches = group.generate_matches("wwwntest.com", false);
+        let matches =
+            group.generate_matches("wwwntest.com", &StringGroupContext::new(&group), false);
         let result = matches.get("test_ruleset").unwrap();
 
         assert_eq!(result.len(), 2);
@@ -294,7 +321,8 @@ mod tests {
             }],
         );
 
-        let matches = group.generate_matches("www.tset.com", true);
+        let matches =
+            group.generate_matches("www.tset.com", &StringGroupContext::new(&group), true);
         let result = matches.get("test_ruleset").unwrap();
 
         assert_eq!(result.len(), 4);
