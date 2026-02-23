@@ -24,6 +24,7 @@ rules-bitflip = ["dep:lazy_static"]
 confusables = { workspace = true, optional = true }
 lazy_static = { workspace = true, optional = true }
 metrics.workspace = true
+hashbrown.workspace = true
 rphonetic = { workspace = true, optional = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json.workspace = true

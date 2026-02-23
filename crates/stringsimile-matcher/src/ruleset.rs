@@ -1,9 +1,7 @@
 //! Group of related rules
 
-use std::{
-    collections::{BTreeMap, HashMap},
-    ops::Deref,
-};
+use hashbrown::HashMap;
+use std::{collections::BTreeMap, ops::Deref};
 
 use metrics::{Counter, counter};
 use serde_json::{Map, Value};

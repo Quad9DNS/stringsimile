@@ -97,9 +97,10 @@ async-stream.workspace = true
 clap = { workspace = true, features = ["derive"] }
 exitcode.workspace = true
 futures.workspace = true
-metrics.workspace = true
+hashbrown.workspace = true
 metrics-exporter-prometheus.workspace = true
 metrics-util.workspace = true
+metrics.workspace = true
 rdkafka = { workspace = true, optional = true }
 serde.workspace = true
 serde_json.workspace = true
@@ -108,8 +109,8 @@ snafu.workspace = true
 sysinfo.workspace = true
 tokio = { workspace = true, features = ["full"] }
 tokio-stream = { workspace = true, features = ["io-util", "sync"] }
-tracing.workspace = true
 tracing-subscriber.workspace = true
+tracing.workspace = true
 walkdir.workspace = true
 
 [dev-dependencies]
