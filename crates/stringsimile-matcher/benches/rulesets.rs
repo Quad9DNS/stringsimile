@@ -15,7 +15,7 @@ use stringsimile_matcher::{
         nysiis::NysiisRule,
         soundex::{SoundexRule, SoundexRuleType},
     },
-    ruleset::{RuleSet, StringGroup},
+    ruleset::{RuleSet, StringGroup, StringGroupContext},
 };
 
 const INPUT_DATA: [&str; 100] = [
@@ -125,6 +125,7 @@ macro_rules! bench_ruleset {
     (name = $rule_name:ident; builder { $builder:expr }) => {
         fn $rule_name(c: &mut Criterion) {
             let string_group = $builder;
+            let context = StringGroupContext::new(&string_group);
             let mut group = c.benchmark_group(stringify!($rule_name));
             group.throughput(criterion::Throughput::Bytes(
                 string_group
@@ -142,7 +143,7 @@ macro_rules! bench_ruleset {
             group.bench_function(stringify!($rule_name), |b| {
                 b.iter(|| {
                     INPUT_DATA.iter().for_each(|input| {
-                        let _ = string_group.generate_matches(input, false);
+                        let _ = string_group.generate_matches(input, &context, false);
                     })
                 });
             });
@@ -165,7 +166,7 @@ macro_rules! bench_ruleset {
             group.bench_function(stringify!($rule_name), |b| {
                 b.iter(|| {
                     INPUT_DATA.iter().for_each(|input| {
-                        let _ = string_group.generate_matches(input, true);
+                        let _ = string_group.generate_matches(input, &context, true);
                     })
                 });
             });
