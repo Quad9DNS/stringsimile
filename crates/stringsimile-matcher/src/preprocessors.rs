@@ -58,7 +58,11 @@ impl Preprocessor {
         match self {
             Preprocessor::SplitTarget(config) => {
                 let ignore_tld = config.ignore_tld;
-                Box::new(input.flat_map(move |i| i.split('.').split_target(ignore_tld)))
+                Box::new(input.flat_map(move |i| {
+                    i.split('.')
+                        .filter(|s| !s.is_empty())
+                        .split_target(ignore_tld)
+                }))
             }
         }
     }
