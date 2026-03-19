@@ -20,5 +20,7 @@ pub mod match_rating;
 pub mod metaphone;
 #[cfg(feature = "rules-nysiis")]
 pub mod nysiis;
+#[cfg(feature = "rules-regex")]
+pub mod regex;
 #[cfg(feature = "rules-soundex")]
 pub mod soundex;

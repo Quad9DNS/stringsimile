@@ -9,6 +9,7 @@ version.workspace = true
 stringsimile-matcher.workspace = true
 
 hashbrown.workspace = true
+regex.workspace = true
 serde = { workspace = true, features = ["derive"] }
 serde_json.workspace = true
 snafu.workspace = true
