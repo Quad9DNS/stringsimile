@@ -84,27 +84,6 @@ fn basic_file_test_report_matches_only() {
         })
         .collect::<Vec<Map<String, Value>>>();
 
-    let input_data_parsed = serde_json::Deserializer::from_slice(INPUT_DATA)
-        .into_iter::<Value>()
-        .map(|r| {
-            r.expect("Failed parsing output")
-                .as_object()
-                .expect("Expected JSON object")
-                .clone()
-        })
-        .collect::<Vec<Map<String, Value>>>();
-
-    assert_eq!(results.len(), input_data_parsed.len());
-
-    // Ensure original data was not modified
-    for i in 0..input_data_parsed.len() {
-        let input_row = &input_data_parsed[i];
-        let results_row = &results[i];
-        for (k, v) in input_row {
-            assert_eq!(results_row[k], *v);
-        }
-
-        println!("{:?}", results_row);
-        assert!(!results_row.contains_key("stringsimile"));
-    }
+    // No matches, no results
+    assert_eq!(results.len(), 0);
 }
