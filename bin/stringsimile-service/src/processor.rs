@@ -233,7 +233,7 @@ impl StringProcessor {
 
                 result = transform_futures.next(), if !inputs_done => {
                     match result {
-                        Some(Ok(val)) => {
+                        Some(Ok(Some(val))) => {
                             for (output_name, sender) in &senders {
                                 if let Err(err) = sender.send(val.clone()).await {
                                     output_passing_errors.increment(1);
@@ -241,6 +241,7 @@ impl StringProcessor {
                                 }
                             }
                         }
+                        Some(Ok(None)) => (),
                         Some(Err(err)) => {
                             rule_matching_errors.increment(1);
                             warn!(message = "Rule matcher task failed.", error = %err);
@@ -265,11 +266,11 @@ impl StringProcessor {
         input_field: FieldAccessor,
         input_name: String,
         message: StringsimileMessage,
-    ) -> StringsimileMessage {
+    ) -> Option<StringsimileMessage> {
         let (original_input, message) = message.into_parts();
         let Some(message) = message else {
             warn!("Input data was not a JSON object!");
-            return StringsimileMessage::from_parts(original_input, message);
+            return None;
         };
 
         let name = match input_field
@@ -282,7 +283,7 @@ impl StringProcessor {
                     "Input parsing error!\nError: {:?}\nOriginal input: {}",
                     error, original_input
                 );
-                return StringsimileMessage::from_parts(original_input, None);
+                return None;
             }
         };
 
@@ -307,7 +308,7 @@ impl StringProcessor {
                 .map(|(_name, results)| results)
                 .any(StringGroupMatchResult::has_matches)
         {
-            StringsimileMessage::from_parts(original_input, None)
+            None
         } else {
             let mut inner_data = Map::default();
             inner_data.insert(
@@ -340,10 +341,13 @@ impl StringProcessor {
                     "Input parsing error!\nExpected JSON object, but found: {}",
                     original_input
                 );
-                return StringsimileMessage::from_parts(original_input, None);
+                return None;
             };
             map.insert("stringsimile".to_string(), Value::Object(inner_data));
-            StringsimileMessage::from_parts(original_input, Some(Value::Object(map)))
+            Some(StringsimileMessage::from_parts(
+                original_input,
+                Some(Value::Object(map)),
+            ))
         }
     }
 }
