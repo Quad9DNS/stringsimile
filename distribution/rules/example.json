@@ -72,6 +72,12 @@
 							"char_subset": "dns",
 							"case_sensitive": true
 						}
+					},
+					{
+						"rule_type": "regex",
+						"values": {
+							"pattern": "test"
+						}
 					}
 				]
 			},

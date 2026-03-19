@@ -1,6 +1,7 @@
 //! Configuration for rules
+use regex::Regex;
 use serde::{Deserialize, Serialize};
-use snafu::Snafu;
+use snafu::{ResultExt, Snafu};
 use stringsimile_matcher::{
     Error,
     rule::{GenericMatcherRule, IntoGenericMatcherRule},
@@ -15,6 +16,7 @@ use stringsimile_matcher::{
         match_rating::MatchRatingRule,
         metaphone::{MetaphoneRule, MetaphoneRuleType},
         nysiis::NysiisRule,
+        regex::RegexRule,
         soundex::{SoundexRule, SoundexRuleType},
     },
 };
@@ -45,6 +47,8 @@ pub enum RuleConfig {
     MatchRating,
     /// Configuration for Bitflip rule
     Bitflip(Option<BitflipConfig>),
+    /// Configuration for Regex rule
+    Regex(RegexConfig),
 }
 
 /// Errors for rule configuration
@@ -98,6 +102,13 @@ pub enum RuleConfigError {
         /// Position at which non-ASCII char was found.
         index: usize,
     },
+
+    /// Regex rule configuration error
+    #[snafu(display("Invalid pattern for Regex rule: {}", source))]
+    RegexInvalidPattern {
+        /// Regex error.
+        source: regex::Error,
+    },
 }
 
 impl RuleConfig {
@@ -146,6 +157,9 @@ impl RuleConfig {
                     .build(target_str)?
                     .into_generic_matcher(),
             ),
+            RuleConfig::Regex(regex_config) => {
+                Box::new(regex_config.build()?.into_generic_matcher())
+            }
         })
     }
 }
@@ -418,6 +432,21 @@ impl Default for BitflipConfig {
             custom_char_subset: Default::default(),
             case_sensitive: default_bitflip_case_sensitive(),
         }
+    }
+}
+
+/// Configuration for Regex rule
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RegexConfig {
+    /// Regex pattern to match against.
+    pub pattern: String,
+}
+
+impl RegexConfig {
+    fn build(&self) -> Result<RegexRule, Error> {
+        Ok(RegexRule::new(
+            Regex::new(&self.pattern).context(RegexInvalidPatternSnafu)?,
+        ))
     }
 }
 
@@ -801,5 +830,45 @@ mod tests {
         };
         assert_eq!(input_str, "abcčćddžđ");
         assert_eq!(*index, 3);
+    }
+
+    #[test]
+    fn test_parse_regex() {
+        let json = r#"
+        {
+            "rule_type": "regex",
+            "values": {
+                "pattern": "test"
+            }
+        }
+            "#;
+
+        let RuleConfig::Regex(config) = serde_json::from_str(json).unwrap() else {
+            panic!("Expected Regex config");
+        };
+        assert_eq!(config.pattern, "test");
+
+        let res = config.build();
+        assert!(res.is_ok());
+    }
+
+    #[test]
+    fn test_parse_regex_invalid_pattern() {
+        let json = r#"
+        {
+            "rule_type": "regex",
+            "values": {
+                "pattern": "["
+            }
+        }
+            "#;
+
+        let RuleConfig::Regex(config) = serde_json::from_str(json).unwrap() else {
+            panic!("Expected Regex config");
+        };
+        assert_eq!(config.pattern, "[");
+
+        let res = config.build();
+        assert!(res.is_err());
     }
 }

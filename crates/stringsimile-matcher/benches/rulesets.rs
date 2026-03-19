@@ -1,4 +1,5 @@
 use criterion::{Criterion, criterion_group, criterion_main};
+use regex::Regex;
 use stringsimile_matcher::{
     preprocessors::{Preprocessor, SplitTargetConfig},
     rule::IntoGenericMatcherRule,
@@ -13,6 +14,7 @@ use stringsimile_matcher::{
         match_rating::MatchRatingRule,
         metaphone::{MetaphoneRule, MetaphoneRuleType},
         nysiis::NysiisRule,
+        regex::RegexRule,
         soundex::{SoundexRule, SoundexRuleType},
     },
     ruleset::{RuleSet, StringGroup, StringGroupContext},
@@ -201,6 +203,7 @@ bench_ruleset! {
                     Box::new(SoundexRule::new(SoundexRuleType::Normal, 5, target_str).into_generic_matcher()),
                     Box::new(SoundexRule::new(SoundexRuleType::Refined, 5, target_str).into_generic_matcher()),
                     Box::new(BitflipRule::new_dns(target_str, true)),
+                    Box::new(RegexRule::new(Regex::new(target_str).unwrap())),
                 ]
             }])
         }
@@ -233,6 +236,7 @@ bench_ruleset! {
                     Box::new(SoundexRule::new(SoundexRuleType::Normal, 5, target_str).into_generic_matcher()),
                     Box::new(SoundexRule::new(SoundexRuleType::Refined, 5, target_str).into_generic_matcher()),
                     Box::new(BitflipRule::new_dns(target_str, true)),
+                    Box::new(RegexRule::new(Regex::new(target_str).unwrap())),
                 ]
             }])
         }
@@ -265,6 +269,7 @@ bench_ruleset! {
                     Box::new(SoundexRule::new(SoundexRuleType::Normal, 5, target_str).into_generic_matcher()),
                     Box::new(SoundexRule::new(SoundexRuleType::Refined, 5, target_str).into_generic_matcher()),
                     Box::new(BitflipRule::new_dns(target_str, true)),
+                    Box::new(RegexRule::new(Regex::new(target_str).unwrap())),
                 ]
             }])
         }

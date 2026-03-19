@@ -1,4 +1,5 @@
 use criterion::{Criterion, criterion_group, criterion_main};
+use regex::Regex;
 use stringsimile_matcher::{
     rule::MatcherRule,
     rules::{
@@ -12,6 +13,7 @@ use stringsimile_matcher::{
         match_rating::MatchRatingRule,
         metaphone::{MetaphoneRule, MetaphoneRuleType},
         nysiis::NysiisRule,
+        regex::RegexRule,
         soundex::{SoundexRule, SoundexRuleType},
     },
 };
@@ -330,6 +332,24 @@ bench_rule! {
     }
 }
 
+bench_rule! {
+    name = regex_exact_match;
+    single_match = "randomWstring_to_find";
+    single_mismatch = "some different string";
+    builder {
+        RegexRule::new(Regex::new("randomWstring_to_find").unwrap())
+    }
+}
+
+bench_rule! {
+    name = regex_complex_pattern;
+    single_match = "randomWstring_to_find";
+    single_mismatch = "some different string";
+    builder {
+        RegexRule::new(Regex::new(r#"\w*_.*"#).unwrap())
+    }
+}
+
 criterion_group!(
     benches,
     confusables,
@@ -351,5 +371,7 @@ criterion_group!(
     bitflip_case_insensitive,
     bitflip_ascii_printable,
     bitflip_ascii_printable_case_insensitive,
+    regex_exact_match,
+    regex_complex_pattern,
 );
 criterion_main!(benches);

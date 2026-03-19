@@ -7,24 +7,26 @@ version.workspace = true
 
 [features]
 default = ["all"]
-all = ["rules-levenshtein", "rules-hamming", "rules-jaro", "rules-jaro-winkler", "rules-confusables", "rules-damerau-levenshtein", "rules-soundex", "rules-metaphone", "rules-nysiis", "rules-match-rating", "rules-bitflip"]
-rules-levenshtein = ["dep:triple_accel"]
+all = ["rules-levenshtein", "rules-hamming", "rules-jaro", "rules-jaro-winkler", "rules-confusables", "rules-damerau-levenshtein", "rules-soundex", "rules-metaphone", "rules-nysiis", "rules-match-rating", "rules-bitflip", "rules-regex"]
+rules-bitflip = ["dep:lazy_static"]
+rules-confusables = ["dep:confusables"]
+rules-damerau-levenshtein = ["dep:triple_accel"]
 rules-hamming = ["dep:triple_accel"]
 rules-jaro = ["dep:strsim"]
 rules-jaro-winkler = ["dep:strsim"]
-rules-confusables = ["dep:confusables"]
-rules-damerau-levenshtein = ["dep:triple_accel"]
-rules-soundex = ["dep:rphonetic"]
+rules-levenshtein = ["dep:triple_accel"]
+rules-match-rating = ["dep:rphonetic"]
 rules-metaphone = ["dep:rphonetic"]
 rules-nysiis = ["dep:rphonetic"]
-rules-match-rating = ["dep:rphonetic"]
-rules-bitflip = ["dep:lazy_static"]
+rules-regex = ["dep:regex"]
+rules-soundex = ["dep:rphonetic"]
 
 [dependencies]
 confusables = { workspace = true, optional = true }
+hashbrown.workspace = true
 lazy_static = { workspace = true, optional = true }
 metrics.workspace = true
-hashbrown.workspace = true
+regex = { workspace = true, optional = true }
 rphonetic = { workspace = true, optional = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json.workspace = true
