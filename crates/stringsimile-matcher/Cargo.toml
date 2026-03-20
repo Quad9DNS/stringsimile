@@ -7,8 +7,9 @@ version.workspace = true
 
 [features]
 default = ["all"]
-all = ["rules-levenshtein", "rules-hamming", "rules-jaro", "rules-jaro-winkler", "rules-confusables", "rules-damerau-levenshtein", "rules-soundex", "rules-metaphone", "rules-nysiis", "rules-match-rating", "rules-bitflip", "rules-regex"]
+all = ["rules-levenshtein", "rules-hamming", "rules-jaro", "rules-jaro-winkler", "rules-confusables", "rules-damerau-levenshtein", "rules-soundex", "rules-metaphone", "rules-nysiis", "rules-match-rating", "rules-bitflip", "rules-regex", "rules-cidr"]
 rules-bitflip = ["dep:lazy_static"]
+rules-cidr = ["dep:ipnet"]
 rules-confusables = ["dep:confusables"]
 rules-damerau-levenshtein = ["dep:triple_accel"]
 rules-hamming = ["dep:triple_accel"]
@@ -24,6 +25,7 @@ rules-soundex = ["dep:rphonetic"]
 [dependencies]
 confusables = { workspace = true, optional = true }
 hashbrown.workspace = true
+ipnet = { workspace = true, optional = true }
 lazy_static = { workspace = true, optional = true }
 metrics.workspace = true
 regex = { workspace = true, optional = true }

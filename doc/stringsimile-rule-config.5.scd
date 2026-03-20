@@ -32,6 +32,7 @@ Currently the following rules are supported:
 - Match Rating
 - Bitflip
 - Regex
+- CIDR
 
 Each of the rules has specific values that can be used to configure it:
 - Levenshtein
@@ -59,8 +60,11 @@ Each of the rules has specific values that can be used to configure it:
   - char_subset - char subset of valid characters to use for bitlips ("dns", "printable", "custom")
   - custom_char_subset - if "custom" char subset is configured, this represents a string of valid characters to consider for bitflips
 - Regex
-  - pattern - regex pattern to match against. This rule ignored the
+  - pattern - regex pattern to match against. This rule ignores the
   `string_match` of the rule set and just uses this pattern.
+- CIDR
+  - address - CIDR notation IP address to match against. This rule ignores the
+  `string_match` of the rule set and just uses this address.
 
 Single string group object has the following keys:
 - name
@@ -82,7 +86,7 @@ Each rule set has the following keys:
 
 Each rule has the following keys:
 - rule_type
-  One of "levenshtein", "jaro", "jaro_winkler", "confusables", "damerau_levenshtein", "hamming", "soundex", "metaphone", "nysiis", "match_rating", "bitflip", "regex"
+  One of "levenshtein", "jaro", "jaro_winkler", "confusables", "damerau_levenshtein", "hamming", "soundex", "metaphone", "nysiis", "match_rating", "bitflip", "regex", "cidr"
 - values
   Object dependent on the rule_type used. Some rules don't have additional
   values and this field can be skipped for them.

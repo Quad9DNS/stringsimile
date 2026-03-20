@@ -5,6 +5,7 @@ use stringsimile_matcher::{
     rule::IntoGenericMatcherRule,
     rules::{
         bitflip::BitflipRule,
+        cidr::CidrRule,
         confusables::ConfusablesRule,
         damerau_levenshtein::DamerauLevenshteinRule,
         hamming::HammingRule,
@@ -204,6 +205,7 @@ bench_ruleset! {
                     Box::new(SoundexRule::new(SoundexRuleType::Refined, 5, target_str).into_generic_matcher()),
                     Box::new(BitflipRule::new_dns(target_str, true)),
                     Box::new(RegexRule::new(Regex::new(target_str).unwrap())),
+                    Box::new(CidrRule::new("192.168.0.0/24".parse().unwrap())),
                 ]
             }])
         }
@@ -237,6 +239,7 @@ bench_ruleset! {
                     Box::new(SoundexRule::new(SoundexRuleType::Refined, 5, target_str).into_generic_matcher()),
                     Box::new(BitflipRule::new_dns(target_str, true)),
                     Box::new(RegexRule::new(Regex::new(target_str).unwrap())),
+                    Box::new(CidrRule::new("192.168.0.0/24".parse().unwrap())),
                 ]
             }])
         }
@@ -270,6 +273,7 @@ bench_ruleset! {
                     Box::new(SoundexRule::new(SoundexRuleType::Refined, 5, target_str).into_generic_matcher()),
                     Box::new(BitflipRule::new_dns(target_str, true)),
                     Box::new(RegexRule::new(Regex::new(target_str).unwrap())),
+                    Box::new(CidrRule::new("192.168.0.0/24".parse().unwrap())),
                 ]
             }])
         }

@@ -78,6 +78,12 @@
 						"values": {
 							"pattern": "test"
 						}
+					},
+					{
+						"rule_type": "cidr",
+						"values": {
+							"address": "192.168.0.0/24"
+						}
 					}
 				]
 			},
