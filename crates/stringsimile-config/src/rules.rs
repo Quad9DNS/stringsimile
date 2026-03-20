@@ -7,6 +7,7 @@ use stringsimile_matcher::{
     rule::{GenericMatcherRule, IntoGenericMatcherRule},
     rules::{
         bitflip::BitflipRule,
+        cidr::CidrRule,
         confusables::ConfusablesRule,
         damerau_levenshtein::DamerauLevenshteinRule,
         hamming::HammingRule,
@@ -49,6 +50,8 @@ pub enum RuleConfig {
     Bitflip(Option<BitflipConfig>),
     /// Configuration for Regex rule
     Regex(RegexConfig),
+    /// Configuration for CIDR rule
+    Cidr(CidrConfig),
 }
 
 /// Errors for rule configuration
@@ -109,6 +112,13 @@ pub enum RuleConfigError {
         /// Regex error.
         source: regex::Error,
     },
+
+    /// CIDR rule configuration error
+    #[snafu(display("Invalid address for CIDR rule: {}", source))]
+    CidrInvalidAddress {
+        /// Address parse error.
+        source: ipnet::AddrParseError,
+    },
 }
 
 impl RuleConfig {
@@ -160,6 +170,7 @@ impl RuleConfig {
             RuleConfig::Regex(regex_config) => {
                 Box::new(regex_config.build()?.into_generic_matcher())
             }
+            RuleConfig::Cidr(cidr_config) => Box::new(cidr_config.build()?.into_generic_matcher()),
         })
     }
 }
@@ -446,6 +457,21 @@ impl RegexConfig {
     fn build(&self) -> Result<RegexRule, Error> {
         Ok(RegexRule::new(
             Regex::new(&self.pattern).context(RegexInvalidPatternSnafu)?,
+        ))
+    }
+}
+
+/// Configuration for CIDR rule
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CidrConfig {
+    /// CIDR notation address to match against.
+    pub address: String,
+}
+
+impl CidrConfig {
+    fn build(&self) -> Result<CidrRule, Error> {
+        Ok(CidrRule::new(
+            self.address.parse().context(CidrInvalidAddressSnafu)?,
         ))
     }
 }
@@ -867,6 +893,46 @@ mod tests {
             panic!("Expected Regex config");
         };
         assert_eq!(config.pattern, "[");
+
+        let res = config.build();
+        assert!(res.is_err());
+    }
+
+    #[test]
+    fn test_parse_cidr() {
+        let json = r#"
+        {
+            "rule_type": "cidr",
+            "values": {
+                "address": "192.168.0.0/24"
+            }
+        }
+            "#;
+
+        let RuleConfig::Cidr(config) = serde_json::from_str(json).unwrap() else {
+            panic!("Expected CIDR config");
+        };
+        assert_eq!(config.address, "192.168.0.0/24");
+
+        let res = config.build();
+        assert!(res.is_ok());
+    }
+
+    #[test]
+    fn test_parse_cidr_invalid_address() {
+        let json = r#"
+        {
+            "rule_type": "cidr",
+            "values": {
+                "address": "test"
+            }
+        }
+            "#;
+
+        let RuleConfig::Cidr(config) = serde_json::from_str(json).unwrap() else {
+            panic!("Expected CIDR config");
+        };
+        assert_eq!(config.address, "test");
 
         let res = config.build();
         assert!(res.is_err());

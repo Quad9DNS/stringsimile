@@ -4,6 +4,7 @@ use stringsimile_matcher::{
     rule::MatcherRule,
     rules::{
         bitflip::BitflipRule,
+        cidr::CidrRule,
         confusables::ConfusablesRule,
         damerau_levenshtein::DamerauLevenshteinRule,
         hamming::HammingRule,
@@ -350,6 +351,15 @@ bench_rule! {
     }
 }
 
+bench_rule! {
+    name = cidr;
+    single_match = "192.168.0.1";
+    single_mismatch = "192.168.1.1";
+    builder {
+        CidrRule::new("192.168.0.0/24".parse().unwrap())
+    }
+}
+
 criterion_group!(
     benches,
     confusables,
@@ -373,5 +383,6 @@ criterion_group!(
     bitflip_ascii_printable_case_insensitive,
     regex_exact_match,
     regex_complex_pattern,
+    cidr,
 );
 criterion_main!(benches);

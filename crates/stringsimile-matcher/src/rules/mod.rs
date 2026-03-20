@@ -2,6 +2,8 @@
 
 #[cfg(feature = "rules-bitflip")]
 pub mod bitflip;
+#[cfg(feature = "rules-cidr")]
+pub mod cidr;
 #[cfg(feature = "rules-confusables")]
 pub mod confusables;
 #[cfg(feature = "rules-damerau-levenshtein")]
