@@ -6,11 +6,11 @@ use stringsimile_matcher::{
         bitflip::BitflipRule,
         cidr::CidrRule,
         confusables::ConfusablesRule,
-        damerau_levenshtein::DamerauLevenshteinRule,
+        damerau_levenshtein::{DamerauLevenshteinRule, DamerauLevenshteinSubstringRule},
         hamming::HammingRule,
         jaro::JaroRule,
         jaro_winkler::JaroWinklerRule,
-        levenshtein::LevenshteinRule,
+        levenshtein::{LevenshteinRule, LevenshteinSubstringRule},
         match_rating::MatchRatingRule,
         metaphone::{MetaphoneRule, MetaphoneRuleType},
         nysiis::NysiisRule,
@@ -190,6 +190,15 @@ bench_rule! {
 }
 
 bench_rule! {
+    name = levenshtein_substring;
+    single_match = "some_string_including_ranodm_string_to_find_inside";
+    single_mismatch = "some string including some different string inside";
+    builder {
+        LevenshteinSubstringRule { maximum_distance: 5 }
+    }
+}
+
+bench_rule! {
     name = damerau_levenshtein;
     single_match = "ranodm_string_to_find";
     single_mismatch = "some different string";
@@ -204,6 +213,15 @@ bench_rule! {
     single_mismatch = "some different string";
     builder {
         DamerauLevenshteinRule { maximum_distance: 5, ignore_mismatch_metadata: true }
+    }
+}
+
+bench_rule! {
+    name = damerau_levenshtein_substring;
+    single_match = "some_string_including_ranodm_string_to_find_inside";
+    single_mismatch = "some string including some different string inside";
+    builder {
+        DamerauLevenshteinSubstringRule { maximum_distance: 5 }
     }
 }
 
@@ -365,8 +383,10 @@ criterion_group!(
     confusables,
     levenshtein,
     levenshtein_optimized_mismatch,
+    levenshtein_substring,
     damerau_levenshtein,
     damerau_levenshtein_optimized_mismatch,
+    damerau_levenshtein_substring,
     hamming,
     jaro,
     jaro_winkler,

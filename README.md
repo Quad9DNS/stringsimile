@@ -36,10 +36,12 @@ Stringsimile supports different inputs, outputs and rules to use when comparing 
 ### Supported rules
 
 - Levenshtein
+- Levenshtein substring variant
 - Jaro
 - Jaro-Winkler
 - IDN Confusables
 - Damerau-Levenshtein
+- Damerau-Levenshtein substring variant
 - Hamming
 - Soundex
 - Metaphone

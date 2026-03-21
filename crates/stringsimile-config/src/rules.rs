@@ -9,11 +9,11 @@ use stringsimile_matcher::{
         bitflip::BitflipRule,
         cidr::CidrRule,
         confusables::ConfusablesRule,
-        damerau_levenshtein::DamerauLevenshteinRule,
+        damerau_levenshtein::{DamerauLevenshteinRule, DamerauLevenshteinSubstringRule},
         hamming::HammingRule,
         jaro::JaroRule,
         jaro_winkler::JaroWinklerRule,
-        levenshtein::LevenshteinRule,
+        levenshtein::{LevenshteinRule, LevenshteinSubstringRule},
         match_rating::MatchRatingRule,
         metaphone::{MetaphoneRule, MetaphoneRuleType},
         nysiis::NysiisRule,
@@ -28,12 +28,16 @@ use stringsimile_matcher::{
 pub enum RuleConfig {
     /// Configuration for Levenshtein rule
     Levenshtein(LevenshteinConfig),
+    /// Configuration for Levenshtein substring rule
+    LevenshteinSubstring(LevenshteinSubstringConfig),
     /// Configuration for Hamming rule
     Hamming(HammingConfig),
     /// Configuration for Confusables rule
     Confusables,
     /// Configuration for Damerau Levenshtein rule
     DamerauLevenshtein(DamerauLevenshteinConfig),
+    /// Configuration for Damerau Levenshtein substring rule
+    DamerauLevenshteinSubstring(DamerauLevenshteinSubstringConfig),
     /// Configuration for Jaro rule
     Jaro(JaroConfig),
     /// Configuration for Jaro-Winkler rule
@@ -137,6 +141,9 @@ impl RuleConfig {
                     .build(ignore_mismatch_metadata)?
                     .into_generic_matcher(),
             ),
+            RuleConfig::LevenshteinSubstring(levenshtein_substring_config) => {
+                Box::new(levenshtein_substring_config.build()?.into_generic_matcher())
+            }
             RuleConfig::Hamming(hamming_config) => {
                 Box::new(hamming_config.build()?.into_generic_matcher())
             }
@@ -147,6 +154,13 @@ impl RuleConfig {
             }
             RuleConfig::DamerauLevenshtein(damerau_levenshtein_config) => {
                 Box::new(damerau_levenshtein_config.build(ignore_mismatch_metadata)?)
+            }
+            RuleConfig::DamerauLevenshteinSubstring(damerau_levenshtein_substring_config) => {
+                Box::new(
+                    damerau_levenshtein_substring_config
+                        .build()?
+                        .into_generic_matcher(),
+                )
             }
             RuleConfig::Soundex(soundex_config) => {
                 Box::new(soundex_config.build(target_str)?.into_generic_matcher())
@@ -191,6 +205,21 @@ impl LevenshteinConfig {
     }
 }
 
+/// Configuration for Levenshtein substring rule
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LevenshteinSubstringConfig {
+    /// Maximum distance
+    pub maximum_distance: u32,
+}
+
+impl LevenshteinSubstringConfig {
+    fn build(&self) -> Result<LevenshteinSubstringRule, Error> {
+        Ok(LevenshteinSubstringRule {
+            maximum_distance: self.maximum_distance,
+        })
+    }
+}
+
 /// Configuration for Levenshtein rule
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HammingConfig {
@@ -228,6 +257,21 @@ impl DamerauLevenshteinConfig {
         Ok(DamerauLevenshteinRule {
             maximum_distance: self.maximum_distance,
             ignore_mismatch_metadata,
+        })
+    }
+}
+
+/// Configuration for Damerau Levenshtein substring rule
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DamerauLevenshteinSubstringConfig {
+    /// Maximum distance
+    pub maximum_distance: u32,
+}
+
+impl DamerauLevenshteinSubstringConfig {
+    fn build(&self) -> Result<DamerauLevenshteinSubstringRule, Error> {
+        Ok(DamerauLevenshteinSubstringRule {
+            maximum_distance: self.maximum_distance,
         })
     }
 }
@@ -498,6 +542,23 @@ mod tests {
     }
 
     #[test]
+    fn test_parse_levenshtein_substring() {
+        let json = r#"
+        {
+            "rule_type": "levenshtein_substring",
+            "values": {
+                "maximum_distance": 3
+            }
+        }
+            "#;
+
+        let RuleConfig::LevenshteinSubstring(config) = serde_json::from_str(json).unwrap() else {
+            panic!("Expected Levenshtein substring config");
+        };
+        assert_eq!(3, config.maximum_distance);
+    }
+
+    #[test]
     fn test_parse_jaro() {
         let json = r#"
         {
@@ -540,6 +601,24 @@ mod tests {
 
         let RuleConfig::DamerauLevenshtein(config) = serde_json::from_str(json).unwrap() else {
             panic!("Expected Damera Levenshtein config");
+        };
+        assert_eq!(3, config.maximum_distance);
+    }
+
+    #[test]
+    fn test_parse_damerau_levenshtein_substring() {
+        let json = r#"
+        {
+            "rule_type": "damerau_levenshtein_substring",
+            "values": {
+                "maximum_distance": 3
+            }
+        }
+            "#;
+
+        let RuleConfig::DamerauLevenshteinSubstring(config) = serde_json::from_str(json).unwrap()
+        else {
+            panic!("Expected Damera Levenshtein substring config");
         };
         assert_eq!(3, config.maximum_distance);
     }
