@@ -18,7 +18,7 @@ pub struct RuleSet {
     /// Preprocessors to apply to input strings before passing them to rules
     pub preprocessors: Vec<Preprocessor>,
     /// Rules to apply to this match
-    pub rules: Vec<Box<dyn GenericMatcherRule>>,
+    pub rules: Vec<(CommonRuleConfig, Box<dyn GenericMatcherRule>)>,
 }
 
 impl Clone for RuleSet {
@@ -27,9 +27,20 @@ impl Clone for RuleSet {
             name: self.name.clone(),
             string_match: self.string_match.clone(),
             preprocessors: self.preprocessors.clone(),
-            rules: self.rules.iter().map(|r| r.clone_dyn()).collect(),
+            rules: self
+                .rules
+                .iter()
+                .map(|(c, r)| (c.clone(), r.clone_dyn()))
+                .collect(),
         }
     }
+}
+
+/// Common configuration for rules
+#[derive(Clone, Default)]
+pub struct CommonRuleConfig {
+    /// Whether match on this rule should result in early exit from ruleset
+    pub exit_on_match: bool,
 }
 
 /// String group
@@ -94,7 +105,7 @@ impl StringGroupContext {
                         metrics: rs
                             .rules
                             .iter()
-                            .map(|rule| {
+                            .map(|(_, rule)| {
                                 (
                                     rule.name().to_string(),
                                     RuleMetrics::new(name, &rs.name, rule.name()),
@@ -133,19 +144,28 @@ impl RuleSet {
             .fold(input, |acc, p| p.process(acc));
 
         for it in input.enumerate() {
-            for rule in &self.rules {
+            for (config, rule) in &self.rules {
                 let rule_metrics = context
                     .metrics
                     .get(rule.name())
                     .expect("Missing metrics for rule");
 
-                self.generate_match(
+                let matched = self.generate_match(
                     &mut matches,
                     rule.deref(),
                     it,
                     rule_metrics,
                     full_metadata_for_all,
                 );
+
+                if matched && config.exit_on_match {
+                    matches
+                        .last_mut()
+                        .expect("Last match not found after generating it")
+                        .metadata
+                        .insert("early_match_exit".to_string(), true.into());
+                    break;
+                }
             }
         }
 
@@ -159,7 +179,7 @@ impl RuleSet {
         (index, part): (usize, &str),
         rule_metrics: &RuleMetrics,
         full_metadata_for_all: bool,
-    ) {
+    ) -> bool {
         match rule.match_rule_generic(part, &self.string_match, full_metadata_for_all) {
             Ok(mut result) => {
                 if result.matched {
@@ -167,6 +187,7 @@ impl RuleSet {
                 } else {
                     rule_metrics.misses.increment(1);
                 }
+                let matched = result.matched;
                 if result.matched || full_metadata_for_all {
                     self.preprocessors
                         .iter()
@@ -175,10 +196,12 @@ impl RuleSet {
                 } else {
                     matches.push(result);
                 }
+                matched
             }
             Err(err) => {
                 rule_metrics.errors.increment(1);
                 warn!(message = "Matcher failed", error = ?err);
+                false
             }
         }
     }
@@ -275,13 +298,19 @@ mod tests {
                 string_match: "www.test.com".to_string(),
                 preprocessors: Vec::default(),
                 rules: vec![
-                    Box::new(BitflipRule::new_dns("www.test.com", true).into_generic_matcher()),
-                    Box::new(
-                        LevenshteinRule {
-                            maximum_distance: 3,
-                            ignore_mismatch_metadata: false,
-                        }
-                        .into_generic_matcher(),
+                    (
+                        Default::default(),
+                        Box::new(BitflipRule::new_dns("www.test.com", true).into_generic_matcher()),
+                    ),
+                    (
+                        Default::default(),
+                        Box::new(
+                            LevenshteinRule {
+                                maximum_distance: 3,
+                                ignore_mismatch_metadata: false,
+                            }
+                            .into_generic_matcher(),
+                        ),
                     ),
                 ],
             }],
@@ -309,13 +338,19 @@ mod tests {
                     ignore_tld: true,
                 })],
                 rules: vec![
-                    Box::new(BitflipRule::new_dns("test", true).into_generic_matcher()),
-                    Box::new(
-                        LevenshteinRule {
-                            maximum_distance: 3,
-                            ignore_mismatch_metadata: false,
-                        }
-                        .into_generic_matcher(),
+                    (
+                        Default::default(),
+                        Box::new(BitflipRule::new_dns("test", true).into_generic_matcher()),
+                    ),
+                    (
+                        Default::default(),
+                        Box::new(
+                            LevenshteinRule {
+                                maximum_distance: 3,
+                                ignore_mismatch_metadata: false,
+                            }
+                            .into_generic_matcher(),
+                        ),
                     ),
                 ],
             }],

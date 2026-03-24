@@ -91,6 +91,8 @@ impl PreprocessorConfig {
 
 #[cfg(test)]
 mod tests {
+    use crate::rules::RuleTypeConfig;
+
     use super::*;
 
     #[test]
@@ -105,6 +107,7 @@ mod tests {
                         "match_rules": [
                             {
                                 "rule_type": "levenshtein",
+                                "exit_on_match": true,
                                 "values": {
                                     "maximum_distance": 3
                                 }
@@ -149,12 +152,21 @@ mod tests {
         assert_eq!("wikipedia", &set_1.string_match);
         assert_eq!(2, set_1.match_rules.len());
 
-        let RuleConfig::Levenshtein(set_1_rule_1) = &set_1.match_rules[0] else {
+        let RuleConfig {
+            common,
+            rule_type: RuleTypeConfig::Levenshtein(set_1_rule_1),
+        } = &set_1.match_rules[0]
+        else {
             panic!("Expected levenshtein rule");
         };
+        assert!(common.exit_on_match);
         assert_eq!(3, set_1_rule_1.maximum_distance);
 
-        let RuleConfig::Jaro(set_1_rule_2) = &set_1.match_rules[1] else {
+        let RuleConfig {
+            common: _,
+            rule_type: RuleTypeConfig::Jaro(set_1_rule_2),
+        } = &set_1.match_rules[1]
+        else {
             panic!("Expected jaro rule");
         };
         assert_eq!(85.0, set_1_rule_2.match_percent_threshold);
@@ -164,11 +176,19 @@ mod tests {
         assert_eq!("wikilearning", &set_2.string_match);
         assert_eq!(2, set_2.match_rules.len());
 
-        let RuleConfig::Hamming(set_2_rule_1) = &set_2.match_rules[0] else {
+        let RuleConfig {
+            common: _,
+            rule_type: RuleTypeConfig::Hamming(set_2_rule_1),
+        } = &set_2.match_rules[0]
+        else {
             panic!("Expected hamming rule");
         };
         assert_eq!(3, set_2_rule_1.maximum_distance);
-        let RuleConfig::JaroWinkler(set_2_rule_2) = &set_2.match_rules[1] else {
+        let RuleConfig {
+            common: _,
+            rule_type: RuleTypeConfig::JaroWinkler(set_2_rule_2),
+        } = &set_2.match_rules[1]
+        else {
             panic!("Expected jaro winkler rule");
         };
         assert_eq!(85.0, set_2_rule_2.match_percent_threshold);
