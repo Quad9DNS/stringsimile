@@ -21,10 +21,18 @@ matching against.
 
 Currently the following rules are supported:
 - Levenshtein
+- Levenshtein substring variant
+  Uses Levenshtein algorithm, but can match on any substring in the incoming
+  string. Since this has to run Levenshtein multiple times, it is considerably
+  slower than Levenshtein when strings become longer than the target string.
 - Jaro
 - Jaro-Winkler
 - IDN Confusables
 - Damerau-Levenshtein
+- Damerau-Levenshtein substring variant
+  Uses Damerau-Levenshtein algorithm, but can match on any substring in the incoming
+  string. Since this has to run Damerau-Levenshtein multiple times, it is considerably
+  slower than Damerau-Levenshtein when strings become longer than the target string.
 - Hamming
 - Soundex
 - Metaphone
@@ -37,12 +45,16 @@ Currently the following rules are supported:
 Each of the rules has specific values that can be used to configure it:
 - Levenshtein
   - maximum_distance - maximum Levenshtein distance to allow to consider this rule matched
+- Levenshtein substring variant (allows matching on any substring of matching length)
+  - maximum_distance - maximum Levenshtein distance to allow to consider this rule matched
 - Jaro
   - match_percent_threshold - minimum Jaro match percentage to consider the rule matched (float between 0 and 1)
 - Jaro-Winkler
   - match_percent_threshold - minimum Jaro-Winkler match percentage to consider the rule matched (float between 0 and 1)
 - IDN Confusables - no additional values (values field may be skipped)
 - Damerau-Levenshtein
+  - maximum_distance - maximum Damerau Levenshtein distance to allow to consider this rule matched
+- Damerau-Levenshtein substring variant (allows matching on any substring of matching length)
   - maximum_distance - maximum Damerau Levenshtein distance to allow to consider this rule matched
 - Hamming
   - maximum_distance - maximum Hamming distance to allow to consider this rule matched
@@ -86,7 +98,7 @@ Each rule set has the following keys:
 
 Each rule has the following keys:
 - rule_type
-  One of "levenshtein", "jaro", "jaro_winkler", "confusables", "damerau_levenshtein", "hamming", "soundex", "metaphone", "nysiis", "match_rating", "bitflip", "regex", "cidr"
+  One of "levenshtein", "levenshtein_substring", "jaro", "jaro_winkler", "confusables", "damerau_levenshtein", "damerau_levenshtein_substring", "hamming", "soundex", "metaphone", "nysiis", "match_rating", "bitflip", "regex", "cidr"
 - exit_on_match
   If set to true and this rule matches the input string, this rule set will stop
   processing and no rules after this one will be checked.

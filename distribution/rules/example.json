@@ -19,6 +19,12 @@
 						}
 					},
 					{
+						"rule_type": "levenshtein_substring",
+						"values": {
+							"maximum_distance": 3
+						}
+					},
+					{
 						"rule_type": "hamming",
 						"exit_on_match": true,
 						"values": {
@@ -63,6 +69,12 @@
 					},
 					{
 						"rule_type": "damerau_levenshtein",
+						"values": {
+							"maximum_distance": 3
+						}
+					},
+					{
+						"rule_type": "damerau_levenshtein_substring",
 						"values": {
 							"maximum_distance": 3
 						}
