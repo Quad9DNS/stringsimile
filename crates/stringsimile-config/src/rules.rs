@@ -570,9 +570,37 @@ mod tests {
         }
             "#;
 
-        let RuleTypeConfig::Levenshtein(config) = serde_json::from_str(json).unwrap() else {
+        let RuleConfig {
+            common,
+            rule_type: RuleTypeConfig::Levenshtein(config),
+        } = serde_json::from_str(json).unwrap()
+        else {
             panic!("Expected Levenshtein config");
         };
+        assert!(!common.exit_on_match);
+        assert_eq!(3, config.maximum_distance);
+    }
+
+    #[test]
+    fn test_parse_levenshtein_exit_on_match() {
+        let json = r#"
+        {
+            "rule_type": "levenshtein",
+            "exit_on_match": true,
+            "values": {
+                "maximum_distance": 3
+            }
+        }
+            "#;
+
+        let RuleConfig {
+            common,
+            rule_type: RuleTypeConfig::Levenshtein(config),
+        } = serde_json::from_str(json).unwrap()
+        else {
+            panic!("Expected Levenshtein config");
+        };
+        assert!(common.exit_on_match);
         assert_eq!(3, config.maximum_distance);
     }
 
@@ -587,7 +615,10 @@ mod tests {
         }
             "#;
 
-        let RuleTypeConfig::LevenshteinSubstring(config) = serde_json::from_str(json).unwrap()
+        let RuleConfig {
+            common: _,
+            rule_type: RuleTypeConfig::LevenshteinSubstring(config),
+        } = serde_json::from_str(json).unwrap()
         else {
             panic!("Expected Levenshtein substring config");
         };
@@ -605,7 +636,11 @@ mod tests {
         }
             "#;
 
-        let RuleTypeConfig::Jaro(config) = serde_json::from_str(json).unwrap() else {
+        let RuleConfig {
+            common: _,
+            rule_type: RuleTypeConfig::Jaro(config),
+        } = serde_json::from_str(json).unwrap()
+        else {
             panic!("Expected Jaro config");
         };
         assert_eq!(0.4, config.match_percent_threshold);
@@ -619,7 +654,11 @@ mod tests {
         }
             "#;
 
-        let RuleTypeConfig::Confusables = serde_json::from_str(json).unwrap() else {
+        let RuleConfig {
+            common: _,
+            rule_type: RuleTypeConfig::Confusables,
+        } = serde_json::from_str(json).unwrap()
+        else {
             panic!("Expected Confusables config");
         };
     }
@@ -635,7 +674,11 @@ mod tests {
         }
             "#;
 
-        let RuleTypeConfig::DamerauLevenshtein(config) = serde_json::from_str(json).unwrap() else {
+        let RuleConfig {
+            common: _,
+            rule_type: RuleTypeConfig::DamerauLevenshtein(config),
+        } = serde_json::from_str(json).unwrap()
+        else {
             panic!("Expected Damera Levenshtein config");
         };
         assert_eq!(3, config.maximum_distance);
@@ -652,8 +695,10 @@ mod tests {
         }
             "#;
 
-        let RuleTypeConfig::DamerauLevenshteinSubstring(config) =
-            serde_json::from_str(json).unwrap()
+        let RuleConfig {
+            common: _,
+            rule_type: RuleTypeConfig::DamerauLevenshteinSubstring(config),
+        } = serde_json::from_str(json).unwrap()
         else {
             panic!("Expected Damera Levenshtein substring config");
         };
@@ -671,7 +716,11 @@ mod tests {
         }
             "#;
 
-        let RuleTypeConfig::JaroWinkler(config) = serde_json::from_str(json).unwrap() else {
+        let RuleConfig {
+            common: _,
+            rule_type: RuleTypeConfig::JaroWinkler(config),
+        } = serde_json::from_str(json).unwrap()
+        else {
             panic!("Expected Jaro-Winkler config");
         };
         assert_eq!(0.4, config.match_percent_threshold);
@@ -688,7 +737,11 @@ mod tests {
         }
             "#;
 
-        let RuleTypeConfig::Hamming(config) = serde_json::from_str(json).unwrap() else {
+        let RuleConfig {
+            common: _,
+            rule_type: RuleTypeConfig::Hamming(config),
+        } = serde_json::from_str(json).unwrap()
+        else {
             panic!("Expected Hamming config");
         };
         assert_eq!(3, config.maximum_distance);
@@ -706,7 +759,11 @@ mod tests {
         }
             "#;
 
-        let RuleTypeConfig::Soundex(config) = serde_json::from_str(json).unwrap() else {
+        let RuleConfig {
+            common: _,
+            rule_type: RuleTypeConfig::Soundex(config),
+        } = serde_json::from_str(json).unwrap()
+        else {
             panic!("Expected Soundex config");
         };
         assert_eq!(3, config.minimum_similarity);
@@ -724,7 +781,11 @@ mod tests {
         }
             "#;
 
-        let RuleTypeConfig::Soundex(config) = serde_json::from_str(json).unwrap() else {
+        let RuleConfig {
+            common: _,
+            rule_type: RuleTypeConfig::Soundex(config),
+        } = serde_json::from_str(json).unwrap()
+        else {
             panic!("Expected Soundex config");
         };
         assert_eq!(3, config.minimum_similarity);
@@ -743,7 +804,11 @@ mod tests {
         }
             "#;
 
-        let RuleTypeConfig::Soundex(config) = serde_json::from_str(json).unwrap() else {
+        let RuleConfig {
+            common: _,
+            rule_type: RuleTypeConfig::Soundex(config),
+        } = serde_json::from_str(json).unwrap()
+        else {
             panic!("Expected Soundex config");
         };
         assert_eq!(3, config.minimum_similarity);
@@ -762,7 +827,11 @@ mod tests {
         }
             "#;
 
-        let RuleTypeConfig::Metaphone(config) = serde_json::from_str(json).unwrap() else {
+        let RuleConfig {
+            common: _,
+            rule_type: RuleTypeConfig::Metaphone(config),
+        } = serde_json::from_str(json).unwrap()
+        else {
             panic!("Expected Metaphone config");
         };
         assert_eq!(Some(3), config.max_code_length);
@@ -778,7 +847,11 @@ mod tests {
         }
             "#;
 
-        let RuleTypeConfig::Metaphone(config) = serde_json::from_str(json).unwrap() else {
+        let RuleConfig {
+            common: _,
+            rule_type: RuleTypeConfig::Metaphone(config),
+        } = serde_json::from_str(json).unwrap()
+        else {
             panic!("Expected Metaphone config");
         };
         assert_eq!(Some(4), config.max_code_length);
@@ -796,7 +869,11 @@ mod tests {
         }
             "#;
 
-        let RuleTypeConfig::Metaphone(config) = serde_json::from_str(json).unwrap() else {
+        let RuleConfig {
+            common: _,
+            rule_type: RuleTypeConfig::Metaphone(config),
+        } = serde_json::from_str(json).unwrap()
+        else {
             panic!("Expected Metaphone config");
         };
         assert_eq!(None, config.max_code_length);
@@ -814,7 +891,11 @@ mod tests {
         }
             "#;
 
-        let RuleTypeConfig::Metaphone(config) = serde_json::from_str(json).unwrap() else {
+        let RuleConfig {
+            common: _,
+            rule_type: RuleTypeConfig::Metaphone(config),
+        } = serde_json::from_str(json).unwrap()
+        else {
             panic!("Expected Metaphone config");
         };
         assert_eq!(default_metaphone_max_code_length(), config.max_code_length);
@@ -833,7 +914,11 @@ mod tests {
         }
             "#;
 
-        let RuleTypeConfig::Metaphone(config) = serde_json::from_str(json).unwrap() else {
+        let RuleConfig {
+            common: _,
+            rule_type: RuleTypeConfig::Metaphone(config),
+        } = serde_json::from_str(json).unwrap()
+        else {
             panic!("Expected Metaphone config");
         };
         assert_eq!(Some(3), config.max_code_length);
@@ -851,7 +936,11 @@ mod tests {
         }
             "#;
 
-        let RuleTypeConfig::Nysiis(config) = serde_json::from_str(json).unwrap() else {
+        let RuleConfig {
+            common: _,
+            rule_type: RuleTypeConfig::Nysiis(config),
+        } = serde_json::from_str(json).unwrap()
+        else {
             panic!("Expected Nysiis config");
         };
         assert!(!config.strict);
@@ -866,7 +955,11 @@ mod tests {
         }
             "#;
 
-        let RuleTypeConfig::Nysiis(config) = serde_json::from_str(json).unwrap() else {
+        let RuleConfig {
+            common: _,
+            rule_type: RuleTypeConfig::Nysiis(config),
+        } = serde_json::from_str(json).unwrap()
+        else {
             panic!("Expected Nysiis config");
         };
         assert!(config.strict);
@@ -880,7 +973,11 @@ mod tests {
         }
             "#;
 
-        let RuleTypeConfig::MatchRating = serde_json::from_str(json).unwrap() else {
+        let RuleConfig {
+            common: _,
+            rule_type: RuleTypeConfig::MatchRating,
+        } = serde_json::from_str(json).unwrap()
+        else {
             panic!("Expected Match Rating config");
         };
     }
@@ -893,7 +990,11 @@ mod tests {
         }
             "#;
 
-        let RuleTypeConfig::Bitflip(config) = serde_json::from_str(json).unwrap() else {
+        let RuleConfig {
+            common: _,
+            rule_type: RuleTypeConfig::Bitflip(config),
+        } = serde_json::from_str(json).unwrap()
+        else {
             panic!("Expected Biflip config");
         };
         let config = config.unwrap_or_default();
@@ -914,7 +1015,11 @@ mod tests {
         }
             "#;
 
-        let RuleTypeConfig::Bitflip(config) = serde_json::from_str(json).unwrap() else {
+        let RuleConfig {
+            common: _,
+            rule_type: RuleTypeConfig::Bitflip(config),
+        } = serde_json::from_str(json).unwrap()
+        else {
             panic!("Expected Biflip config");
         };
         let config = config.unwrap_or_default();
@@ -936,7 +1041,11 @@ mod tests {
         }
             "#;
 
-        let RuleTypeConfig::Bitflip(config) = serde_json::from_str(json).unwrap() else {
+        let RuleConfig {
+            common: _,
+            rule_type: RuleTypeConfig::Bitflip(config),
+        } = serde_json::from_str(json).unwrap()
+        else {
             panic!("Expected Biflip config");
         };
         let config = config.unwrap_or_default();
@@ -958,7 +1067,11 @@ mod tests {
         }
             "#;
 
-        let RuleTypeConfig::Bitflip(config) = serde_json::from_str(json).unwrap() else {
+        let RuleConfig {
+            common: _,
+            rule_type: RuleTypeConfig::Bitflip(config),
+        } = serde_json::from_str(json).unwrap()
+        else {
             panic!("Expected Biflip config");
         };
         let config = config.unwrap_or_default();
@@ -985,7 +1098,11 @@ mod tests {
         }
             "#;
 
-        let RuleTypeConfig::Regex(config) = serde_json::from_str(json).unwrap() else {
+        let RuleConfig {
+            common: _,
+            rule_type: RuleTypeConfig::Regex(config),
+        } = serde_json::from_str(json).unwrap()
+        else {
             panic!("Expected Regex config");
         };
         assert_eq!(config.pattern, "test");
@@ -1005,7 +1122,11 @@ mod tests {
         }
             "#;
 
-        let RuleTypeConfig::Regex(config) = serde_json::from_str(json).unwrap() else {
+        let RuleConfig {
+            common: _,
+            rule_type: RuleTypeConfig::Regex(config),
+        } = serde_json::from_str(json).unwrap()
+        else {
             panic!("Expected Regex config");
         };
         assert_eq!(config.pattern, "[");
@@ -1025,7 +1146,11 @@ mod tests {
         }
             "#;
 
-        let RuleTypeConfig::Cidr(config) = serde_json::from_str(json).unwrap() else {
+        let RuleConfig {
+            common: _,
+            rule_type: RuleTypeConfig::Cidr(config),
+        } = serde_json::from_str(json).unwrap()
+        else {
             panic!("Expected CIDR config");
         };
         assert_eq!(config.address, "192.168.0.0/24");
@@ -1045,7 +1170,11 @@ mod tests {
         }
             "#;
 
-        let RuleTypeConfig::Cidr(config) = serde_json::from_str(json).unwrap() else {
+        let RuleConfig {
+            common: _,
+            rule_type: RuleTypeConfig::Cidr(config),
+        } = serde_json::from_str(json).unwrap()
+        else {
             panic!("Expected CIDR config");
         };
         assert_eq!(config.address, "test");
