@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774374847034,
+  "lastUpdate": 1774374924848,
   "repoUrl": "https://github.com/Quad9DNS/stringsimile",
   "entries": {
     "Benchmark": [
@@ -19222,6 +19222,504 @@ window.BENCHMARK_DATA = {
           {
             "name": "stringsimile_service/processor",
             "value": 3144,
+            "range": "± 68",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "dev@ensarsarajcic.com",
+            "name": "Ensar Sarajčić",
+            "username": "esensar"
+          },
+          "committer": {
+            "email": "dev@ensarsarajcic.com",
+            "name": "Ensar Sarajčić",
+            "username": "esensar"
+          },
+          "distinct": true,
+          "id": "e7818d27b2c6111e9e52c737e6df6926b266d948",
+          "message": "Include common config in rules config tests",
+          "timestamp": "2026-03-24T18:39:29+01:00",
+          "tree_id": "b8c7a782ea711919c2a49346e1a6e76088eb7417",
+          "url": "https://github.com/Quad9DNS/stringsimile/commit/e7818d27b2c6111e9e52c737e6df6926b266d948"
+        },
+        "date": 1774374920243,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "confusables/confusables",
+            "value": 87631,
+            "range": "± 1211",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "confusables/single_match/confusables",
+            "value": 464,
+            "range": "± 1",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "confusables/single_mismatch/confusables",
+            "value": 423,
+            "range": "± 10",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "levenshtein/levenshtein",
+            "value": 114958,
+            "range": "± 323",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "levenshtein/single_match/levenshtein",
+            "value": 698,
+            "range": "± 2",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "levenshtein/single_mismatch/levenshtein",
+            "value": 698,
+            "range": "± 21",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "levenshtein_optimized_mismatch/levenshtein_optimized_mismatch",
+            "value": 23060,
+            "range": "± 115",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "levenshtein_optimized_mismatch/single_match/levenshtein_optimized_mismatch",
+            "value": 697,
+            "range": "± 2",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "levenshtein_optimized_mismatch/single_mismatch/levenshtein_optimized_mismatch",
+            "value": 699,
+            "range": "± 2",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "levenshtein_substring/levenshtein_substring",
+            "value": 368257,
+            "range": "± 11967",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "levenshtein_substring/single_match/levenshtein_substring",
+            "value": 4553,
+            "range": "± 5",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "levenshtein_substring/single_mismatch/levenshtein_substring",
+            "value": 6125,
+            "range": "± 10",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "damerau_levenshtein/damerau_levenshtein",
+            "value": 130341,
+            "range": "± 222",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "damerau_levenshtein/single_match/damerau_levenshtein",
+            "value": 792,
+            "range": "± 3",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "damerau_levenshtein/single_mismatch/damerau_levenshtein",
+            "value": 793,
+            "range": "± 0",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "damerau_levenshtein_optimized_mismatch/damerau_levenshtein_optimized_mismatch",
+            "value": 26864,
+            "range": "± 632",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "damerau_levenshtein_optimized_mismatch/single_match/damerau_levenshtein_optimized_mismatch",
+            "value": 792,
+            "range": "± 1",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "damerau_levenshtein_optimized_mismatch/single_mismatch/damerau_levenshtein_optimized_mismatch",
+            "value": 793,
+            "range": "± 14",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "damerau_levenshtein_substring/damerau_levenshtein_substring",
+            "value": 416074,
+            "range": "± 4058",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "damerau_levenshtein_substring/single_match/damerau_levenshtein_substring",
+            "value": 4999,
+            "range": "± 3",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "damerau_levenshtein_substring/single_mismatch/damerau_levenshtein_substring",
+            "value": 6713,
+            "range": "± 64",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "hamming/hamming",
+            "value": 1567,
+            "range": "± 39",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "hamming/single_match/hamming",
+            "value": 22,
+            "range": "± 1",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "hamming/single_mismatch/hamming",
+            "value": 22,
+            "range": "± 0",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "jaro/jaro",
+            "value": 107462,
+            "range": "± 334",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "jaro/single_match/jaro",
+            "value": 376,
+            "range": "± 1",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "jaro/single_mismatch/jaro",
+            "value": 427,
+            "range": "± 4",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "jaro_winkler/jaro_winkler",
+            "value": 107736,
+            "range": "± 570",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "jaro_winkler/single_match/jaro_winkler",
+            "value": 387,
+            "range": "± 7",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "jaro_winkler/single_mismatch/jaro_winkler",
+            "value": 429,
+            "range": "± 7",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "match_rating/match_rating",
+            "value": 238340,
+            "range": "± 5564",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "match_rating/single_match/match_rating",
+            "value": 1843,
+            "range": "± 6",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "match_rating/single_mismatch/match_rating",
+            "value": 1796,
+            "range": "± 47",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "metaphone_normal/metaphone_normal",
+            "value": 35569,
+            "range": "± 121",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "metaphone_normal/single_match/metaphone_normal",
+            "value": 118,
+            "range": "± 0",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "metaphone_normal/single_mismatch/metaphone_normal",
+            "value": 157,
+            "range": "± 1",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "metaphone_double/metaphone_double",
+            "value": 83867,
+            "range": "± 209",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "metaphone_double/single_match/metaphone_double",
+            "value": 363,
+            "range": "± 1",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "metaphone_double/single_mismatch/metaphone_double",
+            "value": 757,
+            "range": "± 7",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "nysiis/nysiis",
+            "value": 170030,
+            "range": "± 2159",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "nysiis/single_match/nysiis",
+            "value": 1127,
+            "range": "± 5",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "nysiis/single_mismatch/nysiis",
+            "value": 1165,
+            "range": "± 5",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "nysiis_strict/nysiis_strict",
+            "value": 173061,
+            "range": "± 1505",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "nysiis_strict/single_match/nysiis_strict",
+            "value": 1132,
+            "range": "± 5",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "nysiis_strict/single_mismatch/nysiis_strict",
+            "value": 1188,
+            "range": "± 5",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "soundex/soundex",
+            "value": 98692,
+            "range": "± 8195",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "soundex/single_match/soundex",
+            "value": 635,
+            "range": "± 14",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "soundex/single_mismatch/soundex",
+            "value": 655,
+            "range": "± 11",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "soundex_refined/soundex_refined",
+            "value": 101027,
+            "range": "± 3071",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "soundex_refined/single_match/soundex_refined",
+            "value": 650,
+            "range": "± 2",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "soundex_refined/single_mismatch/soundex_refined",
+            "value": 675,
+            "range": "± 8",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "bitflip/bitflip",
+            "value": 2006,
+            "range": "± 23",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "bitflip/single_match/bitflip",
+            "value": 20,
+            "range": "± 0",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "bitflip/single_mismatch/bitflip",
+            "value": 20,
+            "range": "± 0",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "bitflip_case_insensitive/bitflip_case_insensitive",
+            "value": 4845,
+            "range": "± 75",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "bitflip_case_insensitive/single_match/bitflip_case_insensitive",
+            "value": 44,
+            "range": "± 0",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "bitflip_case_insensitive/single_mismatch/bitflip_case_insensitive",
+            "value": 44,
+            "range": "± 0",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "bitflip_ascii_printable/bitflip_ascii_printable",
+            "value": 1964,
+            "range": "± 12",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "bitflip_ascii_printable/single_match/bitflip_ascii_printable",
+            "value": 26,
+            "range": "± 0",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "bitflip_ascii_printable/single_mismatch/bitflip_ascii_printable",
+            "value": 26,
+            "range": "± 0",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "bitflip_ascii_printable_case_insensitive/bitflip_ascii_printable_case_insensitive",
+            "value": 4820,
+            "range": "± 296",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "bitflip_ascii_printable_case_insensitive/single_match/bitflip_ascii_printable_case_insensitive",
+            "value": 52,
+            "range": "± 0",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "bitflip_ascii_printable_case_insensitive/single_mismatch/bitflip_ascii_printable_case_insensitive",
+            "value": 43,
+            "range": "± 0",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "regex_exact_match/regex_exact_match",
+            "value": 2812,
+            "range": "± 14",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "regex_exact_match/single_match/regex_exact_match",
+            "value": 35,
+            "range": "± 0",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "regex_exact_match/single_mismatch/regex_exact_match",
+            "value": 32,
+            "range": "± 0",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "regex_complex_pattern/regex_complex_pattern",
+            "value": 2889,
+            "range": "± 14",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "regex_complex_pattern/single_match/regex_complex_pattern",
+            "value": 100,
+            "range": "± 0",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "regex_complex_pattern/single_mismatch/regex_complex_pattern",
+            "value": 28,
+            "range": "± 1",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "cidr/cidr",
+            "value": 3298,
+            "range": "± 99",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "cidr/single_match/cidr",
+            "value": 34,
+            "range": "± 0",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "cidr/single_mismatch/cidr",
+            "value": 35,
+            "range": "± 0",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "all_rules_split_target_all/all_rules_split_target_all",
+            "value": 3577408,
+            "range": "± 128539",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "all_rules_split_target_all/report_all/all_rules_split_target_all",
+            "value": 8325467,
+            "range": "± 52079",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "all_rules_split_target_skip_tld/all_rules_split_target_skip_tld",
+            "value": 2999977,
+            "range": "± 112907",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "all_rules_split_target_skip_tld/report_all/all_rules_split_target_skip_tld",
+            "value": 6313867,
+            "range": "± 95562",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "all_rules_no_split_target/all_rules_no_split_target",
+            "value": 2933199,
+            "range": "± 16909",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "all_rules_no_split_target/report_all/all_rules_no_split_target",
+            "value": 6048448,
+            "range": "± 176626",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "stringsimile_service/processor",
+            "value": 3212,
             "range": "± 68",
             "unit": "ns/iter"
           }
