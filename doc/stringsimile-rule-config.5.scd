@@ -22,11 +22,17 @@ matching against.
 Currently the following rules are supported:
 - Levenshtein
 - Levenshtein substring variant
+  Uses Levenshtein algorithm, but can match on any substring in the incoming
+  string. Since this has to run Levenshtein multiple times, it is considerably
+  slower than Levenshtein when strings become longer than the target string.
 - Jaro
 - Jaro-Winkler
 - IDN Confusables
 - Damerau-Levenshtein
 - Damerau-Levenshtein substring variant
+  Uses Damerau-Levenshtein algorithm, but can match on any substring in the incoming
+  string. Since this has to run Damerau-Levenshtein multiple times, it is considerably
+  slower than Damerau-Levenshtein when strings become longer than the target string.
 - Hamming
 - Soundex
 - Metaphone
