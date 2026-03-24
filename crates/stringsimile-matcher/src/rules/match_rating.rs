@@ -81,11 +81,8 @@ fn left_to_right_then_right_to_left_processing(name1: String, name2: &str) -> us
     let mut n1: Vec<char> = name1.chars().collect();
     let mut n2: Vec<char> = name2.chars().collect();
 
-    let n1len = n1.len() - 1;
-    let n2len = n2.len() - 1;
-
     for i in 0..n1.len() {
-        if i > n2len {
+        if i >= n2.len() {
             break;
         }
 
@@ -95,22 +92,34 @@ fn left_to_right_then_right_to_left_processing(name1: String, name2: &str) -> us
             n1[i] = ' ';
             n2[i] = ' ';
         }
+    }
 
-        let c1: &char = n1.get(n1.len() - (i + 1)).unwrap();
-        let c2: &char = n2.get(n2.len() - (i + 1)).unwrap();
+    n1.retain(|c| *c != ' ');
+    n2.retain(|c| *c != ' ');
+
+    let n1len = n1.len() - 1;
+    let n2len = n2.len() - 1;
+
+    for i in 0..n1.len() {
+        if i >= n2.len() {
+            break;
+        }
+
+        let c1: &char = n1.get(n1len - i).unwrap();
+        let c2: &char = n2.get(n2len - i).unwrap();
         if c1 == c2 {
             n1[n1len - i] = ' ';
             n2[n2len - i] = ' ';
         }
     }
 
-    let r1: String = n1.iter().filter(|c| c != &&' ').collect();
-    let r2: String = n2.iter().filter(|c| c != &&' ').collect();
+    let r1 = n1.iter().filter(|c| c != &&' ').count();
+    let r2 = n2.iter().filter(|c| c != &&' ').count();
 
-    if r1.len() > r2.len() {
-        6usize.abs_diff(r1.len())
+    if r1 > r2 {
+        6usize.abs_diff(r1)
     } else {
-        6usize.abs_diff(r2.len())
+        6usize.abs_diff(r2)
     }
 }
 

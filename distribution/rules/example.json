@@ -26,6 +26,7 @@
 					},
 					{
 						"rule_type": "hamming",
+						"exit_on_match": true,
 						"values": {
 							"maximum_distance": 3
 						}

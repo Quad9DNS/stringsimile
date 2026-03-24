@@ -50,6 +50,7 @@ impl<I: Iterator> Iterator for IgnoreLastIterator<I> {
 }
 
 impl Preprocessor {
+    // TODO: Change ot use `Cow` so preprocessors can generate their own stuff
     /// Processes iterator of input data producing another iterator with modified data
     pub fn process<'a>(
         &self,

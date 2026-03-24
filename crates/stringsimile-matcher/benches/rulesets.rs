@@ -2,7 +2,7 @@ use criterion::{Criterion, criterion_group, criterion_main};
 use regex::Regex;
 use stringsimile_matcher::{
     preprocessors::{Preprocessor, SplitTargetConfig},
-    rule::IntoGenericMatcherRule,
+    rule::{GenericMatcherRule, IntoGenericMatcherRule},
     rules::{
         bitflip::BitflipRule,
         cidr::CidrRule,
@@ -18,7 +18,7 @@ use stringsimile_matcher::{
         regex::RegexRule,
         soundex::{SoundexRule, SoundexRuleType},
     },
-    ruleset::{RuleSet, StringGroup, StringGroupContext},
+    ruleset::{CommonRuleConfig, RuleSet, StringGroup, StringGroupContext},
 };
 
 const INPUT_DATA: [&str; 100] = [
@@ -189,8 +189,8 @@ bench_ruleset! {
                 preprocessors: vec![Preprocessor::SplitTarget(SplitTargetConfig {
                     ignore_tld: false
                 })],
-                rules: vec![
-                    Box::new(ConfusablesRule.into_generic_matcher()),
+                rules: [
+                    ConfusablesRule.into_generic_matcher().clone_dyn(),
                     Box::new(LevenshteinRule { maximum_distance: 5, ignore_mismatch_metadata: true }.into_generic_matcher()),
                     Box::new(LevenshteinSubstringRule { maximum_distance: 5 }.into_generic_matcher()),
                     Box::new(DamerauLevenshteinRule { maximum_distance: 5, ignore_mismatch_metadata: true }.into_generic_matcher()),
@@ -208,7 +208,7 @@ bench_ruleset! {
                     Box::new(BitflipRule::new_dns(target_str, true)),
                     Box::new(RegexRule::new(Regex::new(target_str).unwrap())),
                     Box::new(CidrRule::new("192.168.0.0/24".parse().unwrap())),
-                ]
+                ].into_iter().map(|r| (CommonRuleConfig::default(), r)).collect()
             }])
         }
     }
@@ -225,8 +225,8 @@ bench_ruleset! {
                 preprocessors: vec![Preprocessor::SplitTarget(SplitTargetConfig {
                     ignore_tld: true
                 })],
-                rules: vec![
-                    Box::new(ConfusablesRule.into_generic_matcher()),
+                rules: [
+                    ConfusablesRule.into_generic_matcher().clone_dyn(),
                     Box::new(LevenshteinRule { maximum_distance: 5, ignore_mismatch_metadata: true }.into_generic_matcher()),
                     Box::new(LevenshteinSubstringRule { maximum_distance: 5 }.into_generic_matcher()),
                     Box::new(DamerauLevenshteinRule { maximum_distance: 5, ignore_mismatch_metadata: true }.into_generic_matcher()),
@@ -244,7 +244,7 @@ bench_ruleset! {
                     Box::new(BitflipRule::new_dns(target_str, true)),
                     Box::new(RegexRule::new(Regex::new(target_str).unwrap())),
                     Box::new(CidrRule::new("192.168.0.0/24".parse().unwrap())),
-                ]
+                ].into_iter().map(|r| (CommonRuleConfig::default(), r)).collect()
             }])
         }
     }
@@ -261,8 +261,8 @@ bench_ruleset! {
                 preprocessors: vec![Preprocessor::SplitTarget(SplitTargetConfig {
                     ignore_tld: true
                 })],
-                rules: vec![
-                    Box::new(ConfusablesRule.into_generic_matcher()),
+                rules: [
+                    ConfusablesRule.into_generic_matcher().clone_dyn(),
                     Box::new(LevenshteinRule { maximum_distance: 5, ignore_mismatch_metadata: true }.into_generic_matcher()),
                     Box::new(LevenshteinSubstringRule { maximum_distance: 5 }.into_generic_matcher()),
                     Box::new(DamerauLevenshteinRule { maximum_distance: 5, ignore_mismatch_metadata: true }.into_generic_matcher()),
@@ -280,7 +280,7 @@ bench_ruleset! {
                     Box::new(BitflipRule::new_dns(target_str, true)),
                     Box::new(RegexRule::new(Regex::new(target_str).unwrap())),
                     Box::new(CidrRule::new("192.168.0.0/24".parse().unwrap())),
-                ]
+                ].into_iter().map(|r| (CommonRuleConfig::default(), r)).collect()
             }])
         }
     }

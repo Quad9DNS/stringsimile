@@ -99,6 +99,9 @@ Each rule set has the following keys:
 Each rule has the following keys:
 - rule_type
   One of "levenshtein", "levenshtein_substring", "jaro", "jaro_winkler", "confusables", "damerau_levenshtein", "damerau_levenshtein_substring", "hamming", "soundex", "metaphone", "nysiis", "match_rating", "bitflip", "regex", "cidr"
+- exit_on_match
+  If set to true and this rule matches the input string, this rule set will stop
+  processing and no rules after this one will be checked.
 - values
   Object dependent on the rule_type used. Some rules don't have additional
   values and this field can be skipped for them.
