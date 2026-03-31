@@ -7,7 +7,11 @@ use metrics::{Counter, counter};
 use serde_json::{Map, Value};
 use tracing::{debug, trace_span, warn};
 
-use crate::{GenericMatchResult, preprocessors::Preprocessor, rule::GenericMatcherRule};
+use crate::{
+    GenericMatchResult,
+    preprocessors::{ExclusionSetContext, Preprocessor},
+    rule::GenericMatcherRule,
+};
 
 /// Rule set
 pub struct RuleSet {
@@ -81,9 +85,43 @@ impl RuleMetrics {
     }
 }
 
+/// Metrics related to a single exclusion set preprocessor
+#[derive(Clone)]
+pub struct ExclusionSetMetrics {
+    /// Number of items excluded by this set
+    pub exclusions: Counter,
+}
+
+impl ExclusionSetMetrics {
+    /// Creates a new metrics object based on provided names
+    pub fn new(string_group: &str, rule_set: &str, preprocessor_index: usize) -> Self {
+        Self {
+            exclusions: counter!("exclusion_set_exclusions",
+                "string_group" => string_group.to_string(),
+                "rule_set" => rule_set.to_string(),
+                "preprocessor_index" => preprocessor_index.to_string(),
+            ),
+        }
+    }
+}
+
 /// Context of a ruleset (external state)
 pub struct RulesetContext {
-    metrics: HashMap<String, RuleMetrics>,
+    metrics: Vec<RuleMetrics>,
+    preprocessors: Vec<PreprocessorContext>,
+}
+
+/// Context of a preprocessor (external state)
+pub enum PreprocessorContext {
+    /// Empty context for preprocessors that don't need it
+    Empty,
+    /// Context for exclusion set preprocessor
+    ExclusionSet {
+        /// Metrics for this exclusion set
+        metrics: ExclusionSetMetrics,
+        /// Specific context for this exclusion set
+        context: ExclusionSetContext,
+    },
 }
 
 /// Context of a string group (external state)
@@ -92,7 +130,7 @@ pub struct StringGroupContext {
 }
 
 impl StringGroupContext {
-    /// Creates a new string group context, with configured contextx for each rule set
+    /// Creates a new string group context, with configured context for each rule set
     pub fn new(string_group: &StringGroup) -> Self {
         let name: &str = &string_group.name;
         let rule_sets: &[RuleSet] = &string_group.rule_sets;
@@ -105,18 +143,28 @@ impl StringGroupContext {
                         metrics: rs
                             .rules
                             .iter()
-                            .map(|(_, rule)| {
-                                (
-                                    rule.name().to_string(),
-                                    RuleMetrics::new(name, &rs.name, rule.name()),
-                                )
-                            })
+                            .map(|(_, rule)| RuleMetrics::new(name, &rs.name, rule.name()))
+                            .collect(),
+                        preprocessors: rs
+                            .preprocessors
+                            .iter()
+                            .enumerate()
+                            .map(|(index, p)| p.build_context(name, &rs.name, index))
                             .collect(),
                     },
                 )
             })
             .collect();
         Self { rulesets }
+    }
+
+    /// Preloads data needed for the context that needs to be loaded asynchronously
+    pub async fn preload_context(&mut self, rulesets: &Vec<RuleSet>) {
+        for ((_, rs_ctx), rs) in self.rulesets.iter_mut().zip(rulesets) {
+            for (ctx, p) in rs_ctx.preprocessors.iter_mut().zip(rs.preprocessors.iter()) {
+                p.preload_context(ctx).await;
+            }
+        }
     }
 }
 
@@ -141,13 +189,16 @@ impl RuleSet {
         let input = self
             .preprocessors
             .iter()
-            .fold(input, |acc, p| p.process(acc));
+            .enumerate()
+            .fold(input, |acc, (index, p)| {
+                p.process(acc, &context.preprocessors[index])
+            });
 
         for it in input.enumerate() {
-            for (config, rule) in &self.rules {
+            for (index, (config, rule)) in self.rules.iter().enumerate() {
                 let rule_metrics = context
                     .metrics
-                    .get(rule.name())
+                    .get(index)
                     .expect("Missing metrics for rule");
 
                 let matched = self.generate_match(
