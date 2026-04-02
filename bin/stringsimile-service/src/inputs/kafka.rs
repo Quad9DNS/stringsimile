@@ -2,8 +2,10 @@ use std::hash::Hash;
 use std::{collections::HashMap, time::Duration};
 
 use futures::StreamExt;
+use rdkafka::ClientContext;
+use rdkafka::consumer::{BaseConsumer, ConsumerContext, Rebalance};
 use rdkafka::{
-    ClientConfig, Message, TopicPartitionList,
+    ClientConfig, Message,
     consumer::{Consumer, StreamConsumer},
 };
 use serde::{Deserialize, Serialize};
@@ -54,6 +56,49 @@ const fn default_kafka_input_port() -> usize {
     9092
 }
 
+pub struct KafkaInputContext {
+    config: KafkaInputConfig,
+}
+
+impl ClientContext for KafkaInputContext {}
+
+impl ConsumerContext for KafkaInputContext {
+    fn post_rebalance(
+        &self,
+        base_consumer: &BaseConsumer<KafkaInputContext>,
+        rebalance: &Rebalance<'_>,
+    ) {
+        if let Rebalance::Assign(offsets) = rebalance
+            && let Some(pointer_config) = &self.config.pointer
+        {
+            let mut offsets = (*offsets).clone();
+            match pointer_config {
+                KafkaPointer::Offset(offset) => {
+                    offsets.set_all_offsets(rdkafka::Offset::OffsetTail(*offset as i64))
+                }
+                KafkaPointer::String(string) if string == "now" || string == "end" => {
+                    offsets.set_all_offsets(rdkafka::Offset::End)
+                }
+                KafkaPointer::String(string) if string == "begin" || string == "start" => {
+                    offsets.set_all_offsets(rdkafka::Offset::Beginning)
+                }
+                KafkaPointer::String(special) => {
+                    warn!("Unsupported kafka pointer value: {}", special);
+                    Ok(())
+                }
+            }
+            .unwrap_or_else(|err| {
+                warn!("Failed to apply kafka input offsets: {}", err);
+            });
+            if let Err(err) =
+                base_consumer.seek_partitions(offsets.clone(), Duration::from_secs(30))
+            {
+                warn!("Failed to seek kafka input partitions: {}", err);
+            }
+        }
+    }
+}
+
 pub struct KafkaInputStream {
     config: KafkaInputConfig,
 }
@@ -71,48 +116,33 @@ impl InputStreamBuilder for KafkaInputStream {
     ) -> crate::Result<std::pin::Pin<Box<dyn futures::Stream<Item = StringsimileMessage> + Send>>>
     {
         let mut config = ClientConfig::new();
+
+        config
+            .set("enable.auto.commit", "true")
+            .set("auto.commit.interval.ms", "5000")
+            .set("enable.auto.offset.store", "true")
+            .set("client.id", "stringsimile");
+
         for (key, value) in &self.config.librdkafka_options {
             config.set(key, value);
         }
 
         config
             .set("bootstrap.servers", self.config.server())
-            .set("group.id", self.config.identifier)
-            .set("client.id", "stringsimile")
-            .set("enable.auto.commit", "true")
-            .set("auto.commit.interval.ms", "5000")
-            .set("enable.auto.offset.store", "true");
+            .set("group.id", self.config.identifier.clone());
 
-        let consumer: StreamConsumer = config.create()?;
+        let consumer: StreamConsumer<KafkaInputContext> =
+            config.create_with_context(KafkaInputContext {
+                config: self.config.clone(),
+            })?;
         let topics: Vec<&str> = self.config.topics.iter().map(|t| t.as_str()).collect();
         consumer.subscribe(&topics)?;
-        if let Some(pointer_config) = self.config.pointer {
-            let mut topic_offsets = TopicPartitionList::with_capacity(topics.len());
-            topics.iter().for_each(|t| {
-                topic_offsets.add_topic_unassigned(t);
-            });
-            match pointer_config {
-                KafkaPointer::Offset(offset) => {
-                    topic_offsets.set_all_offsets(rdkafka::Offset::OffsetTail(offset as i64))?
-                }
-                KafkaPointer::String(string) if string == "now" || string == "end" => {
-                    topic_offsets.set_all_offsets(rdkafka::Offset::End)?
-                }
-                KafkaPointer::String(string) if string == "begin" || string == "start" => {
-                    topic_offsets.set_all_offsets(rdkafka::Offset::Beginning)?
-                }
-                KafkaPointer::String(special) => {
-                    warn!("Unsupported kafka pointer value: {}", special);
-                }
-            }
-            consumer.seek_partitions(topic_offsets, Duration::from_secs(30))?;
-        }
 
         consumer.into_stream(shutdown).await
     }
 }
 
-impl InputStreamBuilder for StreamConsumer {
+impl InputStreamBuilder for StreamConsumer<KafkaInputContext> {
     async fn into_stream(
         self,
         shutdown: Receiver<()>,
@@ -123,12 +153,16 @@ impl InputStreamBuilder for StreamConsumer {
         Ok(Box::pin(async_stream::stream! {
             let mut stream = self.stream().take_until(shutdown);
             loop {
-                match stream.next().await.expect("kafka streams never terminate") {
-                    Err(e) => {
+                match stream.next().await {
+                    None => {
+                        // This must be a shutdown, just exit
+                        break;
+                    },
+                    Some(Err(e)) => {
                         metrics.read_errors.increment(1);
                         warn!("Kafka error: {}", e)
                     },
-                    Ok(m) => {
+                    Some(Ok(m)) => {
                         match m.payload_view::<str>() {
                             None => {
                                 metrics.read_errors.increment(1);
