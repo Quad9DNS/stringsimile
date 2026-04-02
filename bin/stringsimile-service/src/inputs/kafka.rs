@@ -71,17 +71,20 @@ impl InputStreamBuilder for KafkaInputStream {
     ) -> crate::Result<std::pin::Pin<Box<dyn futures::Stream<Item = StringsimileMessage> + Send>>>
     {
         let mut config = ClientConfig::new();
+
+        config
+            .set("enable.auto.commit", "true")
+            .set("auto.commit.interval.ms", "5000")
+            .set("enable.auto.offset.store", "true")
+            .set("client.id", "stringsimile");
+
         for (key, value) in &self.config.librdkafka_options {
             config.set(key, value);
         }
 
         config
             .set("bootstrap.servers", self.config.server())
-            .set("group.id", self.config.identifier)
-            .set("client.id", "stringsimile")
-            .set("enable.auto.commit", "true")
-            .set("auto.commit.interval.ms", "5000")
-            .set("enable.auto.offset.store", "true");
+            .set("group.id", self.config.identifier);
 
         let consumer: StreamConsumer = config.create()?;
         let topics: Vec<&str> = self.config.topics.iter().map(|t| t.as_str()).collect();

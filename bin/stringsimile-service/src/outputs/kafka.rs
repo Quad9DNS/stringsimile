@@ -62,13 +62,15 @@ impl OutputStreamBuilder for KafkaOutputStream {
         mut stream: std::pin::Pin<Box<dyn Stream<Item = StringsimileMessage> + Send>>,
     ) -> crate::Result<()> {
         let mut config = ClientConfig::new();
+        config.set("client.id", "stringsimile");
+
         for (key, value) in &self.config.librdkafka_options {
             config.set(key, value);
         }
+
         config
             .set("bootstrap.servers", self.config.server())
-            .set("group.id", self.config.identifier)
-            .set("client.id", "stringsimile");
+            .set("group.id", self.config.identifier);
 
         let producer: FutureProducer = config.create()?;
         let metrics = OutputMetrics::for_output_type("kafka");
