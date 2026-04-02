@@ -153,12 +153,16 @@ impl InputStreamBuilder for StreamConsumer<KafkaInputContext> {
         Ok(Box::pin(async_stream::stream! {
             let mut stream = self.stream().take_until(shutdown);
             loop {
-                match stream.next().await.expect("kafka streams never terminate") {
-                    Err(e) => {
+                match stream.next().await {
+                    None => {
+                        // This must be a shutdown, just exit
+                        break;
+                    },
+                    Some(Err(e)) => {
                         metrics.read_errors.increment(1);
                         warn!("Kafka error: {}", e)
                     },
-                    Ok(m) => {
+                    Some(Ok(m)) => {
                         match m.payload_view::<str>() {
                             None => {
                                 metrics.read_errors.increment(1);
