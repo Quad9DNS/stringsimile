@@ -5,6 +5,10 @@ on:
     types: [ created ]
   workflow_dispatch:
 
+permissions:
+  # Write required for the release type
+  contents: write
+
 env:
   RUSTFLAGS: "-C target-cpu=x86-64-v3"
 
