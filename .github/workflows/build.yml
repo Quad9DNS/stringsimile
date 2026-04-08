@@ -42,6 +42,13 @@ jobs:
           - package: binary
             needs-binary-build: true
             target-dir: binary-package
+          - target: x86_64-unknown-linux-gnu
+            package: deb
+            needs-cross: true
+          - target: x86_64-unknown-linux-gnu
+            variant: all-dynamic
+            package: deb
+            needs-cross: false
         exclude:
           - target: x86_64-unknown-linux-musl
             variant: all-dynamic
@@ -65,6 +72,10 @@ jobs:
           sudo apt-get update -y && sudo apt-get -y install musl-tools g++
           # HACK to resolve musl build - will probably cause an issue in the future
           sudo ln -s /bin/g++ /bin/musl-g++
+
+      - name: Setup rust cross
+        if: ${{ matrix.needs-cross }}
+        run: cargo install cross
 
       - name: Install scdoc
         run: sudo apt-get update -y && sudo apt-get -y install scdoc
@@ -95,11 +106,20 @@ jobs:
           cp distribution/rules/* "target/${{ matrix.variant }}/${{ matrix.target }}/${{ matrix.target-dir }}/rules/"
 
       - name: Build deb
-        if: ${{ matrix.build-deb }}
+        if: ${{ matrix.build-deb && !matrix.needs-cross }}
         env:
           CARGO_TARGET_DIR: "target/${{ matrix.variant }}"
         run: |
           cargo deb --variant "${{ matrix.variant }}" --target "${{ matrix.target }}"
+
+      - name: Cross build deb
+        if: ${{ matrix.build-deb && matrix.needs-cross }}
+        run: |
+          cross build --target "${{ matrix.target }}" --release --no-default-features --features "${{ matrix.variant }}"
+          cp "target/${{ matrix.target }}/release/stringsimile" "target/release/stringsimile"
+          cargo deb --no-build --variant "${{ matrix.variant }}" --target "${{ matrix.target }}"
+          mkdir -p "target/${{ matrix.variant }}/${{ matrix.target }}/${{ matrix.target-dir }}"
+          mv "target/${{ matrix.target-dir }}" "target/${{ matrix.variant }}/${{ matrix.target }}/${{ matrix.target-dir }}"
 
       - name: Build rpm
         if: ${{ matrix.build-rpm }}
