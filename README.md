@@ -63,11 +63,6 @@ Download your package from [releases](https://github.com/Quad9DNS/stringsimile/r
 | all-dynamic | Provides all features in a dynamically linked binary                            | librdkafka   | yes             |
 | basic       | Provides the basic features in a statically linked binary                       | -            | no              |
 
-We also provide `musl` and `gnu` builds. `gnu` builds require GLIBC 2.38 which is fairly recent, so `musl` can be used if you receive
-```
-version `GLIBC_2.38' not found (required by stringsimile)
-```
-
 ### Debian
 
 Install `librdkafka1` (if using dynamically linked build):

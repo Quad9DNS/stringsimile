@@ -20,12 +20,9 @@ jobs:
     strategy:
       matrix:
         variant: [default, all-dynamic, basic]
-        target: [x86_64-unknown-linux-gnu, x86_64-unknown-linux-musl]
+        target: [x86_64-unknown-linux-gnu]
         package: [deb, rpm, binary]
         include:
-          - target: x86_64-unknown-linux-musl
-            needs-musl: true
-            output-file-name: musl
           - target: x86_64-unknown-linux-gnu
             output-file-name: gnu
           - variant: all-dynamic
@@ -49,9 +46,6 @@ jobs:
             variant: all-dynamic
             package: deb
             needs-cross: false
-        exclude:
-          - target: x86_64-unknown-linux-musl
-            variant: all-dynamic
 
     steps:
       - name: Checkout repo
@@ -65,13 +59,6 @@ jobs:
       - name: Install librdkafka
         if: ${{ matrix.needs-librdkafka }}
         run: sudo apt-get update -y && sudo apt-get -y install librdkafka-dev
-
-      - name: Install musl-tools
-        if: ${{ matrix.needs-musl }}
-        run: |
-          sudo apt-get update -y && sudo apt-get -y install musl-tools g++
-          # HACK to resolve musl build - will probably cause an issue in the future
-          sudo ln -s /bin/g++ /bin/musl-g++
 
       - name: Setup rust cross
         if: ${{ matrix.needs-cross }}
