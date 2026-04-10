@@ -143,6 +143,12 @@ impl RuleSet {
             .iter()
             .fold(input, |acc, p| p.process(acc));
 
+        let mut matched_rules: HashMap<&str, bool> = self
+            .rules
+            .iter()
+            .map(|(_, rule)| (rule.name(), false))
+            .collect();
+
         for it in input.enumerate() {
             for (config, rule) in &self.rules {
                 let rule_metrics = context
@@ -158,6 +164,10 @@ impl RuleSet {
                     full_metadata_for_all,
                 );
 
+                if matched {
+                    matched_rules.insert(rule.name(), true);
+                }
+
                 if matched && config.exit_on_match {
                     matches
                         .last_mut()
@@ -166,6 +176,15 @@ impl RuleSet {
                         .insert("early_match_exit".to_string(), true.into());
                     break;
                 }
+            }
+        }
+
+        for (rule, matched) in matched_rules {
+            let rule_metrics = context.metrics.get(rule).expect("Missing metrics for rule");
+            if matched {
+                rule_metrics.matches.increment(1);
+            } else {
+                rule_metrics.misses.increment(1);
             }
         }
 
@@ -182,11 +201,6 @@ impl RuleSet {
     ) -> bool {
         match rule.match_rule_generic(part, &self.string_match, full_metadata_for_all) {
             Ok(mut result) => {
-                if result.matched {
-                    rule_metrics.matches.increment(1);
-                } else {
-                    rule_metrics.misses.increment(1);
-                }
                 let matched = result.matched;
                 if result.matched || full_metadata_for_all {
                     self.preprocessors
