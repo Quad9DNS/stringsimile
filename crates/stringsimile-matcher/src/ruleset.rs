@@ -193,8 +193,6 @@ impl RuleSet {
                         .iter()
                         .for_each(|p| p.add_metadata(&mut result.metadata, (index, part)));
                     matches.push(result.into_full_metadata());
-                } else {
-                    matches.push(result);
                 }
                 matched
             }
@@ -236,7 +234,9 @@ impl StringGroup {
                     .expect("Missing rule set context"),
                 full_metadata_for_all,
             );
-            matches.insert(rule_set.name.clone(), rule_set_matches);
+            if !rule_set_matches.is_empty() || full_metadata_for_all {
+                matches.insert(rule_set.name.clone(), rule_set_matches);
+            }
         }
 
         matches
