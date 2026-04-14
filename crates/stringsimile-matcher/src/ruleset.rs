@@ -194,11 +194,7 @@ impl RuleSet {
                 p.process(acc, &context.preprocessors[index])
             });
 
-        let mut matched_rules: HashMap<&str, bool> = self
-            .rules
-            .iter()
-            .map(|(_, rule)| (rule.name(), false))
-            .collect();
+        let mut matched_rules: Vec<bool> = self.rules.iter().map(|_| false).collect();
 
         for it in input.enumerate() {
             for (index, (config, rule)) in self.rules.iter().enumerate() {
@@ -216,7 +212,7 @@ impl RuleSet {
                 );
 
                 if matched {
-                    matched_rules.insert(rule.name(), true);
+                    matched_rules[index] = true;
                 }
 
                 if matched && config.exit_on_match {
@@ -230,9 +226,12 @@ impl RuleSet {
             }
         }
 
-        for (rule, matched) in matched_rules {
-            let rule_metrics = context.metrics.get(rule).expect("Missing metrics for rule");
-            if matched {
+        for (index, matched) in matched_rules.iter().enumerate() {
+            let rule_metrics = context
+                .metrics
+                .get(index)
+                .expect("Missing metrics for rule");
+            if *matched {
                 rule_metrics.matches.increment(1);
             } else {
                 rule_metrics.misses.increment(1);
