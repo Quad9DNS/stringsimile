@@ -58,7 +58,7 @@ jobs:
 
       - name: Install dev dependencies
         if: ${{ matrix.needs-dev-dependencies }}
-        run: sudo apt-get update -y && sudo apt-get -y install librdkafka-dev libvectorscan-dev
+        run: sudo apt-get update -y && sudo apt-get -y install librdkafka-dev libhyperscan-dev
 
       - name: Setup rust cross
         if: ${{ matrix.needs-cross }}

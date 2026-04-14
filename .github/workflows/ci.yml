@@ -29,7 +29,7 @@ jobs:
           target: ${{ matrix.target }}
 
       - name: Install dev dependencies
-        run: sudo apt-get update -y && sudo apt-get -y install librdkafka-dev libvectorscan-dev
+        run: sudo apt-get update -y && sudo apt-get -y install librdkafka-dev libhyperscan-dev
 
       - name: Setup cargo deny
         run: cargo install cargo-deny
@@ -58,7 +58,7 @@ jobs:
           target: ${{ matrix.target }}
 
       - name: Install dev dependencies
-        run: sudo apt-get update -y && sudo apt-get -y install librdkafka-dev libvectorscan-dev
+        run: sudo apt-get update -y && sudo apt-get -y install librdkafka-dev libhyperscan-dev
 
       - name: Install scdoc
         run: sudo apt-get update -y && sudo apt-get -y install scdoc
@@ -90,7 +90,7 @@ jobs:
           target: ${{ matrix.target }}
 
       - name: Install dev dependencies
-        run: sudo apt-get update -y && sudo apt-get -y install librdkafka-dev libvectorscan-dev
+        run: sudo apt-get update -y && sudo apt-get -y install librdkafka-dev libhyperscan-dev
 
       - name: Run benchmarks
         run: cargo bench -- --output-format bencher | tee benchmark.txt
