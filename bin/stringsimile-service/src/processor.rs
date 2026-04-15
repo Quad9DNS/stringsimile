@@ -102,10 +102,13 @@ impl StringProcessor {
             .context(RuleParsingSnafu)?;
         built_rules.export_metrics();
 
-        let contexts = built_rules
+        let mut contexts: HashMap<String, StringGroupContext> = built_rules
             .iter()
             .map(|s| (s.name.clone(), StringGroupContext::new(s)))
             .collect();
+        for ((_, ctx), sg) in contexts.iter_mut().zip(built_rules.iter()) {
+            ctx.preload_context(&sg.rule_sets).await;
+        }
         self.rules.store(Arc::new((built_rules, contexts)));
         Ok(())
     }

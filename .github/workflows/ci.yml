@@ -28,6 +28,9 @@ jobs:
         with:
           target: ${{ matrix.target }}
 
+      - name: Install dev dependencies
+        run: sudo apt-get update -y && sudo apt-get -y install librdkafka-dev libhyperscan-dev
+
       - name: Setup cargo deny
         run: cargo install cargo-deny
 
@@ -54,16 +57,8 @@ jobs:
         with:
           target: ${{ matrix.target }}
 
-      - name: Install librdkafka
-        if: ${{ matrix.needs-librdkafka }}
-        run: sudo apt-get update -y && sudo apt-get -y install librdkafka-dev
-
-      - name: Install musl-tools
-        if: ${{ matrix.needs-musl }}
-        run: |
-          sudo apt-get update -y && sudo apt-get -y install musl-tools g++
-          # HACK to resolve musl build - will probably cause an issue in the future
-          sudo ln -s /bin/g++ /bin/musl-g++
+      - name: Install dev dependencies
+        run: sudo apt-get update -y && sudo apt-get -y install librdkafka-dev libhyperscan-dev
 
       - name: Install scdoc
         run: sudo apt-get update -y && sudo apt-get -y install scdoc
@@ -93,6 +88,9 @@ jobs:
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           target: ${{ matrix.target }}
+
+      - name: Install dev dependencies
+        run: sudo apt-get update -y && sudo apt-get -y install librdkafka-dev libhyperscan-dev
 
       - name: Run benchmarks
         run: cargo bench -- --output-format bencher | tee benchmark.txt

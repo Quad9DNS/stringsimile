@@ -1,7 +1,7 @@
 use criterion::{Criterion, criterion_group, criterion_main};
 use regex::Regex;
 use stringsimile_matcher::{
-    preprocessors::{Preprocessor, SplitTargetConfig},
+    preprocessors::{ExclusionSetConfig, ExclusionSetSource, Preprocessor, SplitTargetConfig},
     rule::{GenericMatcherRule, IntoGenericMatcherRule},
     rules::{
         bitflip::BitflipRule,
@@ -178,6 +178,120 @@ macro_rules! bench_ruleset {
     };
 }
 
+fn all_rules(target_str: &str) -> Vec<(CommonRuleConfig, Box<dyn GenericMatcherRule>)> {
+    [
+        ConfusablesRule.into_generic_matcher().clone_dyn(),
+        Box::new(
+            LevenshteinRule {
+                maximum_distance: 5,
+                ignore_mismatch_metadata: true,
+            }
+            .into_generic_matcher(),
+        ),
+        Box::new(
+            LevenshteinSubstringRule {
+                maximum_distance: 5,
+            }
+            .into_generic_matcher(),
+        ),
+        Box::new(
+            DamerauLevenshteinRule {
+                maximum_distance: 5,
+                ignore_mismatch_metadata: true,
+            }
+            .into_generic_matcher(),
+        ),
+        Box::new(
+            DamerauLevenshteinSubstringRule {
+                maximum_distance: 5,
+            }
+            .into_generic_matcher(),
+        ),
+        Box::new(
+            HammingRule {
+                maximum_distance: 5,
+            }
+            .into_generic_matcher(),
+        ),
+        Box::new(JaroRule { match_percent: 0.5 }.into_generic_matcher()),
+        Box::new(JaroWinklerRule { match_percent: 0.5 }.into_generic_matcher()),
+        Box::new(MatchRatingRule::new(target_str).into_generic_matcher()),
+        Box::new(
+            MetaphoneRule::new(MetaphoneRuleType::Normal, Some(4), target_str)
+                .into_generic_matcher(),
+        ),
+        Box::new(
+            MetaphoneRule::new(MetaphoneRuleType::Double, Some(4), target_str)
+                .into_generic_matcher(),
+        ),
+        Box::new(NysiisRule::new(false, target_str).into_generic_matcher()),
+        Box::new(NysiisRule::new(true, target_str).into_generic_matcher()),
+        Box::new(SoundexRule::new(SoundexRuleType::Normal, 5, target_str).into_generic_matcher()),
+        Box::new(SoundexRule::new(SoundexRuleType::Refined, 5, target_str).into_generic_matcher()),
+        Box::new(BitflipRule::new_dns(target_str, true)),
+        Box::new(RegexRule::new(Regex::new(target_str).unwrap())),
+        Box::new(CidrRule::new("192.168.0.0/24".parse().unwrap())),
+    ]
+    .into_iter()
+    .map(|r| (CommonRuleConfig::default(), r))
+    .collect()
+}
+
+fn all_preprocessors() -> Vec<Preprocessor> {
+    vec![
+        Preprocessor::SplitTarget(SplitTargetConfig { ignore_tld: false }),
+        Preprocessor::ExclusionSet(ExclusionSetConfig {
+            source: ExclusionSetSource::Static(vec!["com".to_string(), "net".to_string()]),
+            regex: false,
+        }),
+    ]
+}
+
+bench_ruleset! {
+    name = all_rules_exclude_exact;
+    builder {
+        {
+            let target_str = "test.string.to.match";
+            StringGroup::new("test_group".to_string(), vec![RuleSet {
+                name:"test_ruleset".to_string(),
+                string_match: target_str.to_string(),
+                preprocessors: vec![Preprocessor::ExclusionSet(ExclusionSetConfig {source: ExclusionSetSource::Static(vec!["com".to_string(),"net".to_string()]), regex: false })],
+                rules: all_rules(target_str)
+            }])
+        }
+    }
+}
+
+bench_ruleset! {
+    name = all_rules_exclude_regex;
+    builder {
+        {
+            let target_str = "test.string.to.match";
+            StringGroup::new("test_group".to_string(), vec![RuleSet {
+                name:"test_ruleset".to_string(),
+                string_match: target_str.to_string(),
+                preprocessors: vec![Preprocessor::ExclusionSet(ExclusionSetConfig {source: ExclusionSetSource::Static(vec![".*com.*".to_string(),".*net.*".to_string()]), regex: true })],
+                rules: all_rules(target_str)
+            }])
+        }
+    }
+}
+
+bench_ruleset! {
+    name = all_rules_all_preprocessors;
+    builder {
+        {
+            let target_str = "test.string.to.match";
+            StringGroup::new("test_group".to_string(), vec![RuleSet {
+                name:"test_ruleset".to_string(),
+                string_match: target_str.to_string(),
+                preprocessors: all_preprocessors(),
+                rules: all_rules(target_str)
+            }])
+        }
+    }
+}
+
 bench_ruleset! {
     name = all_rules_split_target_all;
     builder {
@@ -188,27 +302,10 @@ bench_ruleset! {
                 string_match: target_str.to_string(),
                 preprocessors: vec![Preprocessor::SplitTarget(SplitTargetConfig {
                     ignore_tld: false
-                })],
-                rules: [
-                    ConfusablesRule.into_generic_matcher().clone_dyn(),
-                    Box::new(LevenshteinRule { maximum_distance: 5, ignore_mismatch_metadata: true }.into_generic_matcher()),
-                    Box::new(LevenshteinSubstringRule { maximum_distance: 5 }.into_generic_matcher()),
-                    Box::new(DamerauLevenshteinRule { maximum_distance: 5, ignore_mismatch_metadata: true }.into_generic_matcher()),
-                    Box::new(DamerauLevenshteinSubstringRule { maximum_distance: 5 }.into_generic_matcher()),
-                    Box::new(HammingRule { maximum_distance: 5 }.into_generic_matcher()),
-                    Box::new(JaroRule { match_percent: 0.5 }.into_generic_matcher()),
-                    Box::new(JaroWinklerRule { match_percent: 0.5 }.into_generic_matcher()),
-                    Box::new(MatchRatingRule::new(target_str).into_generic_matcher()),
-                    Box::new(MetaphoneRule::new(MetaphoneRuleType::Normal, Some(4), target_str).into_generic_matcher()),
-                    Box::new(MetaphoneRule::new(MetaphoneRuleType::Double, Some(4), target_str).into_generic_matcher()),
-                    Box::new(NysiisRule::new(false, target_str).into_generic_matcher()),
-                    Box::new(NysiisRule::new(true, target_str).into_generic_matcher()),
-                    Box::new(SoundexRule::new(SoundexRuleType::Normal, 5, target_str).into_generic_matcher()),
-                    Box::new(SoundexRule::new(SoundexRuleType::Refined, 5, target_str).into_generic_matcher()),
-                    Box::new(BitflipRule::new_dns(target_str, true)),
-                    Box::new(RegexRule::new(Regex::new(target_str).unwrap())),
-                    Box::new(CidrRule::new("192.168.0.0/24".parse().unwrap())),
-                ].into_iter().map(|r| (CommonRuleConfig::default(), r)).collect()
+                }),
+                Preprocessor::ExclusionSet(ExclusionSetConfig { source: ExclusionSetSource::Static(vec!["s3".to_string(), "gob".to_string(), "mh".to_string(), "www".to_string()]), regex: false })
+                ],
+                rules: all_rules(target_str)
             }])
         }
     }
@@ -225,26 +322,7 @@ bench_ruleset! {
                 preprocessors: vec![Preprocessor::SplitTarget(SplitTargetConfig {
                     ignore_tld: true
                 })],
-                rules: [
-                    ConfusablesRule.into_generic_matcher().clone_dyn(),
-                    Box::new(LevenshteinRule { maximum_distance: 5, ignore_mismatch_metadata: true }.into_generic_matcher()),
-                    Box::new(LevenshteinSubstringRule { maximum_distance: 5 }.into_generic_matcher()),
-                    Box::new(DamerauLevenshteinRule { maximum_distance: 5, ignore_mismatch_metadata: true }.into_generic_matcher()),
-                    Box::new(DamerauLevenshteinSubstringRule { maximum_distance: 5 }.into_generic_matcher()),
-                    Box::new(HammingRule { maximum_distance: 5 }.into_generic_matcher()),
-                    Box::new(JaroRule { match_percent: 0.5 }.into_generic_matcher()),
-                    Box::new(JaroWinklerRule { match_percent: 0.5 }.into_generic_matcher()),
-                    Box::new(MatchRatingRule::new(target_str).into_generic_matcher()),
-                    Box::new(MetaphoneRule::new(MetaphoneRuleType::Normal, Some(4), target_str).into_generic_matcher()),
-                    Box::new(MetaphoneRule::new(MetaphoneRuleType::Double, Some(4), target_str).into_generic_matcher()),
-                    Box::new(NysiisRule::new(false, target_str).into_generic_matcher()),
-                    Box::new(NysiisRule::new(true, target_str).into_generic_matcher()),
-                    Box::new(SoundexRule::new(SoundexRuleType::Normal, 5, target_str).into_generic_matcher()),
-                    Box::new(SoundexRule::new(SoundexRuleType::Refined, 5, target_str).into_generic_matcher()),
-                    Box::new(BitflipRule::new_dns(target_str, true)),
-                    Box::new(RegexRule::new(Regex::new(target_str).unwrap())),
-                    Box::new(CidrRule::new("192.168.0.0/24".parse().unwrap())),
-                ].into_iter().map(|r| (CommonRuleConfig::default(), r)).collect()
+                rules: all_rules(target_str)
             }])
         }
     }
@@ -261,26 +339,7 @@ bench_ruleset! {
                 preprocessors: vec![Preprocessor::SplitTarget(SplitTargetConfig {
                     ignore_tld: true
                 })],
-                rules: [
-                    ConfusablesRule.into_generic_matcher().clone_dyn(),
-                    Box::new(LevenshteinRule { maximum_distance: 5, ignore_mismatch_metadata: true }.into_generic_matcher()),
-                    Box::new(LevenshteinSubstringRule { maximum_distance: 5 }.into_generic_matcher()),
-                    Box::new(DamerauLevenshteinRule { maximum_distance: 5, ignore_mismatch_metadata: true }.into_generic_matcher()),
-                    Box::new(DamerauLevenshteinSubstringRule { maximum_distance: 5 }.into_generic_matcher()),
-                    Box::new(HammingRule { maximum_distance: 5 }.into_generic_matcher()),
-                    Box::new(JaroRule { match_percent: 0.5 }.into_generic_matcher()),
-                    Box::new(JaroWinklerRule { match_percent: 0.5 }.into_generic_matcher()),
-                    Box::new(MatchRatingRule::new(target_str).into_generic_matcher()),
-                    Box::new(MetaphoneRule::new(MetaphoneRuleType::Normal, Some(4), target_str).into_generic_matcher()),
-                    Box::new(MetaphoneRule::new(MetaphoneRuleType::Double, Some(4), target_str).into_generic_matcher()),
-                    Box::new(NysiisRule::new(false, target_str).into_generic_matcher()),
-                    Box::new(NysiisRule::new(true, target_str).into_generic_matcher()),
-                    Box::new(SoundexRule::new(SoundexRuleType::Normal, 5, target_str).into_generic_matcher()),
-                    Box::new(SoundexRule::new(SoundexRuleType::Refined, 5, target_str).into_generic_matcher()),
-                    Box::new(BitflipRule::new_dns(target_str, true)),
-                    Box::new(RegexRule::new(Regex::new(target_str).unwrap())),
-                    Box::new(CidrRule::new("192.168.0.0/24".parse().unwrap())),
-                ].into_iter().map(|r| (CommonRuleConfig::default(), r)).collect()
+                rules: all_rules(target_str)
             }])
         }
     }
@@ -288,6 +347,9 @@ bench_ruleset! {
 
 criterion_group!(
     benches,
+    all_rules_exclude_exact,
+    all_rules_exclude_regex,
+    all_rules_all_preprocessors,
     all_rules_split_target_all,
     all_rules_split_target_skip_tld,
     all_rules_no_split_target

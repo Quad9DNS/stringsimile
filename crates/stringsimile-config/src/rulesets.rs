@@ -1,9 +1,11 @@
 //! Rulesets configuration
 
+use std::path::PathBuf;
+
 use serde::{Deserialize, Serialize};
 use stringsimile_matcher::{
     Error,
-    preprocessors::{Preprocessor, SplitTargetConfig},
+    preprocessors::{ExclusionSetConfig, ExclusionSetSource, Preprocessor, SplitTargetConfig},
     ruleset::{RuleSet, StringGroup},
 };
 
@@ -65,6 +67,22 @@ impl StringGroupConfig {
     }
 }
 
+/// Configuration for exclusion set preprocessors
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "exclusion_set_source", rename_all = "snake_case")]
+pub enum ExclusionSetPreprocessorConfig {
+    /// Configuration for the file exclusion set preprocessor source
+    File {
+        /// Path to the file containing exclusion set - one entry per line
+        path: PathBuf,
+    },
+    /// Configuration for the static list exclusion set preprocessor source
+    List {
+        /// Static list of exclusion set entries
+        list: Vec<String>,
+    },
+}
+
 /// Configuration for preprocessors
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "preprocessor_type", rename_all = "snake_case")]
@@ -75,6 +93,15 @@ pub enum PreprocessorConfig {
         #[serde(default)]
         ignore_tld: bool,
     },
+    /// Configuration for the exclusion set preprocessor
+    ExclusionSet {
+        /// Specific exclusion set type config
+        #[serde(flatten)]
+        inner: ExclusionSetPreprocessorConfig,
+        /// If set to true, values will be treated as regex patterns, rather than exact values
+        #[serde(default)]
+        regex: bool,
+    },
 }
 
 impl PreprocessorConfig {
@@ -83,6 +110,19 @@ impl PreprocessorConfig {
             PreprocessorConfig::SplitTarget { ignore_tld } => {
                 Ok(Preprocessor::SplitTarget(SplitTargetConfig {
                     ignore_tld: *ignore_tld,
+                }))
+            }
+            PreprocessorConfig::ExclusionSet { inner, regex } => {
+                Ok(Preprocessor::ExclusionSet(ExclusionSetConfig {
+                    source: match inner {
+                        ExclusionSetPreprocessorConfig::File { path } => {
+                            ExclusionSetSource::File(path.clone())
+                        }
+                        ExclusionSetPreprocessorConfig::List { list } => {
+                            ExclusionSetSource::Static(list.clone())
+                        }
+                    },
+                    regex: *regex,
                 }))
             }
         }
@@ -240,10 +280,14 @@ mod tests {
         assert_eq!("wikipedia", &set_1.string_match);
         assert_eq!(2, set_1.preprocessors.len());
 
-        let PreprocessorConfig::SplitTarget { ignore_tld } = &set_1.preprocessors[0];
+        let PreprocessorConfig::SplitTarget { ignore_tld } = &set_1.preprocessors[0] else {
+            panic!("Expected split target preprocessor");
+        };
         assert!(ignore_tld);
 
-        let PreprocessorConfig::SplitTarget { ignore_tld } = &set_1.preprocessors[1];
+        let PreprocessorConfig::SplitTarget { ignore_tld } = &set_1.preprocessors[1] else {
+            panic!("Expected split target preprocessor");
+        };
         assert!(!ignore_tld);
     }
 }
