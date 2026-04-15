@@ -26,8 +26,7 @@ pub enum Preprocessor {
     SplitTarget(SplitTargetConfig),
     /// Exclusion set preprocessor
     ///
-    /// Splits input string on '.' character and optionally ignores last part.
-    /// Useful for domain names.
+    /// Excludes known strings from being processed by the rules in the ruleset.
     ExclusionSet(ExclusionSetConfig),
 }
 
