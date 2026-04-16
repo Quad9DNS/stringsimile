@@ -1,7 +1,7 @@
 //! Group of related rules
 
 use hashbrown::HashMap;
-use std::{collections::BTreeMap, ops::Deref};
+use std::{borrow::Cow, collections::BTreeMap, ops::Deref};
 
 use metrics::{Counter, counter};
 use serde_json::{Map, Value};
@@ -9,7 +9,7 @@ use tracing::{debug, trace_span, warn};
 
 use crate::{
     GenericMatchResult,
-    preprocessors::{ExclusionSetContext, Preprocessor},
+    preprocessors::{BoxedTargetWithMetadataIter, ExclusionSetContext, Preprocessor},
     rule::GenericMatcherRule,
 };
 
@@ -184,7 +184,8 @@ impl RuleSet {
         );
         let mut matches: Vec<GenericMatchResult> = Vec::default();
 
-        let input: Box<dyn Iterator<Item = &str>> = Box::new([name].into_iter());
+        let input: BoxedTargetWithMetadataIter<'_> =
+            Box::new([(Cow::Borrowed(name), Cow::Owned(Map::default()))].into_iter());
 
         let input = self
             .preprocessors
@@ -196,7 +197,7 @@ impl RuleSet {
 
         let mut matched_rules: Vec<bool> = self.rules.iter().map(|_| false).collect();
 
-        for it in input.enumerate() {
+        for it in input {
             for (index, (config, rule)) in self.rules.iter().enumerate() {
                 let rule_metrics = context
                     .metrics
@@ -206,7 +207,7 @@ impl RuleSet {
                 let matched = self.generate_match(
                     &mut matches,
                     rule.deref(),
-                    it,
+                    &it,
                     rule_metrics,
                     full_metadata_for_all,
                 );
@@ -245,7 +246,7 @@ impl RuleSet {
         &self,
         matches: &mut Vec<GenericMatchResult>,
         rule: &dyn GenericMatcherRule,
-        (index, part): (usize, &str),
+        (part, extra_metadata): &(Cow<'_, str>, Cow<'_, Map<String, Value>>),
         rule_metrics: &RuleMetrics,
         full_metadata_for_all: bool,
     ) -> bool {
@@ -253,9 +254,9 @@ impl RuleSet {
             Ok(mut result) => {
                 let matched = result.matched;
                 if result.matched || full_metadata_for_all {
-                    self.preprocessors
-                        .iter()
-                        .for_each(|p| p.add_metadata(&mut result.metadata, (index, part)));
+                    extra_metadata.iter().for_each(|(k, v)| {
+                        result.metadata.insert(k.to_string(), v.clone());
+                    });
                     matches.push(result.into_full_metadata());
                 }
                 matched

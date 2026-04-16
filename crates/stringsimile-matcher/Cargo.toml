@@ -7,7 +7,7 @@ version.workspace = true
 
 [features]
 default = ["all"]
-all = ["rules-levenshtein", "rules-hamming", "rules-jaro", "rules-jaro-winkler", "rules-confusables", "rules-damerau-levenshtein", "rules-soundex", "rules-metaphone", "rules-nysiis", "rules-match-rating", "rules-bitflip", "rules-regex", "rules-cidr", "preprocessors-split-target", "preprocessors-exclusion-sets", "preprocessors-exclusion-sets-regex"]
+all = ["rules-levenshtein", "rules-hamming", "rules-jaro", "rules-jaro-winkler", "rules-confusables", "rules-damerau-levenshtein", "rules-soundex", "rules-metaphone", "rules-nysiis", "rules-match-rating", "rules-bitflip", "rules-regex", "rules-cidr", "preprocessors-split-target", "preprocessors-exclusion-sets", "preprocessors-exclusion-sets-regex", "preprocessors-punycode"]
 rules-bitflip = ["dep:lazy_static"]
 rules-cidr = ["dep:ipnet"]
 rules-confusables = ["dep:confusables"]
@@ -25,11 +25,13 @@ preprocessors-split-target = []
 preprocessors-exclusion-sets = []
 preprocessors-exclusion-sets-regex = ["dep:hyperscan"]
 preprocessors-exclusion-sets-regex-hyperscan-static = ["hyperscan/static"]
+preprocessors-punycode = ["dep:idna"]
 
 [dependencies]
 confusables = { workspace = true, optional = true }
 hashbrown.workspace = true
 hyperscan = { workspace = true, optional = true }
+idna = { workspace = true, optional = true }
 ipnet = { workspace = true, optional = true }
 lazy_static = { workspace = true, optional = true }
 metrics.workspace = true

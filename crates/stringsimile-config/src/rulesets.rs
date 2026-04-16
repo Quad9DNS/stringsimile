@@ -5,7 +5,9 @@ use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 use stringsimile_matcher::{
     Error,
-    preprocessors::{ExclusionSetConfig, ExclusionSetSource, Preprocessor, SplitTargetConfig},
+    preprocessors::{
+        ExclusionSetConfig, ExclusionSetSource, Preprocessor, PunycodeConfig, SplitTargetConfig,
+    },
     ruleset::{RuleSet, StringGroup},
 };
 
@@ -102,6 +104,23 @@ pub enum PreprocessorConfig {
         #[serde(default)]
         regex: bool,
     },
+    /// Configuration for the punycode preprocessor
+    Punycode {
+        /// If set to true, non-ascii strings will be punycode encoded
+        #[serde(default = "default_true")]
+        encode: bool,
+        /// If set to true, punycode encoded strings will be decoded
+        #[serde(default = "default_true")]
+        decode: bool,
+        /// If set to true, the original input value will be kept alongside the encoded/decoded
+        /// value
+        #[serde(default)]
+        keep_both: bool,
+    },
+}
+
+const fn default_true() -> bool {
+    true
 }
 
 impl PreprocessorConfig {
@@ -125,6 +144,15 @@ impl PreprocessorConfig {
                     regex: *regex,
                 }))
             }
+            PreprocessorConfig::Punycode {
+                encode,
+                decode,
+                keep_both,
+            } => Ok(Preprocessor::Punycode(PunycodeConfig {
+                encode: *encode,
+                decode: *decode,
+                keep_both: *keep_both,
+            })),
         }
     }
 }
@@ -250,6 +278,23 @@ mod tests {
                             },
                             {
                                 "preprocessor_type": "split_target"
+                            },
+                            {
+                                "preprocessor_type": "exclusion_set",
+                                "exclusion_set_source": "list",
+                                "list": [ "www" ]
+                            },
+                            {
+                                "preprocessor_type": "punycode",
+                                "encode": true,
+                                "decode": false
+                            },
+                            {
+                                "preprocessor_type": "punycode"
+                            },
+                            {
+                                "preprocessor_type": "punycode",
+                                "keep_both": true
                             }
                         ],
                         "match_rules": [
@@ -278,7 +323,7 @@ mod tests {
         let set_1 = &wikimedia_group.rule_sets[0];
         assert_eq!("wikipedia main brand name", &set_1.name);
         assert_eq!("wikipedia", &set_1.string_match);
-        assert_eq!(2, set_1.preprocessors.len());
+        assert_eq!(6, set_1.preprocessors.len());
 
         let PreprocessorConfig::SplitTarget { ignore_tld } = &set_1.preprocessors[0] else {
             panic!("Expected split target preprocessor");
@@ -289,5 +334,50 @@ mod tests {
             panic!("Expected split target preprocessor");
         };
         assert!(!ignore_tld);
+
+        let PreprocessorConfig::ExclusionSet {
+            inner: ExclusionSetPreprocessorConfig::List { list },
+            regex: false,
+        } = &set_1.preprocessors[2]
+        else {
+            panic!("Expected list exclusion set preprocessor");
+        };
+        assert_eq!(list, &vec!["www".to_string()]);
+
+        let PreprocessorConfig::Punycode {
+            encode,
+            decode,
+            keep_both,
+        } = &set_1.preprocessors[3]
+        else {
+            panic!("Expected punycode set preprocessor");
+        };
+        assert!(encode);
+        assert!(!decode);
+        assert!(!keep_both);
+
+        let PreprocessorConfig::Punycode {
+            encode,
+            decode,
+            keep_both,
+        } = &set_1.preprocessors[4]
+        else {
+            panic!("Expected punycode set preprocessor");
+        };
+        assert!(encode);
+        assert!(decode);
+        assert!(!keep_both);
+
+        let PreprocessorConfig::Punycode {
+            encode,
+            decode,
+            keep_both,
+        } = &set_1.preprocessors[5]
+        else {
+            panic!("Expected punycode set preprocessor");
+        };
+        assert!(encode);
+        assert!(decode);
+        assert!(keep_both);
     }
 }

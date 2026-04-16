@@ -1,7 +1,9 @@
 use criterion::{Criterion, criterion_group, criterion_main};
 use regex::Regex;
 use stringsimile_matcher::{
-    preprocessors::{ExclusionSetConfig, ExclusionSetSource, Preprocessor, SplitTargetConfig},
+    preprocessors::{
+        ExclusionSetConfig, ExclusionSetSource, Preprocessor, PunycodeConfig, SplitTargetConfig,
+    },
     rule::{GenericMatcherRule, IntoGenericMatcherRule},
     rules::{
         bitflip::BitflipRule,
@@ -244,6 +246,11 @@ fn all_preprocessors() -> Vec<Preprocessor> {
             source: ExclusionSetSource::Static(vec!["com".to_string(), "net".to_string()]),
             regex: false,
         }),
+        Preprocessor::Punycode(PunycodeConfig {
+            encode: true,
+            decode: true,
+            keep_both: true,
+        }),
     ]
 }
 
@@ -271,6 +278,21 @@ bench_ruleset! {
                 name:"test_ruleset".to_string(),
                 string_match: target_str.to_string(),
                 preprocessors: vec![Preprocessor::ExclusionSet(ExclusionSetConfig {source: ExclusionSetSource::Static(vec![".*com.*".to_string(),".*net.*".to_string()]), regex: true })],
+                rules: all_rules(target_str)
+            }])
+        }
+    }
+}
+
+bench_ruleset! {
+    name = all_rules_punycode;
+    builder {
+        {
+            let target_str = "test.string.to.match";
+            StringGroup::new("test_group".to_string(), vec![RuleSet {
+                name:"test_ruleset".to_string(),
+                string_match: target_str.to_string(),
+                preprocessors: vec![Preprocessor::Punycode(PunycodeConfig { encode: true, decode: true, keep_both: true })],
                 rules: all_rules(target_str)
             }])
         }
@@ -347,6 +369,7 @@ bench_ruleset! {
 
 criterion_group!(
     benches,
+    all_rules_punycode,
     all_rules_exclude_exact,
     all_rules_exclude_regex,
     all_rules_all_preprocessors,
