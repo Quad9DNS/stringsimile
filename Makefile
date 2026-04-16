@@ -28,17 +28,17 @@ DOCS := $(addprefix target/man/,\
 	stringsimile-config.5 \
 	stringsimile-rule-config.5)
 
-all: $(DOCS) target/default/release/stringsimile
+all: doc target/default/release/stringsimile
 	cp target/default/release/stringsimile target/stringsimile
 
-basic: $(DOCS) target/basic/release/stringsimile
+basic: doc target/basic/release/stringsimile
 	cp target/basic/release/stringsimile target/stringsimile
 
 container-debian-static: deb-cross
-	$(CONTAINER_TOOL) build --build-arg CARGO_TARGET_DIR="target/default" -f distribution/container/Containerfile.debian-static .
+	$(CONTAINER_TOOL) build --build-arg CARGO_TARGET_DIR="target" --build-arg CARGO_BUILD_TARGET="x86_64-unknown-linux-gnu" -f distribution/container/Containerfile.debian-static .
 
 container-debian-dynamic: deb-dynamic
-	$(CONTAINER_TOOL) build --build-arg CARGO_TARGET_DIR="target/default" -f distribution/container/Containerfile.debian .
+	$(CONTAINER_TOOL) build --build-arg CARGO_TARGET_DIR="target/all-dynamic" -f distribution/container/Containerfile.debian .
 
 container-alpine:
 	CARGO_TARGET_DIR="target/default" CARGO_BUILD_TARGET="x86_64-unknown-linux-musl" cargo build --release
@@ -53,14 +53,14 @@ deb-cross:
 	cp "target/x86_64-unknown-linux-gnu/release/stringsimile" "target/release/stringsimile"
 	cargo deb --no-build --variant default --target x86_64-unknown-linux-gnu
 
-deb: target/default/debian/stringsimile_$(VERSION)-1_amd64.deb
-deb-dynamic: target/all-dynamic/debian/stringsimile_$(VERSION)-1_amd64.deb
-deb-basic: target/basic/debian/stringsimile_$(VERSION)-1_amd64.deb
+deb: target/default/debian/stringsimile_$(VERSION)-1_amd64.deb doc
+deb-dynamic: target/all-dynamic/debian/stringsimile_$(VERSION)-1_amd64.deb doc
+deb-basic: target/basic/debian/stringsimile_$(VERSION)-1_amd64.deb doc
 
 all-rpm: rpm rpm-dynamic rpm-basic
-rpm: target/default/generate-rpm/stringsimile_$(VERSION)-1.x86_64.rpm
-rpm-dynamic: target/all-dynamic/generate-rpm/stringsimile_$(VERSION)-1.x86_64.rpm
-rpm-basic: target/basic/generate-rpm/stringsimile_$(VERSION)-1.x86_64.rpm
+rpm: target/default/generate-rpm/stringsimile_$(VERSION)-1.x86_64.rpm doc
+rpm-dynamic: target/all-dynamic/generate-rpm/stringsimile_$(VERSION)-1.x86_64.rpm doc
+rpm-basic: target/basic/generate-rpm/stringsimile_$(VERSION)-1.x86_64.rpm doc
 
 target/%/debian/stringsimile_$(VERSION)-1_amd64.deb: target/%/release/stringsimile $(DOCS)
 	CARGO_TARGET_DIR="target/$*" cargo deb --variant $*

@@ -3,7 +3,7 @@ FROM debian:bookworm-slim AS builder
 ARG CARGO_TARGET_DIR="target"
 ARG CARGO_BUILD_TARGET="."
 
-RUN apt update -y && apt install librdkafka1 -y
+RUN apt update -y && apt install librdkafka1 libhyperscan5 -y
 COPY ./$CARGO_TARGET_DIR/$CARGO_BUILD_TARGET/debian/stringsimile_*_*.deb .
 
 RUN dpkg -i ./stringsimile_*_*.deb

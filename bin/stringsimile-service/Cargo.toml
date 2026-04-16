@@ -28,7 +28,7 @@ depends = []
 default-features = true
 
 [package.metadata.deb.variants.all-dynamic]
-depends = ["librdkafka1", "hyperscan"]
+depends = ["librdkafka1", "libhyperscan5"]
 default-features = false
 features = ["all-dynamic"]
 
