@@ -13,6 +13,8 @@ COPY --from=builder /usr/bin/stringsimile /usr/bin/stringsimile
 COPY --from=builder /etc/stringsimile /etc/stringsimile
 COPY --from=builder /var/lib/stringsimile /var/lib/stringsimile
 
+RUN apt update -y && apt install libhyperscan5 -y
+
 # Smoke test
 RUN ["stringsimile", "--version"]
 

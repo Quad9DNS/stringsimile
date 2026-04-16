@@ -34,7 +34,7 @@ all: $(DOCS) target/default/release/stringsimile
 basic: $(DOCS) target/basic/release/stringsimile
 	cp target/basic/release/stringsimile target/stringsimile
 
-container-debian-static: deb
+container-debian-static: deb-cross
 	$(CONTAINER_TOOL) build --build-arg CARGO_TARGET_DIR="target/default" -f distribution/container/Containerfile.debian-static .
 
 container-debian-dynamic: deb-dynamic
@@ -48,6 +48,11 @@ target/%/release/stringsimile:
 	CARGO_TARGET_DIR="target/$*" cargo build --release --no-default-features --features $*
 
 all-deb: deb deb-dynamic deb-basic
+deb-cross:
+	cross build --target x86_64-unknown-linux-gnu --release --no-default-features --features default
+	cp "target/x86_64-unknown-linux-gnu/release/stringsimile" "target/release/stringsimile"
+	cargo deb --no-build --variant default --target x86_64-unknown-linux-gnu
+
 deb: target/default/debian/stringsimile_$(VERSION)-1_amd64.deb
 deb-dynamic: target/all-dynamic/debian/stringsimile_$(VERSION)-1_amd64.deb
 deb-basic: target/basic/debian/stringsimile_$(VERSION)-1_amd64.deb

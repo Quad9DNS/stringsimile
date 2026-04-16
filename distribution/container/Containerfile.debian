@@ -10,7 +10,7 @@ RUN dpkg -i ./stringsimile_*_*.deb
 
 FROM debian:bookworm-slim
 
-RUN apt update -y && apt install librdkafka1 -y
+RUN apt update -y && apt install librdkafka1 libhyperscan5 -y
 
 COPY --from=builder /usr/bin/stringsimile /usr/bin/stringsimile
 COPY --from=builder /etc/stringsimile /etc/stringsimile
