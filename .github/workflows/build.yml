@@ -26,7 +26,7 @@ jobs:
           - target: x86_64-unknown-linux-gnu
             output-file-name: gnu
           - variant: all-dynamic
-            needs-dev-dependencies: true
+            needs-librdkafka: true
           - package: deb
             needs-cargo-deb: true
             build-deb: true
@@ -56,9 +56,12 @@ jobs:
         with:
           target: ${{ matrix.target }}
 
-      - name: Install dev dependencies
-        if: ${{ matrix.needs-dev-dependencies }}
-        run: sudo apt-get update -y && sudo apt-get -y install librdkafka-dev libhyperscan-dev
+      - name: Install libhyperscan
+        run: sudo apt-get update -y && sudo apt-get -y install libhyperscan-dev
+
+      - name: Install librdkafka
+        if: ${{ matrix.needs-librdkafka }}
+        run: sudo apt-get update -y && sudo apt-get -y install librdkafka-dev
 
       - name: Setup rust cross
         if: ${{ matrix.needs-cross }}
