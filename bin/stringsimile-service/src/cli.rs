@@ -1,9 +1,9 @@
 use std::path::PathBuf;
 
-use clap::{ArgAction, Parser};
+use clap::{ArgAction, Parser, crate_version};
 
 #[derive(Parser)]
-#[command(version, about, long_about = None, rename_all = "kebab-case")]
+#[command(version = stringsimile_version(), about, long_about = None, rename_all = "kebab-case")]
 pub struct CliArgs {
     /// Path to the directory (or file) containing rules
     #[clap(short, long, default_value = "/var/lib/stringsimile")]
@@ -64,4 +64,18 @@ pub struct CliArgs {
     /// Prefix to add to all metrics names.
     #[clap(long, default_value = "stringsimile")]
     pub metrics_name_prefix: String,
+}
+
+fn stringsimile_version() -> String {
+    let features: &[&str] = &[
+        #[cfg(any(feature = "kafka-static", feature = "kafka-dynamic"))]
+        "kafka (input/output)",
+        #[cfg(any(feature = "hyperscan-static", feature = "hyperscan-dynamic"))]
+        "hyperscan (regex exclusion sets)",
+    ];
+    format!(
+        "{}\nCompiled with: {}",
+        crate_version!(),
+        features.join(", ")
+    )
 }

@@ -21,6 +21,8 @@ assets = [
     { source = "../../target/man/stringsimile.1", dest = "usr/share/man/man1/stringsimile.1", mode = "644" },
     { source = "../../target/man/stringsimile-config.5", dest = "usr/share/man/man5/stringsimile-config.5", mode = "644" },
     { source = "../../target/man/stringsimile-rule-config.5", dest = "usr/share/man/man5/stringsimile-rule-config.5", mode = "644" },
+    { source = "../../target/man/stringsimile-kafka.7", dest = "usr/share/man/man7/stringsimile-kafka.7", mode = "644" },
+    { source = "../../target/man/stringsimile-metrics.7", dest = "usr/share/man/man7/stringsimile-metrics.7", mode = "644" },
 ]
 
 [package.metadata.deb.variants.default]
@@ -55,6 +57,8 @@ assets = [
     { source = "../../target/man/stringsimile.1", dest = "/usr/share/man/man1/stringsimile.1", mode = "644" },
     { source = "../../target/man/stringsimile-config.5", dest = "/usr/share/man/man5/stringsimile-config.5", mode = "644" },
     { source = "../../target/man/stringsimile-rule-config.5", dest = "/usr/share/man/man5/stringsimile-rule-config.5", mode = "644" },
+    { source = "../../target/man/stringsimile-kafka.7", dest = "/usr/share/man/man7/stringsimile-kafka.7", mode = "644" },
+    { source = "../../target/man/stringsimile-metrics.7", dest = "/usr/share/man/man7/stringsimile-metrics.7", mode = "644" },
 ]
 
 [package.metadata.generate-rpm.variants.default]
@@ -97,7 +101,7 @@ stringsimile-config.workspace = true
 
 arc-swap.workspace = true
 async-stream.workspace = true
-clap = { workspace = true, features = ["derive"] }
+clap = { workspace = true, features = ["cargo", "derive", "string"] }
 exitcode.workspace = true
 futures.workspace = true
 hashbrown.workspace = true

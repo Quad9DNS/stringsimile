@@ -84,7 +84,7 @@ file configurations.
 
 # SEE ALSO
 
-*stringsimile-config*(5) *stringsimile-rule-config*(5)
+*stringsimile-config*(5) *stringsimile-rule-config*(5) *stringsimile-kafka*(7)
 
 # AUTHORS
 

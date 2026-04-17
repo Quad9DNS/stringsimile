@@ -32,7 +32,8 @@ Configuration file uses YAML format with the following keys:
 	    - identifier
 	    Kafka identifier for input data
 	    - pointer
-	    Kafka pointer for input data (either offset from end as a number, or a string "end" or "begin"). By default, stored  offset will be used
+	    Kafka pointer for input data (either offset from end as a number, or
+	    a string "end" or "begin"). By default, stored offset will be used.
 	    - librdkafka_options
 	    Key value pairs of options to pass to librdkafka
 - output
@@ -62,7 +63,7 @@ Configuration file uses YAML format with the following keys:
 	  rules. Check out *stringsimile-rule-config*(5) for information on
 	  rules files. Defaults to /var/lib/stringsimile
 	- input_field
-	  Field from input object to match agains the rules. Defaults to ".domain_name".
+	  Field from input object to match against the rules. Defaults to ".domain_name".
 	  This field supports simple syntax for accessing nested objects:
 	  e.g. ".domain_name" will look for "domain_name" key in root object.
 	  ".value.domain_name" will look for "value" in root object
