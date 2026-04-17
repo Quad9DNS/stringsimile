@@ -25,7 +25,8 @@ endif
 DOCS := $(addprefix target/man/,\
 	stringsimile.1 \
 	stringsimile-config.5 \
-	stringsimile-rule-config.5)
+	stringsimile-rule-config.5 \
+	stringsimile-kafka.7)
 
 all: doc target/default/release/stringsimile
 	cp target/default/release/stringsimile target/stringsimile
@@ -108,6 +109,10 @@ target/man/%.5: doc/man/%.5.scd
 	@mkdir -p target/man
 	scdoc < $? > $@
 
+target/man/%.7: doc/man/%.7.scd
+	@mkdir -p target/man
+	scdoc < $? > $@
+
 doc: $(DOCS)
 
 # Exists in GNUMake but not in NetBSD make and others.
@@ -117,12 +122,12 @@ clean:
 	cargo clean
 
 install: $(DOCS) target/default/release/stringsimile
-	mkdir -m755 -p $(DESTDIR)$(BINDIR) $(DESTDIR)$(MANDIR)/man1 $(DESTDIR)$(MANDIR)/man5 $(CONFDIR) $(RULEDIR)
+	mkdir -m755 -p $(DESTDIR)$(BINDIR) $(DESTDIR)$(MANDIR)/man1 $(DESTDIR)$(MANDIR)/man5 $(DESTDIR)$(MANDIR)/man7 $(CONFDIR) $(RULEDIR)
 	install -m755 target/stringsimile $(DESTDIR)$(BINDIR)/stringsimile
 	install -m644 target/man/stringsimile.1 $(DESTDIR)$(MANDIR)/man1/stringsimile.1
 	install -m644 target/man/stringsimile-config.5 $(DESTDIR)$(MANDIR)/man5/stringsimile-config.5
 	install -m644 target/man/stringsimile-rule-config.5 $(DESTDIR)$(MANDIR)/man5/stringsimile-rule-config.5
-	install -m644 target/man/stringsimile-rule-config.5 $(DESTDIR)$(MANDIR)/man5/stringsimile-rule-config.5
+	install -m644 target/man/stringsimile-kafka.7 $(DESTDIR)$(MANDIR)/man7/stringsimile-kafka.7
 	install -m644 distribution/config.yaml $(CONFDIR)/stringsimile.yaml
 	install -m644 distribution/rules/* $(RULEDIR)/
 
@@ -133,9 +138,11 @@ uninstall:
 	$(RM) $(DESTDIR)$(MANDIR)/man1/stringsimile.1
 	$(RM) $(DESTDIR)$(MANDIR)/man5/stringsimile-config.5
 	$(RM) $(DESTDIR)$(MANDIR)/man5/stringsimile-rule-config.5
+	$(RM) $(DESTDIR)$(MANDIR)/man7/stringsimile-kafka.7
 	${RMDIR_IF_EMPTY} $(DESTDIR)$(BINDIR)
 	$(RMDIR_IF_EMPTY) $(DESTDIR)$(MANDIR)/man1
 	$(RMDIR_IF_EMPTY) $(DESTDIR)$(MANDIR)/man5
+	$(RMDIR_IF_EMPTY) $(DESTDIR)$(MANDIR)/man7
 	$(RMDIR_IF_EMPTY) $(DESTDIR)$(MANDIR)
 
 .PHONY: all all-deb deb deb-dynamic deb-basic all-rpm rpm rpm-dynamic rpm-basic container-debian-static container-debian-dynamic container-alpine doc clean install uninstall debug

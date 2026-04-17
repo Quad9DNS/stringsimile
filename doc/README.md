@@ -107,6 +107,7 @@ Check out the [example configuration](../distribution/config.yaml) and [example 
 
 - [Configuration](./configuration.md)
 - [Rule configuration](./rules-configuration.md)
+- [Kafka](./kafka.md)
 
 # Authors
 
