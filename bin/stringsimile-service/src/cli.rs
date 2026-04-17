@@ -67,15 +67,15 @@ pub struct CliArgs {
 }
 
 fn stringsimile_version() -> String {
+    let features: &[&str] = &[
+        #[cfg(any(feature = "kafka-static", feature = "kafka-dynamic"))]
+        "kafka (input/output)",
+        #[cfg(any(feature = "hyperscan-static", feature = "hyperscan-dynamic"))]
+        "hyperscan (regex exclusion sets)",
+    ];
     format!(
         "{}\nCompiled with: {}",
         crate_version!(),
-        [
-            #[cfg(any(feature = "kafka-static", feature = "kafka-dynamic"))]
-            "kafka (input/output)",
-            #[cfg(any(feature = "hyperscan-static", feature = "hyperscan-dynamic"))]
-            "hyperscan (regex exclusion sets)",
-        ]
-        .join(", ")
+        features.join(", ")
     )
 }

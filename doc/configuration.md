@@ -50,7 +50,7 @@ Configuration file uses YAML format with the following keys:
     accessing nested objects: e.g. ".domain_name" will look for
     "domain_name" key in root object. ".value.domain_name" will look
     for "value" in root object and then for "domain_name" in the
-    "value" object. ".domain_names\[0\]" will take first value in
+    "value" object. ".domain_names[0]" will take first value in
     "domain_names" array. Any failures in matching will just pass
     through the object unmodified.
 
@@ -73,7 +73,7 @@ Configuration file uses YAML format with the following keys:
     - **export_interval_secs** How often to export metrics to stdout.
 
   - **name_prefix** Prefix to add to all metrics names. Defaults to
-    stringsimile\_
+    stringsimile_
 
 - **process** Configuration for the stringsimile process.
 
