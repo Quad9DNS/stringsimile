@@ -51,7 +51,7 @@ Stringsimile supports different inputs, outputs and rules to use when comparing 
 - Regex
 - CIDR
 
-Check out the [example rules file](./distribution/rules/example.json) to see how they can be defined. You can also check out the included man pages (`man 5 stringsimile-rule-config`).
+Check out the [example rules file](./distribution/rules/example.json) to see how they can be defined. You can also check out the included man pages (`man 5 stringsimile-rule-config`) or [markdown docs](./doc) for more information.
 
 ## Installing
 

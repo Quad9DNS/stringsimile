@@ -2,7 +2,6 @@
 .SUFFIXES:
 .SUFFIXES: .1 .5 .1.scd .5.scd
 
-VPATH=doc
 PREFIX?=/usr/local
 BINDIR?=$(PREFIX)/bin
 MANDIR?=$(PREFIX)/share/man
@@ -101,11 +100,11 @@ check-deny:
 test:
 	cargo test
 
-target/man/%.1: doc/%.1.scd
+target/man/%.1: doc/man/%.1.scd
 	@mkdir -p target/man
 	scdoc < $? > $@
 
-target/man/%.5: doc/%.5.scd
+target/man/%.5: doc/man/%.5.scd
 	@mkdir -p target/man
 	scdoc < $? > $@
 

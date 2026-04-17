@@ -62,7 +62,7 @@ Configuration file uses YAML format with the following keys:
 	  rules. Check out *stringsimile-rule-config*(5) for information on
 	  rules files. Defaults to /var/lib/stringsimile
 	- input_field
-	  Field from input object to match agains the rules. Defaults to ".domain_name".
+	  Field from input object to match against the rules. Defaults to ".domain_name".
 	  This field supports simple syntax for accessing nested objects:
 	  e.g. ".domain_name" will look for "domain_name" key in root object.
 	  ".value.domain_name" will look for "value" in root object
