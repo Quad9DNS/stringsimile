@@ -68,7 +68,7 @@ continue where it left off when it is restarted.
 The above configuration connects to localhost:9092 for input data, reads
 from "input" topic, from the first message.
 
-# SEE ALSO
+# See also
 
 - [Main docs](./README.md)
 - [Configuration](./configuration.md)

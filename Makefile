@@ -26,7 +26,8 @@ DOCS := $(addprefix target/man/,\
 	stringsimile.1 \
 	stringsimile-config.5 \
 	stringsimile-rule-config.5 \
-	stringsimile-kafka.7)
+	stringsimile-kafka.7 \
+	stringsimile-metrics.7)
 
 all: doc target/default/release/stringsimile
 	cp target/default/release/stringsimile target/stringsimile
