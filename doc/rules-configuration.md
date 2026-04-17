@@ -254,119 +254,119 @@ Examples can be found in [/var/lib/stringsimile directory](../distribution/rules
 - **Levenshtein** configured with `{ \"values\": {
   \"maximum_distance\": 2 } }` and `\"string_match\": \"test\"`, will
   give the following results for:
-  1. Input string = tset
+  1. Input string = tset  
      Result = `{\"match\": true, \"distance\": 2}`
-  2. Input string = tsettest
+  2. Input string = tsettest  
      Result = `{\"match\": false, \"distance\": 4}`
 
 - **Levenshtein substring variant** with
   `{ \"values\": { \"maximum_distance\": 1 } }` and
   `\"string_match\": \"test\"`, will give the following results
   for:
-  1. Input string = mytestx
+  1. Input string = mytestx  
      Result = `{\"match\": true, \"distance\": 0}`
-  2. Input string = mytartx
+  2. Input string = mytartx  
      Result = `{\"match\": false, \"distance\": 2}`
 
 - **Jaro** configured with `{ \"values\": {
   \"match_percent_threshold\": 0.9 } }` and `\"string_match\":
   \"test\"`, will give the following results for:
-  1. Input string = test
+  1. Input string = test  
      Result = `{\"match\": true, \"similarity\": 1.0}`
-  2. Input string = tset
+  2. Input string = tset  
      Result = `{\"match\": false, \"similarity\": 0.83}`
 
 - **Jaro-Winkler** configured with `{ \"values\": {
   \"match_percent_threshold\": 0.9 } }` and `\"string_match\":
   \"test\"`, will give the following results for:
-  1. Input string = test
+  1. Input string = test  
      Result = `{\"match\": true, \"similarity\": 1.0}`
-  2. Input string = tesx
+  2. Input string = tesx  
      Result = `{\"match\": true, \"similarity\": 0.93}`
 
 - **IDN Confusables** configured with no additional values and
   `\"string_match\": \"test\"`, will give the following results
   for:
-  1. Input string = teѕt (with Cyrillic 'ѕ')
+  1. Input string = teѕt (with Cyrillic 'ѕ')  
      Result = `{\"match\": true}`
-  2. Input string = toast
+  2. Input string = toast  
      Result = `{\"match\": false}`
 
 - **Damerau-Levenshtein** configured with `{
   \"values\": { \"maximum_distance\": 1 } }` and `\"string_match\":
   \"test\"`, will give the following results for:
-  1. Input string = tset
+  1. Input string = tset  
      Result = `{\"match\": true, \"distance\": 1}` (transposition)
-  2. Input string = tent
+  2. Input string = tent  
      Result = `{\"match\": true, \"distance\": 1}`
 
 - **Damerau-Levenshtein substring variant** configured with
   `{ \"values\": { \"maximum_distance\": 1 } }` and
   `\"string_match\": \"test\"`, will give the following results
   for:
-  1. Input string = xtsety
+  1. Input string = xtsety  
      Result = `{\"match\": true, \"distance\": 1}`
-  2. Input string = abc
+  2. Input string = abc  
      Result = `{\"match\": false}`
 
 - **Hamming** configured with `{ \"values\": {
   \"maximum_distance\": 1 } }` and `\"string_match\": \"test\"`, will
   give the following results for:
-  1. Input string = tent
+  1. Input string = tent  
      Result = `{\"match\": true, \"distance\": 1}`
-  2. Input string = tests
+  2. Input string = tests  
      Result = `{\"match\": false}` (different length)
 
 - **Soundex** configured with `{ \"values\": {
   \"minimum_similarity\": 4 } }` and `\"string_match\": \"Robert\"`,
   will give the following results for:
-  1. Input string = Rupert
+  1. Input string = Rupert  
      Result = `{\"match\": true, \"similarity\": 4}`
-  2. Input string = Rubin
+  2. Input string = Rubin  
      Result = `{\"match\": false, \"similarity\": 2}`
 
 - **Metaphone** configured with `{ \"values\": {
   \"max_code_length\": 4 } }` and `\"string_match\": \"Smith\"`, will
   give the following results for:
-  1. Input string = Smyth
+  1. Input string = Smyth  
      Result = `{\"match\": true}`
-  2. Input string = Schmidt
+  2. Input string = Schmidt  
      Result = `{\"match\": false}`
 
 - **NYSIIS** configured with default values and `\"string_match\":
   \"Macdonald\"`, will give the following results for:
-  1. Input string = McDonald
+  1. Input string = McDonald  
      Result = `{\"match\": true}`
-  2. Input string = Macdonell
+  2. Input string = Macdonell  
      Result = `{\"match\": false}`
 
 - **Match Rating** configured with no additional values and
   `\"string_match\": \"Smith\"`, will give the following results
   for:
-  1. Input string = Smyth
+  1. Input string = Smyth  
      Result = `{\"match\": true}`
-  2. Input string = Johnson
+  2. Input string = Johnson  
      Result = `{\"match\": false}`
 
 - **Bitflip** configured with default values and `\"string_match\":
   \"test\"`, will give the following results for:
-  1. Input string = uest
+  1. Input string = uest  
      Result = `{\"match\": true}`
-  2. Input string = best
+  2. Input string = best  
      Result = `{\"match\": false}`
 
 - **Regex** configured with `{ \"values\": { \"pattern\":
   \"\^test\[0-9\]+\$\" } }`, will give the following results for:
-  1. Input string = test123
+  1. Input string = test123  
      Result = `{\"match\": true}`
-  2. Input string = testing
+  2. Input string = testing  
      Result = `{\"match\": false}`
 
 - **CIDR** configured with `{ \"values\": { \"address\":
   \"192.168.0.0/24\" } }`, will give the following results for:
-  1. Input string = 192.168.0.30
+  1. Input string = 192.168.0.30  
      Result = `{\"match\": true}`
-  2. Input string = 192.168.1.30
+  2. Input string = 192.168.1.30  
      Result = `{\"match\": false}`
 
 # See also
