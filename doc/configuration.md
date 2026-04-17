@@ -21,7 +21,7 @@ Configuration file uses YAML format with the following keys:
     - **topics** Kafka topics to subscribe to for input data
     - **identifier** Kafka identifier for input data
     - **pointer** Kafka pointer for input data (either offset from end as a number, or
-    a string \"end\" or \"begin\"). By default, stored offset will be used
+    a string "end" or "begin"). By default, stored offset will be used
     - **librdkafka_options** Key value pairs of options to pass to librdkafka
 
 - **output** Configuration for inputs, where processed objects with match
@@ -46,12 +46,12 @@ Configuration file uses YAML format with the following keys:
     information on rules files. Defaults to [/var/lib/stringsimile](../distribution/rules).
 
   - **input_field** Field from input object to match against the rules.
-    Defaults to \".domain_name\". This field supports simple syntax for
-    accessing nested objects: e.g. \".domain_name\" will look for
-    \"domain_name\" key in root object. \".value.domain_name\" will look
-    for \"value\" in root object and then for \"domain_name\" in the
-    \"value\" object. \".domain_names\[0\]\" will take first value in
-    \"domain_names\" array. Any failures in matching will just pass
+    Defaults to ".domain_name". This field supports simple syntax for
+    accessing nested objects: e.g. ".domain_name" will look for
+    "domain_name" key in root object. ".value.domain_name" will look
+    for "value" in root object and then for "domain_name" in the
+    "value" object. ".domain_names\[0\]" will take first value in
+    "domain_names" array. Any failures in matching will just pass
     through the object unmodified.
 
   - **report_all** Set to true to put matching metadata in all objects,
@@ -77,8 +77,8 @@ Configuration file uses YAML format with the following keys:
 
 - **process** Configuration for the stringsimile process.
 
-  - **log_level** Logging level. Valid levels are: \"error\", \"warn\",
-    \"info\", \"debug\", \"trace\"
+  - **log_level** Logging level. Valid levels are: "error", "warn",
+    "info", "debug", "trace"
 
   - **threads** Number of threads to use. Defaults to number of available
     cores.

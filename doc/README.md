@@ -90,15 +90,15 @@ Using predefined example [rule configurations](./rules-configuration.md)
 and a simple [config](./configuration.md) with just stdin input and stdout output:
 
 ```
-\$ echo \'{\"domain_name\": \"wikipedoa.zorkgo.xyz\"}\' \| stringsimile
+\$ echo \'{"domain_name": "wikipedoa.zorkgo.xyz"}\' \| stringsimile
 \--report-all
 
-{\"domain_name\":\"wikipedoa.zorkgo.xyz\",\"stringsimile\":{\"groups\":\[{\"rule_sets\":{\"Example
+{"domain_name":"wikipedoa.zorkgo.xyz","stringsimile":{"groups":\[{"rule_sets":{"Example
 rule
-set\":\[{\"distance\":8,\"match\":false,\"rule_type\":\"levenshtein\",\"split_position\":0,\"split_string\":\"wikipedoa\"},{\"distance\":7,\"match\":false,\"rule_type\":\"levenshtein\",\"split_position\":1,\"split_string\":\"zorkgo\"},{\"match\":false,\"match_percent\":0.5026455026455027,\"rule_type\":\"jaro\",\"split_position\":0,\"split_string\":\"wikipedoa\"},{\"match\":false,\"match_percent\":0.0,\"rule_type\":\"jaro\",\"split_position\":1,\"split_string\":\"zorkgo\"}\],\"Test
+set":\[{"distance":8,"match":false,"rule_type":"levenshtein","split_position":0,"split_string":"wikipedoa"},{"distance":7,"match":false,"rule_type":"levenshtein","split_position":1,"split_string":"zorkgo"},{"match":false,"match_percent":0.5026455026455027,"rule_type":"jaro","split_position":0,"split_string":"wikipedoa"},{"match":false,"match_percent":0.0,"rule_type":"jaro","split_position":1,"split_string":"zorkgo"}\],"Test
 rule
-set\":\[{\"distance\":8,\"match\":false,\"rule_type\":\"levenshtein\",\"split_position\":0,\"split_string\":\"wikipedoa\"},{\"distance\":6,\"match\":false,\"rule_type\":\"levenshtein\",\"split_position\":1,\"split_string\":\"zorkgo\"},{\"match\":false,\"match_percent\":0.0,\"rule_type\":\"jaro\",\"split_position\":0,\"split_string\":\"wikipedoa\"},{\"match\":false,\"match_percent\":0.0,\"rule_type\":\"jaro\",\"split_position\":1,\"split_string\":\"zorkgo\"},{\"match\":false,\"rule_type\":\"confusables\",\"split_position\":0,\"split_string\":\"wikipedoa\"},{\"match\":false,\"rule_type\":\"confusables\",\"split_position\":1,\"split_string\":\"zorkgo\"},{\"distance\":8,\"match\":false,\"rule_type\":\"damerau_levenshtein\",\"split_position\":0,\"split_string\":\"wikipedoa\"},{\"distance\":6,\"match\":false,\"rule_type\":\"damerau_levenshtein\",\"split_position\":1,\"split_string\":\"zorkgo\"}\]},\"string_group_name\":\"Example
-string group\"}\]}}
+set":\[{"distance":8,"match":false,"rule_type":"levenshtein","split_position":0,"split_string":"wikipedoa"},{"distance":6,"match":false,"rule_type":"levenshtein","split_position":1,"split_string":"zorkgo"},{"match":false,"match_percent":0.0,"rule_type":"jaro","split_position":0,"split_string":"wikipedoa"},{"match":false,"match_percent":0.0,"rule_type":"jaro","split_position":1,"split_string":"zorkgo"},{"match":false,"rule_type":"confusables","split_position":0,"split_string":"wikipedoa"},{"match":false,"rule_type":"confusables","split_position":1,"split_string":"zorkgo"},{"distance":8,"match":false,"rule_type":"damerau_levenshtein","split_position":0,"split_string":"wikipedoa"},{"distance":6,"match":false,"rule_type":"damerau_levenshtein","split_position":1,"split_string":"zorkgo"}\]},"string_group_name":"Example
+string group"}\]}}
 ```
 
 Check out the [example configuration](../distribution/config.yaml) and [example rules](../distribution/rules/example.json).

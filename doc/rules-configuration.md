@@ -124,13 +124,13 @@ Each of the rules has specific values that can be used to configure it:
   - **minimum_similarity** - minimum Soundex similarity to consider
   this rule matched (max 4 for normal soundex)
   - **soundex_type** - type of
-  Soundex to use (\"normal\" or \"refined\") - \"normal\" is limited to
+  Soundex to use ("normal" or "refined") - "normal" is limited to
   4 maximum similarity
 
 - **Metaphone**
   - **max_code_length** - maximum code length for Metaphone to
   generate (defaults to 4) - can be set to null for unlimited
-  - **metaphone_type** - type of Metaphone to use (\"normal\" or \"double\")
+  - **metaphone_type** - type of Metaphone to use ("normal" or "double")
 
 - **NYSIIS**
   - **strict** - can be set to false to disable strict mode and allow
@@ -139,11 +139,11 @@ Each of the rules has specific values that can be used to configure it:
 - **Match Rating** - no additional values (values field may be skipped)
 
 - **Bitflip** - optional values (values field may be skipped - defaults to
-  \"dns\" char subset with case sensitive matching)
+  "dns" char subset with case sensitive matching)
   - **case_sensitive** - can be set to false to make comparison case insensitive
   - **char_subset** - char subset of valid characters to use for bitlips
-  (\"dns\", \"printable\", \"custom\")
-  - **custom_char_subset** - if \"custom\" char subset is configured, this represents a string of valid characters to consider for bitflips
+  ("dns", "printable", "custom")
+  - **custom_char_subset** - if "custom" char subset is configured, this represents a string of valid characters to consider for bitflips
 
 - **Regex**
   - **pattern** - regex pattern to match against. This rule ignores
@@ -177,11 +177,11 @@ Each rule set has the following keys:
 
 Each rule has the following keys:
 
-- **rule_type** One of \"levenshtein\", \"levenshtein_substring\", \"jaro\",
-  \"jaro_winkler\", \"confusables\", \"damerau_levenshtein\",
-  \"damerau_levenshtein_substring\", \"hamming\", \"soundex\",
-  \"metaphone\", \"nysiis\", \"match_rating\", \"bitflip\", \"regex\",
-  \"cidr\"
+- **rule_type** One of "levenshtein", "levenshtein_substring", "jaro",
+  "jaro_winkler", "confusables", "damerau_levenshtein",
+  "damerau_levenshtein_substring", "hamming", "soundex",
+  "metaphone", "nysiis", "match_rating", "bitflip", "regex",
+  "cidr"
 
 - **exit_on_match** If set to true and this rule matches the input string,
   this rule set will stop processing and no rules after this one will be
@@ -191,15 +191,15 @@ Each rule has the following keys:
   additional values and this field can be skipped for them.
 
 Besides rules, it is possible to define a list of preprocessors in
-\"preprocessors\" array inside a ruleset. The following preprocessors
+"preprocessors" array inside a ruleset. The following preprocessors
 are supported:
 
 - **Split target** Splits the input string by dot characters, optionally
   ignoring the last part (if `ignore_tld` is set to true). This is
   useful for domain names. Each part will then be passed through the
   rules individually and will get additional metadata if matched, to
-  tell which part exactly matched (\"split_string\" and
-  \"split_position\" keys).
+  tell which part exactly matched ("split_string" and
+  "split_position" keys).
 
 - **Exclusion set** Excludes known input strings from being matched, to
   avoid matching on them unnecessarily. Can be defined as a list of
@@ -208,12 +208,12 @@ are supported:
 - **Punycode** Encodes or decodes input string to and from punycode,
   optionally passing both the original and encoded/decoded string to the
   rules. Each of the value will get additional metadata to tell if it is
-  punycoded (\"punycode\" boolean key).
+  punycoded ("punycode" boolean key).
 
 Each preprocessor has the following keys:
 
-- **preprocessor_type** One of \"split_target\", \"exclusion_set\",
-  \"punycode\"
+- **preprocessor_type** One of "split_target", "exclusion_set",
+  "punycode"
 
 Depending on the preprocessor_type, other keys may be used too:
 
@@ -224,7 +224,7 @@ Depending on the preprocessor_type, other keys may be used too:
   the provided strings will be interpreted as regex patterns.
 
 - **exclusion_set_source** \[used only for exclusion_set\] Source of strings
-  for exclusion set. One of \"list\" or \"file\". List takes in a list
+  for exclusion set. One of "list" or "file". List takes in a list
   of string values in the rules file itself, while file takes a path to
   an external file with a list of strings, one string per line.
 
@@ -251,123 +251,123 @@ Examples can be found in [/var/lib/stringsimile directory](../distribution/rules
 
 # RULE EXAMPLES
 
-- **Levenshtein** configured with `{ \"values\": {
-  \"maximum_distance\": 2 } }` and `\"string_match\": \"test\"`, will
+- **Levenshtein** configured with `{ "values": {
+  "maximum_distance": 2 } }` and `"string_match": "test"`, will
   give the following results for:
   1. Input string = tset  
-     Result = `{\"match\": true, \"distance\": 2}`
+     Result = `{"match": true, "distance": 2}`
   2. Input string = tsettest  
-     Result = `{\"match\": false, \"distance\": 4}`
+     Result = `{"match": false, "distance": 4}`
 
 - **Levenshtein substring variant** with
-  `{ \"values\": { \"maximum_distance\": 1 } }` and
-  `\"string_match\": \"test\"`, will give the following results
+  `{ "values": { "maximum_distance": 1 } }` and
+  `"string_match": "test"`, will give the following results
   for:
   1. Input string = mytestx  
-     Result = `{\"match\": true, \"distance\": 0}`
+     Result = `{"match": true, "distance": 0}`
   2. Input string = mytartx  
-     Result = `{\"match\": false, \"distance\": 2}`
+     Result = `{"match": false, "distance": 2}`
 
-- **Jaro** configured with `{ \"values\": {
-  \"match_percent_threshold\": 0.9 } }` and `\"string_match\":
-  \"test\"`, will give the following results for:
+- **Jaro** configured with `{ "values": {
+  "match_percent_threshold": 0.9 } }` and `"string_match":
+  "test"`, will give the following results for:
   1. Input string = test  
-     Result = `{\"match\": true, \"similarity\": 1.0}`
+     Result = `{"match": true, "similarity": 1.0}`
   2. Input string = tset  
-     Result = `{\"match\": false, \"similarity\": 0.83}`
+     Result = `{"match": false, "similarity": 0.83}`
 
-- **Jaro-Winkler** configured with `{ \"values\": {
-  \"match_percent_threshold\": 0.9 } }` and `\"string_match\":
-  \"test\"`, will give the following results for:
+- **Jaro-Winkler** configured with `{ "values": {
+  "match_percent_threshold": 0.9 } }` and `"string_match":
+  "test"`, will give the following results for:
   1. Input string = test  
-     Result = `{\"match\": true, \"similarity\": 1.0}`
+     Result = `{"match": true, "similarity": 1.0}`
   2. Input string = tesx  
-     Result = `{\"match\": true, \"similarity\": 0.93}`
+     Result = `{"match": true, "similarity": 0.93}`
 
 - **IDN Confusables** configured with no additional values and
-  `\"string_match\": \"test\"`, will give the following results
+  `"string_match": "test"`, will give the following results
   for:
   1. Input string = teѕt (with Cyrillic 'ѕ')  
-     Result = `{\"match\": true}`
+     Result = `{"match": true}`
   2. Input string = toast  
-     Result = `{\"match\": false}`
+     Result = `{"match": false}`
 
 - **Damerau-Levenshtein** configured with `{
-  \"values\": { \"maximum_distance\": 1 } }` and `\"string_match\":
-  \"test\"`, will give the following results for:
+  "values": { "maximum_distance": 1 } }` and `"string_match":
+  "test"`, will give the following results for:
   1. Input string = tset  
-     Result = `{\"match\": true, \"distance\": 1}` (transposition)
+     Result = `{"match": true, "distance": 1}` (transposition)
   2. Input string = tent  
-     Result = `{\"match\": true, \"distance\": 1}`
+     Result = `{"match": true, "distance": 1}`
 
 - **Damerau-Levenshtein substring variant** configured with
-  `{ \"values\": { \"maximum_distance\": 1 } }` and
-  `\"string_match\": \"test\"`, will give the following results
+  `{ "values": { "maximum_distance": 1 } }` and
+  `"string_match": "test"`, will give the following results
   for:
   1. Input string = xtsety  
-     Result = `{\"match\": true, \"distance\": 1}`
+     Result = `{"match": true, "distance": 1}`
   2. Input string = abc  
-     Result = `{\"match\": false}`
+     Result = `{"match": false}`
 
-- **Hamming** configured with `{ \"values\": {
-  \"maximum_distance\": 1 } }` and `\"string_match\": \"test\"`, will
+- **Hamming** configured with `{ "values": {
+  "maximum_distance": 1 } }` and `"string_match": "test"`, will
   give the following results for:
   1. Input string = tent  
-     Result = `{\"match\": true, \"distance\": 1}`
+     Result = `{"match": true, "distance": 1}`
   2. Input string = tests  
-     Result = `{\"match\": false}` (different length)
+     Result = `{"match": false}` (different length)
 
-- **Soundex** configured with `{ \"values\": {
-  \"minimum_similarity\": 4 } }` and `\"string_match\": \"Robert\"`,
+- **Soundex** configured with `{ "values": {
+  "minimum_similarity": 4 } }` and `"string_match": "Robert"`,
   will give the following results for:
   1. Input string = Rupert  
-     Result = `{\"match\": true, \"similarity\": 4}`
+     Result = `{"match": true, "similarity": 4}`
   2. Input string = Rubin  
-     Result = `{\"match\": false, \"similarity\": 2}`
+     Result = `{"match": false, "similarity": 2}`
 
-- **Metaphone** configured with `{ \"values\": {
-  \"max_code_length\": 4 } }` and `\"string_match\": \"Smith\"`, will
+- **Metaphone** configured with `{ "values": {
+  "max_code_length": 4 } }` and `"string_match": "Smith"`, will
   give the following results for:
   1. Input string = Smyth  
-     Result = `{\"match\": true}`
+     Result = `{"match": true}`
   2. Input string = Schmidt  
-     Result = `{\"match\": false}`
+     Result = `{"match": false}`
 
-- **NYSIIS** configured with default values and `\"string_match\":
-  \"Macdonald\"`, will give the following results for:
+- **NYSIIS** configured with default values and `"string_match":
+  "Macdonald"`, will give the following results for:
   1. Input string = McDonald  
-     Result = `{\"match\": true}`
+     Result = `{"match": true}`
   2. Input string = Macdonell  
-     Result = `{\"match\": false}`
+     Result = `{"match": false}`
 
 - **Match Rating** configured with no additional values and
-  `\"string_match\": \"Smith\"`, will give the following results
+  `"string_match": "Smith"`, will give the following results
   for:
   1. Input string = Smyth  
-     Result = `{\"match\": true}`
+     Result = `{"match": true}`
   2. Input string = Johnson  
-     Result = `{\"match\": false}`
+     Result = `{"match": false}`
 
-- **Bitflip** configured with default values and `\"string_match\":
-  \"test\"`, will give the following results for:
+- **Bitflip** configured with default values and `"string_match":
+  "test"`, will give the following results for:
   1. Input string = uest  
-     Result = `{\"match\": true}`
+     Result = `{"match": true}`
   2. Input string = best  
-     Result = `{\"match\": false}`
+     Result = `{"match": false}`
 
-- **Regex** configured with `{ \"values\": { \"pattern\":
-  \"\^test\[0-9\]+\$\" } }`, will give the following results for:
+- **Regex** configured with `{ "values": { "pattern":
+  "\^test\[0-9\]+\$" } }`, will give the following results for:
   1. Input string = test123  
-     Result = `{\"match\": true}`
+     Result = `{"match": true}`
   2. Input string = testing  
-     Result = `{\"match\": false}`
+     Result = `{"match": false}`
 
-- **CIDR** configured with `{ \"values\": { \"address\":
-  \"192.168.0.0/24\" } }`, will give the following results for:
+- **CIDR** configured with `{ "values": { "address":
+  "192.168.0.0/24" } }`, will give the following results for:
   1. Input string = 192.168.0.30  
-     Result = `{\"match\": true}`
+     Result = `{"match": true}`
   2. Input string = 192.168.1.30  
-     Result = `{\"match\": false}`
+     Result = `{"match": false}`
 
 # See also
 
