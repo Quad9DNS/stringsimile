@@ -84,7 +84,7 @@ For more information use **\--help** option.
 
 > Print version information for this tool.
 
-# EXAMPLES
+# Examples
 
 Using predefined example [rule configurations](./rules-configuration.md)
 and a simple [config](./configuration.md) with just stdin input and stdout output:

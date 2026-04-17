@@ -86,7 +86,7 @@ Configuration file uses YAML format with the following keys:
   - **shutdown_timeout_ms** Graceful shutdown timeout in milliseconds.
     Default to 60 seconds.
 
-# EXAMPLES
+# Examples
 
 The following example shows default configuration values:
 
