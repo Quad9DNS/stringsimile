@@ -371,5 +371,5 @@ Examples can be found in [/var/lib/stringsimile directory](../distribution/rules
 
 # See also
 
-- [Main docs](./main.md)
+- [Main docs](./README.md)
 - [Configuration](./configuration.md)

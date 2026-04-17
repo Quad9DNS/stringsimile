@@ -123,5 +123,5 @@ Default configuration is also available in
 
 # See also
 
-- [Main docs](./main.md)
+- [Main docs](./README.md)
 - [Rule configuration](./rules-configuration.md)
