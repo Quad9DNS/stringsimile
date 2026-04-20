@@ -49,7 +49,7 @@ target/%/release/stringsimile:
 	CARGO_TARGET_DIR="target/$*" cargo build --release --no-default-features --features $*
 
 all-deb: deb deb-dynamic deb-basic
-deb-cross:
+deb-cross: doc
 	cross build --target x86_64-unknown-linux-gnu --release --no-default-features --features default
 	cp "target/x86_64-unknown-linux-gnu/release/stringsimile" "target/release/stringsimile"
 	cargo deb --no-build --variant default --target x86_64-unknown-linux-gnu
