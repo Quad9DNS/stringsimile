@@ -102,8 +102,21 @@ jobs:
         run: |
           cargo deb --variant "${{ matrix.variant }}" --target "${{ matrix.target }}"
 
+      - name: Install Hyperscan
+        if: ${{ matrix.build-deb && matrix.needs-cross }}
+        uses: flier/install-hyperscan@main
+        with:
+          hyperscan_version: 5.4.1
+          build_static_lib: on
+          src_dir: ${{ runner.temp }}/hyperscan/
+          install_prefix: ${{ github.workspace }}/dist
+          cache_key: ${{ runner.os }}-build-hyperscan-${{ matrix.hyperscan }}-pcre-${{ matrix.pcre }}-${{ secrets.CACHE_VERSION }}
+
       - name: Cross build deb
         if: ${{ matrix.build-deb && matrix.needs-cross }}
+        env:
+          PKG_CONFIG_PATH: ${{ github.workspace }}/dist/lib/pkgconfig
+          HYPERSCAN_ROOT: ${{ github.workspace }}/dist
         run: |
           cross build --target "${{ matrix.target }}" --release --no-default-features --features "${{ matrix.variant }}"
           cp "target/${{ matrix.target }}/release/stringsimile" "target/release/stringsimile"

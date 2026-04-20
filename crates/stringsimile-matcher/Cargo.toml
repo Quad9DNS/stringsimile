@@ -24,7 +24,7 @@ rules-soundex = ["dep:rphonetic"]
 preprocessors-split-target = []
 preprocessors-exclusion-sets = []
 preprocessors-exclusion-sets-regex = ["dep:hyperscan"]
-preprocessors-exclusion-sets-regex-hyperscan-static = ["hyperscan/static"]
+preprocessors-exclusion-sets-regex-hyperscan-static = ["hyperscan/static", "hyperscan/contained"]
 preprocessors-punycode = ["dep:idna"]
 
 [dependencies]
