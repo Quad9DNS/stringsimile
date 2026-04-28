@@ -240,14 +240,14 @@ impl StringProcessor {
                             for (output_name, sender) in &senders {
                                 if let Err(err) = sender.send(val.clone()).await {
                                     output_passing_errors.increment(1);
-                                    warn!(message = "Passing message to output failed.", output = output_name, error = %err);
+                                    debug!(message = "Passing message to output failed.", output = output_name, error = %err);
                                 }
                             }
                         }
                         Some(Ok(None)) => (),
                         Some(Err(err)) => {
                             rule_matching_errors.increment(1);
-                            warn!(message = "Rule matcher task failed.", error = %err);
+                            debug!(message = "Rule matcher task failed.", error = %err);
                         }
                         None => {
                             if transform_futures.is_terminated() {
@@ -272,7 +272,7 @@ impl StringProcessor {
     ) -> Option<StringsimileMessage> {
         let (original_input, message) = message.into_parts();
         let Some(message) = message else {
-            warn!("Input data was not a JSON object!");
+            debug!("Input data was not a JSON object!");
             return None;
         };
 
@@ -282,7 +282,7 @@ impl StringProcessor {
         {
             Ok(fields) => fields,
             Err(error) => {
-                warn!(
+                debug!(
                     "Input parsing error!\nError: {:?}\nOriginal input: {}",
                     error, original_input
                 );
@@ -340,7 +340,7 @@ impl StringProcessor {
                 ),
             );
             let Value::Object(mut map) = message else {
-                warn!(
+                debug!(
                     "Input parsing error!\nExpected JSON object, but found: {}",
                     original_input
                 );
