@@ -9,7 +9,7 @@ use std::{
 
 use arc_swap::ArcSwap;
 use futures::{StreamExt, TryFutureExt, stream::FusedStream};
-use metrics::counter;
+use metrics::{Unit, counter, describe_counter};
 use serde_json::{Map, Value};
 use snafu::ResultExt;
 use stringsimile_config::rulesets::StringGroupConfig;
@@ -194,6 +194,11 @@ impl StringProcessor {
             self.config.process.threads,
         );
 
+        describe_counter!(
+            "process_errors",
+            Unit::Count,
+            "Number of errors encountered in main processing"
+        );
         let rule_loading_errors = counter!("process_errors", "type" => "rule_reload");
         let output_passing_errors = counter!("process_errors", "type" => "output_message_passing");
         let rule_matching_errors = counter!("process_errors", "type" => "rule_matching");

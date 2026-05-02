@@ -5,7 +5,7 @@ use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
 use clap::Parser;
 use exitcode::ExitCode;
-use metrics::gauge;
+use metrics::{Unit, describe_gauge, gauge};
 use metrics_exporter_prometheus::PrometheusBuilder;
 use metrics_util::layers::{PrefixLayer, Stack};
 use tokio::runtime::Runtime;
@@ -179,6 +179,11 @@ impl Service<StartedState> {
 
         let mut signal_rx = signals.receiver;
 
+        describe_gauge!(
+            "last_reload_signal",
+            Unit::Seconds,
+            "Timestamp of last reload signal received"
+        );
         let last_reload_signal = gauge!("last_reload_signal");
 
         let signal = loop {

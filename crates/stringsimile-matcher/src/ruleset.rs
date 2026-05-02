@@ -3,7 +3,7 @@
 use hashbrown::HashMap;
 use std::{borrow::Cow, collections::BTreeMap, ops::Deref};
 
-use metrics::{Counter, counter};
+use metrics::{Counter, Unit, counter, describe_counter};
 use serde_json::{Map, Value};
 use tracing::{debug, trace_span, warn};
 
@@ -65,6 +65,21 @@ struct RuleMetrics {
 
 impl RuleMetrics {
     fn new(string_group: &str, rule_set: &str, rule: &str) -> Self {
+        describe_counter!(
+            "rule_matches",
+            Unit::Count,
+            "Number of matches found by this rule"
+        );
+        describe_counter!(
+            "rule_misses",
+            Unit::Count,
+            "Number of mismatches found by this rule"
+        );
+        describe_counter!(
+            "rule_errors",
+            Unit::Count,
+            "Number of errors encountered by this rule"
+        );
         Self {
             matches: counter!("rule_matches",
                 "string_group" => string_group.to_string(),
@@ -95,6 +110,11 @@ pub struct ExclusionSetMetrics {
 impl ExclusionSetMetrics {
     /// Creates a new metrics object based on provided names
     pub fn new(string_group: &str, rule_set: &str, preprocessor_index: usize) -> Self {
+        describe_counter!(
+            "exclusion_set_exclusions",
+            Unit::Count,
+            "Number of input objects (or parts) excluded by this set"
+        );
         Self {
             exclusions: counter!("exclusion_set_exclusions",
                 "string_group" => string_group.to_string(),

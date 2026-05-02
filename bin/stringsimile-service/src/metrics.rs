@@ -4,7 +4,7 @@ use std::{
 };
 
 use futures::TryFutureExt;
-use metrics::{Gauge, gauge};
+use metrics::{Gauge, Unit, describe_gauge, gauge};
 use metrics_exporter_prometheus::PrometheusHandle;
 use stringsimile_matcher::ruleset::StringGroup;
 use tokio::{
@@ -34,6 +34,22 @@ struct TokioRuntimeMetrics {
 
 impl TokioRuntimeMetrics {
     fn new() -> Self {
+        describe_gauge!(
+            "service_alive_tasks",
+            Unit::Count,
+            "number of active asynchronous tasks"
+        );
+        describe_gauge!(
+            "service_pending_tasks",
+            Unit::Count,
+            "number asynchronous tasks waiting in the queue"
+        );
+        describe_gauge!(
+            "service_workers_count",
+            Unit::Count,
+            "number of workers available to process tasks"
+        );
+
         Self {
             alive_tasks: gauge!("service_alive_tasks"),
             pending_tasks: gauge!("service_pending_tasks"),
@@ -67,6 +83,11 @@ impl MetricsProcessor {
     pub async fn run(self, runtime_handle: Handle, mut shutdown: Receiver<()>) {
         let mut export_tasks = JoinSet::new();
 
+        describe_gauge!(
+            "process_uptime_secs",
+            Unit::Seconds,
+            "Duration this stringsimile instance has been running in seconds"
+        );
         let uptime_metric = gauge!("process_uptime_secs");
         let init_time = self.process_init_time;
         let mut system_metrics = self.sytem_metrics;
@@ -131,6 +152,11 @@ pub trait ExportMetrics {
 
 impl ExportMetrics for Vec<StringGroup> {
     fn export_metrics(&self) {
+        describe_gauge!(
+            "string_groupnames",
+            Unit::Count,
+            "Number of string groups in current rule configuration"
+        );
         gauge!("string_groupnames").set(self.len() as f64);
         let (rule_sets, rules) = self
             .iter()
@@ -142,7 +168,17 @@ impl ExportMetrics for Vec<StringGroup> {
             })
             .reduce(|(sets, rules), g| (sets + g.0, rules + g.1))
             .unwrap_or((0, 0));
+        describe_gauge!(
+            "rule_sets",
+            Unit::Count,
+            "Number of rule sets in current rule configuration"
+        );
         gauge!("rule_sets").set(rule_sets as f64);
+        describe_gauge!(
+            "rules",
+            Unit::Count,
+            "Number of rules in current rule configuration"
+        );
         gauge!("rules").set(rules as f64);
     }
 }
