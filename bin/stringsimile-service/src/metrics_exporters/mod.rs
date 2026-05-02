@@ -4,15 +4,20 @@ use stdout::StdoutMetricsExporter;
 
 mod bufwriter;
 mod file;
+mod scrape;
 mod stdout;
 
 pub use file::FileExporterConfig;
+pub use scrape::ScrapeExporterConfig;
 pub use stdout::StdoutExporterConfig;
+
+use crate::metrics_exporters::scrape::ScrapeMetricsExporter;
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub enum MetricsExporter {
     Stdout(StdoutExporterConfig),
     File(FileExporterConfig),
+    Scrape(ScrapeExporterConfig),
 }
 
 impl MetricsExporterTaskBuilder for MetricsExporter {
@@ -28,6 +33,11 @@ impl MetricsExporterTaskBuilder for MetricsExporter {
                     .start_exporting(handle)
                     .await
             }
+            MetricsExporter::Scrape(config) => {
+                ScrapeMetricsExporter::new(config)
+                    .start_exporting(handle)
+                    .await
+            }
         }
     }
 }
@@ -39,6 +49,10 @@ impl MetricsExporterBuilder for MetricsExporter {
             MetricsExporter::File(config) => {
                 let file_name = config.file_path.to_string_lossy();
                 format!("file{file_name}")
+            }
+            MetricsExporter::Scrape(config) => {
+                let addr = config.addr;
+                format!("http{addr}")
             }
         }
     }

@@ -101,6 +101,7 @@ stringsimile-config.workspace = true
 
 arc-swap.workspace = true
 async-stream.workspace = true
+axum.workspace = true
 clap = { workspace = true, features = ["cargo", "derive", "string"] }
 exitcode.workspace = true
 futures.workspace = true

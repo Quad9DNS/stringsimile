@@ -10,7 +10,9 @@ use crate::{
     error::{ConfigYamlParsingSnafu, FileReadSnafu},
     field_access::FieldAccessorConfig,
     inputs::Input,
-    metrics_exporters::{FileExporterConfig, MetricsExporter, StdoutExporterConfig},
+    metrics_exporters::{
+        FileExporterConfig, MetricsExporter, ScrapeExporterConfig, StdoutExporterConfig,
+    },
     outputs::Output,
 };
 
@@ -107,6 +109,8 @@ struct MetricsConfig {
     file: Option<FileExporterConfig>,
     #[serde(default)]
     stdout: Option<StdoutExporterConfig>,
+    #[serde(default)]
+    scrape: Option<ScrapeExporterConfig>,
     #[serde(default = "default_metrics_prefix")]
     name_prefix: String,
 }
@@ -120,6 +124,7 @@ impl Default for MetricsConfig {
                 mode: 0o644,
             }),
             stdout: Default::default(),
+            scrape: None,
             name_prefix: default_metrics_prefix(),
         }
     }
@@ -427,6 +432,17 @@ impl TryFrom<CliArgs> for ServiceConfig {
                 .metrics
                 .exporters
                 .retain(|i| !matches!(i, MetricsExporter::File(_)));
+        }
+
+        if let Some(metrics_addr) = &value.metrics_scrape_addr {
+            new_metrics.insert(MetricsExporter::Scrape(ScrapeExporterConfig {
+                addr: *metrics_addr,
+            }));
+            // TODO: For now allow just one file config, maybe it would be okay to have multiple?
+            base_config
+                .metrics
+                .exporters
+                .retain(|i| !matches!(i, MetricsExporter::Scrape(_)));
         }
 
         let metrics_config = ValidatedMetricsConfig {
