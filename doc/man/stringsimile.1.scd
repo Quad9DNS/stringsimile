@@ -45,6 +45,9 @@ For more information use *--help* option.
 *--metrics-file <path>*
 	Optionally set file to write metrics data to.
 
+*--metrics-scrape-addr <addr:port>*
+	Optionally set address + port to serve metrics data on.
+
 *--metrics-to-stdout*
 	Set to true to write metrics data to stdout.
 

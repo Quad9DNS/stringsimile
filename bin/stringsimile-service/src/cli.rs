@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::{net::SocketAddr, path::PathBuf};
 
 use clap::{ArgAction, Parser, crate_version};
 
@@ -60,6 +60,10 @@ pub struct CliArgs {
     /// Set to true to write metrics data to stdout.
     #[clap(long, default_value_t = false)]
     pub metrics_to_stdout: bool,
+
+    /// Optionally set address + port to serve metrics data on (/metrics endpoint).
+    #[clap(long)]
+    pub metrics_scrape_addr: Option<SocketAddr>,
 
     /// Prefix to add to all metrics names.
     #[clap(long, default_value = "stringsimile")]

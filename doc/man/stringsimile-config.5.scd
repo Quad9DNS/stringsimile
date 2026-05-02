@@ -89,6 +89,10 @@ Configuration file uses YAML format with the following keys:
 	    How often to export metrics to the given file. Defaults to 15.
 	    - mode
 	    File mode for the created file. Defaults to 644.
+	- scrape
+	  Export metrics via scrape endpoint (/metrics). Not enabled by default.
+	    - addr
+	    Address + port to serve metrics endpoint on.
 	- stdout
 	  Export metrics to stdout. Not enabled by default.
 	    - export_interval_secs
