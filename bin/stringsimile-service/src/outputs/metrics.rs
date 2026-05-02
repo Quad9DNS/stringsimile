@@ -1,4 +1,4 @@
-use metrics::{Counter, counter};
+use metrics::{Counter, Unit, counter, describe_counter};
 
 #[derive(Clone)]
 pub struct OutputMetrics {
@@ -10,6 +10,21 @@ pub struct OutputMetrics {
 
 impl OutputMetrics {
     pub fn for_output_type(output_type: &str) -> Self {
+        describe_counter!(
+            "output_objects_written",
+            Unit::Count,
+            "Number of objects written to the output"
+        );
+        describe_counter!(
+            "output_bytes_written",
+            Unit::Bytes,
+            "Number of bytes written to the output"
+        );
+        describe_counter!(
+            "output_errors",
+            Unit::Count,
+            "Number of errors encountered by this output"
+        );
         Self {
             objects: counter!(
                 "output_objects_written",

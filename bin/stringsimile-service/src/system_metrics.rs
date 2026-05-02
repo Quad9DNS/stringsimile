@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use metrics::{Gauge, gauge};
+use metrics::{Gauge, Unit, describe_gauge, gauge};
 use sysinfo::{System, get_current_pid};
 
 pub struct SystemMetrics {
@@ -29,6 +29,37 @@ impl SystemMetrics {
                 )
             })
             .collect();
+        describe_gauge!(
+            "host_total_memory",
+            Unit::Bytes,
+            "Total memory available on the host in bytes"
+        );
+        describe_gauge!(
+            "host_used_memory",
+            Unit::Bytes,
+            "Total used memory on the host in bytes"
+        );
+        describe_gauge!(
+            "host_cpu_count",
+            Unit::Count,
+            "Number of CPUs available on the host"
+        );
+        describe_gauge!(
+            "host_cpu_usage",
+            Unit::Percent,
+            "Total CPU usage on the host in percentage"
+        );
+        describe_gauge!(
+            "service_used_memory",
+            Unit::Bytes,
+            "Memory used by this stringsimile instance in bytes"
+        );
+        describe_gauge!(
+            "service_cpu_usage",
+            Unit::Percent,
+            "CPU usage by this stringsimile instance in percentage"
+        );
+
         Self {
             system,
             host_total_memory: gauge!("host_total_memory"),
