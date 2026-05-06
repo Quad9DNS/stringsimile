@@ -50,6 +50,12 @@
 						}
 					},
 					{
+						"rule_type": "jaccard",
+						"values": {
+							"minimum_similarity": 0.3
+						}
+					},
+					{
 						"rule_type": "jaro",
 						"values": {
 							"match_percent_threshold": 0.85

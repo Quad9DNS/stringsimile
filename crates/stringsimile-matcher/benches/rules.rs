@@ -8,6 +8,7 @@ use stringsimile_matcher::{
         confusables::ConfusablesRule,
         damerau_levenshtein::{DamerauLevenshteinRule, DamerauLevenshteinSubstringRule},
         hamming::HammingRule,
+        jaccard::JaccardRule,
         jaro::JaroRule,
         jaro_winkler::JaroWinklerRule,
         levenshtein::{LevenshteinRule, LevenshteinSubstringRule},
@@ -235,6 +236,15 @@ bench_rule! {
 }
 
 bench_rule! {
+    name = jaccard;
+    single_match = "rendom_string_to_find";
+    single_mismatch = "some different string";
+    builder {
+        JaccardRule::new(0.5, TARGET_STR)
+    }
+}
+
+bench_rule! {
     name = jaro;
     single_match = "rendom_string_to_find";
     single_mismatch = "some different string";
@@ -388,6 +398,7 @@ criterion_group!(
     damerau_levenshtein_optimized_mismatch,
     damerau_levenshtein_substring,
     hamming,
+    jaccard,
     jaro,
     jaro_winkler,
     match_rating,

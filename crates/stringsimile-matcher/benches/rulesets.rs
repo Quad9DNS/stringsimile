@@ -11,6 +11,7 @@ use stringsimile_matcher::{
         confusables::ConfusablesRule,
         damerau_levenshtein::{DamerauLevenshteinRule, DamerauLevenshteinSubstringRule},
         hamming::HammingRule,
+        jaccard::JaccardRule,
         jaro::JaroRule,
         jaro_winkler::JaroWinklerRule,
         levenshtein::{LevenshteinRule, LevenshteinSubstringRule},
@@ -215,6 +216,7 @@ fn all_rules(target_str: &str) -> Vec<(CommonRuleConfig, Box<dyn GenericMatcherR
             }
             .into_generic_matcher(),
         ),
+        Box::new(JaccardRule::new(0.5, target_str).into_generic_matcher()),
         Box::new(JaroRule { match_percent: 0.5 }.into_generic_matcher()),
         Box::new(JaroWinklerRule { match_percent: 0.5 }.into_generic_matcher()),
         Box::new(MatchRatingRule::new(target_str).into_generic_matcher()),
