@@ -37,6 +37,7 @@ Stringsimile supports different inputs, outputs and rules to use when comparing 
 
 - Levenshtein
 - Levenshtein substring variant
+- Jaccard
 - Jaro
 - Jaro-Winkler
 - IDN Confusables

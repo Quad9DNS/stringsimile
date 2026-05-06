@@ -11,6 +11,7 @@ use stringsimile_matcher::{
         confusables::ConfusablesRule,
         damerau_levenshtein::{DamerauLevenshteinRule, DamerauLevenshteinSubstringRule},
         hamming::HammingRule,
+        jaccard::JaccardRule,
         jaro::JaroRule,
         jaro_winkler::JaroWinklerRule,
         levenshtein::{LevenshteinRule, LevenshteinSubstringRule},
@@ -62,6 +63,8 @@ pub enum RuleTypeConfig {
     DamerauLevenshtein(DamerauLevenshteinConfig),
     /// Configuration for Damerau Levenshtein substring rule
     DamerauLevenshteinSubstring(DamerauLevenshteinSubstringConfig),
+    /// Configuration for Jaccard rule
+    Jaccard(JaccardConfig),
     /// Configuration for Jaro rule
     Jaro(JaroConfig),
     /// Configuration for Jaro-Winkler rule
@@ -85,6 +88,16 @@ pub enum RuleTypeConfig {
 /// Errors for rule configuration
 #[derive(Debug, Clone, Snafu)]
 pub enum RuleConfigError {
+    /// Jaccard rule configuration error
+    #[snafu(display(
+        "Invalid minimum similarity for Jaccard rule. It has to be a decimal value between 0 and 1. Found: {}",
+        input_value
+    ))]
+    JaccardConfigThresholdError {
+        /// Value that was provided to the rule
+        input_value: f64,
+    },
+
     /// Jaro rule configuration error
     #[snafu(display(
         "Invalid match percent threshold for Jaro rule. It has to be a decimal value between 0 and 1. Found: {}",
@@ -181,6 +194,9 @@ impl RuleConfig {
                 }
                 RuleTypeConfig::Confusables => {
                     Box::new(ConfusablesConfig.build()?.into_generic_matcher())
+                }
+                RuleTypeConfig::Jaccard(jaccard_config) => {
+                    Box::new(jaccard_config.build(target_str)?.into_generic_matcher())
                 }
                 RuleTypeConfig::Jaro(jaro_config) => {
                     Box::new(jaro_config.build()?.into_generic_matcher())
@@ -311,10 +327,30 @@ impl DamerauLevenshteinSubstringConfig {
     }
 }
 
+/// Configuration for Jaccard rule
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct JaccardConfig {
+    /// Minimum similarity
+    pub minimum_similarity: f64,
+}
+
+impl JaccardConfig {
+    fn build(&self, target_str: &str) -> Result<JaccardRule, Error> {
+        if self.minimum_similarity < 0.0 || self.minimum_similarity > 1.0 {
+            return Err(RuleConfigError::JaccardConfigThresholdError {
+                input_value: self.minimum_similarity,
+            }
+            .into());
+        }
+
+        Ok(JaccardRule::new(self.minimum_similarity, target_str))
+    }
+}
+
 /// Configuration for Jaro rule
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct JaroConfig {
-    /// Maximum distance
+    /// Match percent to be considered a match
     pub match_percent_threshold: f64,
 }
 
@@ -623,6 +659,27 @@ mod tests {
             panic!("Expected Levenshtein substring config");
         };
         assert_eq!(3, config.maximum_distance);
+    }
+
+    #[test]
+    fn test_parse_jaccard() {
+        let json = r#"
+        {
+            "rule_type": "jaccard",
+            "values": {
+                "minimum_similarity": 0.4
+            }
+        }
+            "#;
+
+        let RuleConfig {
+            common: _,
+            rule_type: RuleTypeConfig::Jaccard(config),
+        } = serde_json::from_str(json).unwrap()
+        else {
+            panic!("Expected Jaccard config");
+        };
+        assert_eq!(0.4, config.minimum_similarity);
     }
 
     #[test]

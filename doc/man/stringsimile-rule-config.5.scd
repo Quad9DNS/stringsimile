@@ -28,6 +28,10 @@ Currently the following rules are supported:
   Uses Levenshtein algorithm, but can match on any substring in the incoming
   string. Since this has to run Levenshtein multiple times, it is considerably
   slower than Levenshtein when strings become longer than the target string.
+- Jaccard (https://en.wikipedia.org/wiki/Jaccard_index)
+  Uses Jaccard index to measure similarity between incoming and the target string,
+  comparing them as sets of characters and considers the rule matched
+  if the similarity is higher than the threshold provided.
 - Jaro (https://en.wikipedia.org/wiki/Jaro%E2%80%93Winkler_distance#Jaro_similarity)
   Uses Jaro similarity to calculate match percentage between incoming and the
   target string and considers the rule matched if the match percentage is higher
@@ -80,6 +84,8 @@ Each of the rules has specific values that can be used to configure it:
   - maximum_distance - maximum Levenshtein distance to allow to consider this rule matched
 - Levenshtein substring variant (allows matching on any substring of matching length)
   - maximum_distance - maximum Levenshtein distance to allow to consider this rule matched
+- Jaccard
+  - minimum_similarity - minimum Jaccard similarity to consider the rule matched (float between 0 and 1)
 - Jaro
   - match_percent_threshold - minimum Jaro match percentage to consider the rule matched (float between 0 and 1)
 - Jaro-Winkler
