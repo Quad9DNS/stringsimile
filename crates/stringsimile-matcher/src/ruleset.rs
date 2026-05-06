@@ -180,9 +180,11 @@ impl StringGroupContext {
 
     /// Preloads data needed for the context that needs to be loaded asynchronously
     pub async fn preload_context(&mut self, rulesets: &Vec<RuleSet>) {
-        for ((_, rs_ctx), rs) in self.rulesets.iter_mut().zip(rulesets) {
-            for (ctx, p) in rs_ctx.preprocessors.iter_mut().zip(rs.preprocessors.iter()) {
-                p.preload_context(ctx).await;
+        for rs in rulesets {
+            if let Some(rs_ctx) = self.rulesets.get_mut(&rs.name) {
+                for (ctx, p) in rs_ctx.preprocessors.iter_mut().zip(rs.preprocessors.iter()) {
+                    p.preload_context(ctx).await;
+                }
             }
         }
     }
@@ -366,8 +368,12 @@ impl StringGroupMatchResult for BTreeMap<String, Vec<GenericMatchResult>> {
 
 #[cfg(test)]
 mod tests {
+    use std::fs;
+
+    use tempfile::NamedTempFile;
+
     use crate::{
-        preprocessors::SplitTargetConfig,
+        preprocessors::{ExclusionSetConfig, ExclusionSetSource, SplitTargetConfig},
         rule::IntoGenericMatcherRule,
         rules::{bitflip::BitflipRule, levenshtein::LevenshteinRule},
     };
@@ -445,6 +451,153 @@ mod tests {
             group.generate_matches("www.tset.com", &StringGroupContext::new(&group), true);
         let result = matches.get("test_ruleset").unwrap();
 
+        assert_eq!(result.len(), 4);
+        assert!(!result[0].matched);
+        assert_eq!(result[0].rule_type, "bitflip");
+        assert_eq!(
+            result[0]
+                .metadata
+                .get("split_string")
+                .unwrap()
+                .as_str()
+                .unwrap(),
+            "www"
+        );
+        assert_eq!(
+            result[0]
+                .metadata
+                .get("split_position")
+                .unwrap()
+                .as_u64()
+                .unwrap(),
+            0
+        );
+        assert!(!result[1].matched);
+        assert_eq!(result[1].rule_type, "levenshtein");
+        assert_eq!(
+            result[1]
+                .metadata
+                .get("split_string")
+                .unwrap()
+                .as_str()
+                .unwrap(),
+            "www"
+        );
+        assert_eq!(
+            result[1]
+                .metadata
+                .get("split_position")
+                .unwrap()
+                .as_u64()
+                .unwrap(),
+            0
+        );
+        assert!(!result[2].matched);
+        assert_eq!(result[2].rule_type, "bitflip");
+        assert_eq!(
+            result[2]
+                .metadata
+                .get("split_string")
+                .unwrap()
+                .as_str()
+                .unwrap(),
+            "tset"
+        );
+        assert_eq!(
+            result[2]
+                .metadata
+                .get("split_position")
+                .unwrap()
+                .as_u64()
+                .unwrap(),
+            1
+        );
+        assert!(result[3].matched);
+        assert_eq!(result[3].rule_type, "levenshtein");
+        assert_eq!(
+            result[3]
+                .metadata
+                .get("split_string")
+                .unwrap()
+                .as_str()
+                .unwrap(),
+            "tset"
+        );
+        assert_eq!(
+            result[3]
+                .metadata
+                .get("split_position")
+                .unwrap()
+                .as_u64()
+                .unwrap(),
+            1
+        );
+    }
+
+    #[tokio::test]
+    async fn basic_example_exclusion_set_preprocessing() {
+        let file = NamedTempFile::new().unwrap();
+        fs::write(file.path(), "is\ncom\n").unwrap();
+        let group = StringGroup::new(
+            "test".to_string(),
+            vec![
+                RuleSet {
+                    name: "test_ruleset".to_string(),
+                    string_match: "test".to_string(),
+                    preprocessors: vec![
+                        Preprocessor::SplitTarget(SplitTargetConfig { ignore_tld: false }),
+                        Preprocessor::ExclusionSet(ExclusionSetConfig {
+                            source: ExclusionSetSource::File(file.path().to_path_buf()),
+                            regex: false,
+                        }),
+                    ],
+                    rules: vec![
+                        (
+                            Default::default(),
+                            Box::new(BitflipRule::new_dns("test", true).into_generic_matcher()),
+                        ),
+                        (
+                            Default::default(),
+                            Box::new(
+                                LevenshteinRule {
+                                    maximum_distance: 3,
+                                    ignore_mismatch_metadata: false,
+                                }
+                                .into_generic_matcher(),
+                            ),
+                        ),
+                    ],
+                },
+                RuleSet {
+                    name: "test_ruleset_2".to_string(),
+                    string_match: "test".to_string(),
+                    preprocessors: vec![
+                        Preprocessor::ExclusionSet(ExclusionSetConfig {
+                            source: ExclusionSetSource::File(file.path().to_path_buf()),
+                            regex: false,
+                        }),
+                        Preprocessor::SplitTarget(SplitTargetConfig { ignore_tld: true }),
+                    ],
+                    rules: vec![(
+                        Default::default(),
+                        Box::new(BitflipRule::new_dns("fdsfdsfs", true).into_generic_matcher()),
+                    )],
+                },
+            ],
+        );
+        let mut context = StringGroupContext::new(&group);
+        context.preload_context(&group.rule_sets).await;
+
+        let matches = group.generate_matches("www.tset.com", &context, true);
+        let result = matches.get("test_ruleset").unwrap();
+
+        println!(
+            "{:?}",
+            result
+                .iter()
+                .map(|r| r.metadata.clone())
+                .collect::<Vec<_>>()
+        );
         assert_eq!(result.len(), 4);
         assert!(!result[0].matched);
         assert_eq!(result[0].rule_type, "bitflip");

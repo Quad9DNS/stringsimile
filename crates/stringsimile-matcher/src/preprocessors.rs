@@ -160,7 +160,9 @@ impl Preprocessor {
     /// Preloads context for this preprocessor
     pub async fn preload_context(&self, context: &mut PreprocessorContext) {
         match self {
-            Preprocessor::SplitTarget(_) | Preprocessor::Punycode(_) => {}
+            Preprocessor::SplitTarget(_) | Preprocessor::Punycode(_) => {
+                assert!(matches!(context, PreprocessorContext::Empty))
+            }
             Preprocessor::ExclusionSet(exclusion_set_config) => {
                 match (
                     &exclusion_set_config.regex,
@@ -182,7 +184,14 @@ impl Preprocessor {
                             .collect::<Vec<_>>();
                         *filter = Some(HashProxy::from(&set));
                     }
-                    (_, ExclusionSetSource::Static(_), _) => {
+                    (
+                        _,
+                        ExclusionSetSource::Static(_),
+                        PreprocessorContext::ExclusionSet {
+                            metrics: _,
+                            context: ExclusionSetContext::ExactStaticSet(_),
+                        },
+                    ) => {
                         // Data is already loaded in this set
                     }
                     (
