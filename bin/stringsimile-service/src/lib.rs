@@ -14,5 +14,9 @@ pub mod service;
 mod signal;
 mod system_metrics;
 
+#[cfg(feature = "jemalloc")]
+#[global_allocator]
+static GLOBAL_ALLOCATOR: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
+
 /// Type alias for generic result.
 pub type Result<T> = std::result::Result<T, Error>;
