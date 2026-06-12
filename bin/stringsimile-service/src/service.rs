@@ -227,10 +227,18 @@ impl Service<StartedState> {
                             if config.process.enable_config_reload {
                                 // First validate the configuration
 
-                                if let Err(err) = ServiceConfig::try_from(CliArgs::parse()) {
-                                    warn!(message = "Invalid configuration, aborting config reload...", error = %err);
+                                let config = match ServiceConfig::try_from(CliArgs::parse()) {
+                                    Ok(config) => config,
+                                    Err(err) => {
+                                        warn!(message = "Invalid configuration, aborting config reload...", error = %err);
+                                        continue;
+                                    }
+                                };
+
+                                if let Err(err) = StringProcessor::load_rules(&config.matcher).await {
+                                    warn!(message = "Invalid rules, aborting config reload...", error = %err);
                                     continue;
-                                }
+                            }
 
                                 let _ = shutdown_tx.send(());
                                 info!("Starting graceful shutdown for config reload. ({} ms)", config.process.shutdown_timeout.as_millis());
