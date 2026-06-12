@@ -210,6 +210,7 @@ impl ProcessConfig {
             threads: self.threads,
             log_level: self.log_level.parse()?,
             shutdown_timeout: Duration::from_millis(self.shutdown_timeout_ms.try_into()?),
+            enable_config_reload: false,
         })
     }
 }
@@ -257,6 +258,8 @@ pub struct ValidatedProcessConfig {
     /// processing to complete for the given duration and will resort to forceful shutdown
     /// afterwards.
     pub shutdown_timeout: Duration,
+    /// Whether reload signal should reload full configuration or just the rules.
+    pub enable_config_reload: bool,
 }
 
 impl ValidatedProcessConfig {
@@ -273,6 +276,7 @@ impl ValidatedProcessConfig {
             } else {
                 other.shutdown_timeout
             },
+            enable_config_reload: self.enable_config_reload || other.enable_config_reload,
         }
     }
 }
@@ -411,6 +415,7 @@ impl TryFrom<CliArgs> for ServiceConfig {
             // Any default for now, will be replaced with the calculated level
             log_level: Level::INFO,
             shutdown_timeout: default_shutdown_duration(),
+            enable_config_reload: value.enable_config_reload,
         };
 
         let mut new_metrics = HashSet::default();

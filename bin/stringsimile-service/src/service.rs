@@ -8,7 +8,7 @@ use exitcode::ExitCode;
 use metrics::{Unit, describe_gauge, gauge};
 use metrics_exporter_prometheus::PrometheusBuilder;
 use metrics_util::layers::{PrefixLayer, Stack};
-use tokio::runtime::Runtime;
+use tokio::runtime::{Handle, Runtime};
 use tokio::sync::broadcast::{Receiver, Sender};
 use tokio::task::JoinHandle;
 use tokio::time::interval;
@@ -22,7 +22,6 @@ use crate::processor::StringProcessor;
 use crate::signal::{ServiceOsSignals, ServiceSignal};
 
 use std::os::unix::process::ExitStatusExt;
-use tokio::runtime::Handle;
 
 pub struct Service<T> {
     pub config: ServiceConfig,
@@ -45,7 +44,13 @@ impl Service<InitState> {
     pub fn run() -> ExitStatus {
         let (runtime, app) = Self::prepare_start().unwrap_or_else(|code| std::process::exit(code));
 
-        runtime.block_on(app.run())
+        let res = runtime.block_on(app.run());
+        if let Some(exit) = res {
+            return exit;
+        }
+
+        // Restart path
+        Service::init_and_run()
     }
 
     pub fn prepare_start() -> Result<(Runtime, Service<StartedState>), ExitCode> {
@@ -161,7 +166,9 @@ pub struct StartedState {
 }
 
 impl Service<StartedState> {
-    pub async fn run(self) -> ExitStatus {
+    /// Runs the service to completion (exit or restart)
+    /// If the service should be restarted, None is returned
+    pub async fn run(self) -> Option<ExitStatus> {
         self.main().await.shutdown().await
     }
 
@@ -198,6 +205,11 @@ impl Service<StartedState> {
                             // Ignoring error here, since there is nothing meaningful to be done
                             if let Ok(epoch_timestamp) = now.duration_since(UNIX_EPOCH) {
                                 last_reload_signal.set(epoch_timestamp.as_secs_f64())
+                            }
+
+                            if config.process.enable_config_reload {
+                                let _ = shutdown_tx.send(());
+                                info!("Starting graceful shutdown for config reload. ({} ms)", config.process.shutdown_timeout.as_millis());
                             }
                         },
                         Ok(ServiceSignal::Shutdown) => {
@@ -242,7 +254,7 @@ pub struct FinishedState {
 }
 
 impl Service<FinishedState> {
-    pub async fn shutdown(self) -> ExitStatus {
+    pub async fn shutdown(self) -> Option<ExitStatus> {
         let Service {
             config,
             state:
@@ -256,10 +268,13 @@ impl Service<FinishedState> {
 
         match signal {
             ServiceSignal::Shutdown => {
-                Self::stop(config, processor_handle, metrics_handle, signal_receiver).await
+                Some(Self::stop(config, processor_handle, metrics_handle, signal_receiver).await)
             }
-            ServiceSignal::Quit => Self::quit(),
-            _ => unreachable!(),
+            ServiceSignal::ReloadConfig => {
+                Self::stop(config, processor_handle, metrics_handle, signal_receiver).await;
+                None
+            }
+            ServiceSignal::Quit => Some(Self::quit()),
         }
     }
 

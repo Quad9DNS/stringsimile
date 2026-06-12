@@ -56,6 +56,7 @@ fn basic_file_test() {
             threads: 1,
             log_level: Level::INFO,
             shutdown_timeout: Duration::from_secs(60),
+            enable_config_reload: false,
         },
     };
 
@@ -67,7 +68,7 @@ fn basic_file_test() {
     let exit_status = runtime.block_on(service.run());
 
     // Assert results
-    assert_eq!(exit_status.code().unwrap(), exitcode::OK);
+    assert_eq!(exit_status.unwrap().code().unwrap(), exitcode::OK);
 
     output_file
         .as_file()

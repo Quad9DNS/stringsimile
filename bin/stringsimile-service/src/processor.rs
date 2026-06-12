@@ -209,7 +209,7 @@ impl StringProcessor {
         loop {
             tokio::select! {
 
-                Ok(ServiceSignal::ReloadConfig) = signals.recv() => {
+                Ok(ServiceSignal::ReloadConfig) = signals.recv(), if !self.config.process.enable_config_reload => {
                     if let Err(err) = self.reload_rules().await {
                         rule_loading_errors.increment(1);
                         error!(message = "Reloading rules has failed! Keeping previous rules.", error = %err);

@@ -68,6 +68,10 @@ pub struct CliArgs {
     /// Prefix to add to all metrics names.
     #[clap(long, default_value = "stringsimile")]
     pub metrics_name_prefix: String,
+
+    /// Set to true to enable full config reload on SIGHUP and not just rules.
+    #[clap(long, default_value_t = false)]
+    pub enable_config_reload: bool,
 }
 
 fn stringsimile_version() -> String {
