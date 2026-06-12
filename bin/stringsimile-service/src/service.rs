@@ -36,13 +36,18 @@ pub struct InitState {
 
 impl Service<()> {
     pub fn init_and_run() -> ExitStatus {
-        Service::<InitState>::run()
+        Service::<InitState>::run(false)
+    }
+
+    pub fn reload() -> ExitStatus {
+        Service::<InitState>::run(true)
     }
 }
 
 impl Service<InitState> {
-    pub fn run() -> ExitStatus {
-        let (runtime, app) = Self::prepare_start().unwrap_or_else(|code| std::process::exit(code));
+    pub fn run(reload: bool) -> ExitStatus {
+        let (runtime, app) =
+            Self::prepare_start(reload).unwrap_or_else(|code| std::process::exit(code));
 
         let res = runtime.block_on(app.run());
         if let Some(exit) = res {
@@ -50,34 +55,42 @@ impl Service<InitState> {
         }
 
         // Restart path
-        Service::init_and_run()
+        Service::reload()
     }
 
-    pub fn prepare_start() -> Result<(Runtime, Service<StartedState>), ExitCode> {
-        Self::prepare()
+    pub fn prepare_start(reload: bool) -> Result<(Runtime, Service<StartedState>), ExitCode> {
+        Self::prepare(reload)
             .and_then(|(runtime, app)| app.start(runtime.handle()).map(|app| (runtime, app)))
     }
 
-    pub fn prepare() -> Result<(Runtime, Self), ExitCode> {
+    pub fn prepare(reload: bool) -> Result<(Runtime, Self), ExitCode> {
         let args = CliArgs::try_parse().map_err(|error| {
             _ = error.print();
             error.exit_code()
         })?;
 
-        Self::prepare_from_config(args.try_into().map_err(|err| {
-            // The tracing subscriber is never initialized before this
-            tracing_subscriber::fmt()
-                .with_file(false)
-                .with_target(false)
-                .with_max_level(Level::INFO)
-                .with_writer(io::stderr)
-                .init();
-            error!(message = "Configuration error.", error = %err);
-            exitcode::USAGE
-        })?)
+        Self::prepare_from_config(
+            args.try_into().map_err(|err| {
+                if !reload {
+                    // The tracing subscriber is never initialized before this
+                    tracing_subscriber::fmt()
+                        .with_file(false)
+                        .with_target(false)
+                        .with_max_level(Level::INFO)
+                        .with_writer(io::stderr)
+                        .init();
+                }
+                error!(message = "Configuration error.", error = %err);
+                exitcode::USAGE
+            })?,
+            reload,
+        )
     }
 
-    pub fn prepare_from_config(config: ServiceConfig) -> Result<(Runtime, Self), ExitCode> {
+    pub fn prepare_from_config(
+        config: ServiceConfig,
+        reload: bool,
+    ) -> Result<(Runtime, Self), ExitCode> {
         let init_time = Instant::now();
 
         let runtime = tokio::runtime::Builder::new_multi_thread()
@@ -86,29 +99,33 @@ impl Service<InitState> {
             .build()
             .expect("Building async runtime failed!");
 
-        tracing_subscriber::fmt()
-            .with_file(false)
-            .with_target(false)
-            .with_max_level(config.process.log_level)
-            .with_span_events(FmtSpan::FULL)
-            .with_writer(io::stderr)
-            .init();
+        if !reload {
+            tracing_subscriber::fmt()
+                .with_file(false)
+                .with_target(false)
+                .with_max_level(config.process.log_level)
+                .with_span_events(FmtSpan::FULL)
+                .with_writer(io::stderr)
+                .init();
+        }
 
         let metrics_recorder = PrometheusBuilder::new().build_recorder();
         let metrics_handle = metrics_recorder.handle();
 
-        let layers = Stack::new(metrics_recorder);
+        if !reload {
+            let layers = Stack::new(metrics_recorder);
 
-        let metrics_prefix = config.metrics.prefix.clone();
-        if !metrics_prefix.is_empty() {
-            layers
-                .push(PrefixLayer::new(metrics_prefix))
-                .install()
-                .expect("Failed preparing metrics recorder!");
-        } else {
-            layers
-                .install()
-                .expect("Failed preparing metrics recorder!");
+            let metrics_prefix = config.metrics.prefix.clone();
+            if !metrics_prefix.is_empty() {
+                layers
+                    .push(PrefixLayer::new(metrics_prefix))
+                    .install()
+                    .expect("Failed preparing metrics recorder!");
+            } else {
+                layers
+                    .install()
+                    .expect("Failed preparing metrics recorder!");
+            }
         }
 
         let signals = ServiceOsSignals::new(&runtime);
@@ -210,6 +227,7 @@ impl Service<StartedState> {
                             if config.process.enable_config_reload {
                                 let _ = shutdown_tx.send(());
                                 info!("Starting graceful shutdown for config reload. ({} ms)", config.process.shutdown_timeout.as_millis());
+                                break ServiceSignal::ReloadConfig;
                             }
                         },
                         Ok(ServiceSignal::Shutdown) => {

@@ -61,7 +61,8 @@ fn basic_file_test_report_matches_only() {
     };
 
     // Run the service
-    let (runtime, service) = Service::prepare_from_config(config).expect("building service failed");
+    let (runtime, service) =
+        Service::prepare_from_config(config, false).expect("building service failed");
     let service = service
         .start(runtime.handle())
         .expect("starting service failed");
