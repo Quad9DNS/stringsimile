@@ -1,6 +1,6 @@
 use stringsimile_matcher::Error;
 
-mod cli;
+pub mod cli;
 pub mod config;
 mod error;
 pub mod field_access;
@@ -12,6 +12,7 @@ pub mod outputs;
 pub mod processor;
 pub mod service;
 mod signal;
+pub mod subcmd;
 mod system_metrics;
 
 /// Type alias for generic result.

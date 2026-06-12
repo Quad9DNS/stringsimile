@@ -2,7 +2,9 @@ use std::{net::SocketAddr, path::PathBuf};
 
 use clap::{ArgAction, Parser, crate_version};
 
-#[derive(Parser)]
+use crate::subcmd::SubCmd;
+
+#[derive(Parser, Clone)]
 #[command(version = stringsimile_version(), about, long_about = None, rename_all = "kebab-case")]
 pub struct CliArgs {
     /// Path to the directory (or file) containing rules
@@ -72,6 +74,9 @@ pub struct CliArgs {
     /// Set to true to enable full config reload on SIGHUP and not just rules.
     #[clap(long, default_value_t = false)]
     pub enable_config_reload: bool,
+
+    #[clap(subcommand)]
+    pub subcommand: Option<SubCmd>,
 }
 
 fn stringsimile_version() -> String {

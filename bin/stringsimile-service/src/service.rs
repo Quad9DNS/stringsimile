@@ -35,19 +35,19 @@ pub struct InitState {
 }
 
 impl Service<()> {
-    pub fn init_and_run() -> ExitStatus {
-        Service::<InitState>::run(false)
+    pub fn init_and_run(args: CliArgs) -> ExitStatus {
+        Service::<InitState>::run(args, false)
     }
 
-    pub fn reload() -> ExitStatus {
-        Service::<InitState>::run(true)
+    pub fn reload(args: CliArgs) -> ExitStatus {
+        Service::<InitState>::run(args, true)
     }
 }
 
 impl Service<InitState> {
-    pub fn run(reload: bool) -> ExitStatus {
-        let (runtime, app) =
-            Self::prepare_start(reload).unwrap_or_else(|code| std::process::exit(code));
+    pub fn run(args: CliArgs, reload: bool) -> ExitStatus {
+        let (runtime, app) = Self::prepare_start(args.clone(), reload)
+            .unwrap_or_else(|code| std::process::exit(code));
 
         let res = runtime.block_on(app.run());
         if let Some(exit) = res {
@@ -55,20 +55,18 @@ impl Service<InitState> {
         }
 
         // Restart path
-        Service::reload()
+        Service::reload(args)
     }
 
-    pub fn prepare_start(reload: bool) -> Result<(Runtime, Service<StartedState>), ExitCode> {
-        Self::prepare(reload)
+    pub fn prepare_start(
+        args: CliArgs,
+        reload: bool,
+    ) -> Result<(Runtime, Service<StartedState>), ExitCode> {
+        Self::prepare(args, reload)
             .and_then(|(runtime, app)| app.start(runtime.handle()).map(|app| (runtime, app)))
     }
 
-    pub fn prepare(reload: bool) -> Result<(Runtime, Self), ExitCode> {
-        let args = CliArgs::try_parse().map_err(|error| {
-            _ = error.print();
-            error.exit_code()
-        })?;
-
+    pub fn prepare(args: CliArgs, reload: bool) -> Result<(Runtime, Self), ExitCode> {
         Self::prepare_from_config(
             args.try_into().map_err(|err| {
                 if !reload {
