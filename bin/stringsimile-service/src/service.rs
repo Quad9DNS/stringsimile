@@ -225,6 +225,13 @@ impl Service<StartedState> {
                             }
 
                             if config.process.enable_config_reload {
+                                // First validate the configuration
+
+                                if let Err(err) = ServiceConfig::try_from(CliArgs::parse()) {
+                                    warn!(message = "Invalid configuration, aborting config reload...", error = %err);
+                                    continue;
+                                }
+
                                 let _ = shutdown_tx.send(());
                                 info!("Starting graceful shutdown for config reload. ({} ms)", config.process.shutdown_timeout.as_millis());
                                 break ServiceSignal::ReloadConfig;
