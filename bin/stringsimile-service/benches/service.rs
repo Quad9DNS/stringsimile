@@ -51,6 +51,7 @@ fn processor(c: &mut Criterion) {
             threads: 1,
             log_level: Level::INFO,
             shutdown_timeout: Duration::from_secs(60),
+            enable_config_reload: false,
         },
     };
 

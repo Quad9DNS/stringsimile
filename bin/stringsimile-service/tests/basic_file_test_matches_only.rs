@@ -56,18 +56,20 @@ fn basic_file_test_report_matches_only() {
             threads: 1,
             log_level: Level::INFO,
             shutdown_timeout: Duration::from_secs(60),
+            enable_config_reload: false,
         },
     };
 
     // Run the service
-    let (runtime, service) = Service::prepare_from_config(config).expect("building service failed");
+    let (runtime, service) =
+        Service::prepare_from_config(config, false).expect("building service failed");
     let service = service
         .start(runtime.handle())
         .expect("starting service failed");
     let exit_status = runtime.block_on(service.run());
 
     // Assert results
-    assert_eq!(exit_status.code().unwrap(), exitcode::OK);
+    assert_eq!(exit_status.unwrap().code().unwrap(), exitcode::OK);
 
     output_file
         .as_file()

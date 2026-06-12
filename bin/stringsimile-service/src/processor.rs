@@ -23,7 +23,7 @@ use tracing::{debug, error, info, warn};
 use walkdir::WalkDir;
 
 use crate::{
-    config::ServiceConfig,
+    config::{MatcherConfig, ServiceConfig},
     error::{
         FileReadSnafu, InputConfigSnafu, InputParsingSnafu, RuleParsingSnafu,
         StringsimileServiceError,
@@ -70,10 +70,10 @@ impl StringProcessor {
         Ok(parsed_rules)
     }
 
-    pub async fn reload_rules(&mut self) -> crate::Result<()> {
-        let parsed_rules = if self.config.matcher.rules_path.is_dir() {
+    pub async fn load_rules(config: &MatcherConfig) -> crate::Result<Vec<StringGroup>> {
+        let parsed_rules = if config.rules_path.is_dir() {
             let mut parsed_rules: Vec<StringGroupConfig> = Vec::new();
-            for entry in WalkDir::new(self.config.matcher.rules_path.clone())
+            for entry in WalkDir::new(config.rules_path.clone())
                 .into_iter()
                 .filter_map(|e| e.ok())
             {
@@ -92,14 +92,18 @@ impl StringProcessor {
             }
             parsed_rules
         } else {
-            Self::parse_file(self.config.matcher.rules_path.clone()).await?
+            Self::parse_file(config.rules_path.clone()).await?
         };
 
-        let built_rules = parsed_rules
+        Ok(parsed_rules
             .into_iter()
-            .map(|c| c.into_string_group(self.config.matcher.report_all))
+            .map(|c| c.into_string_group(config.report_all))
             .collect::<Result<Vec<StringGroup>, _>>()
-            .context(RuleParsingSnafu)?;
+            .context(RuleParsingSnafu)?)
+    }
+
+    pub async fn reload_rules(&mut self) -> crate::Result<()> {
+        let built_rules = Self::load_rules(&self.config.matcher).await?;
         built_rules.export_metrics();
 
         let mut contexts: HashMap<String, StringGroupContext> = built_rules
@@ -209,7 +213,7 @@ impl StringProcessor {
         loop {
             tokio::select! {
 
-                Ok(ServiceSignal::ReloadConfig) = signals.recv() => {
+                Ok(ServiceSignal::ReloadConfig) = signals.recv(), if !self.config.process.enable_config_reload => {
                     if let Err(err) = self.reload_rules().await {
                         rule_loading_errors.increment(1);
                         error!(message = "Reloading rules has failed! Keeping previous rules.", error = %err);

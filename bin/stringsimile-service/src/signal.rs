@@ -5,7 +5,7 @@ use tokio::{
     sync::broadcast::{self, Receiver, Sender},
 };
 use tokio_stream::{Stream, StreamExt};
-use tracing::{error, info};
+use tracing::{debug, info};
 
 #[derive(Debug, Clone)]
 pub enum ServiceSignal {
@@ -68,7 +68,8 @@ impl SignalHandler {
 
             while let Some(value) = stream.next().await {
                 if tx.send(value.into()).is_err() {
-                    error!(message = "Couldn't send signal.");
+                    // This is expected after reload
+                    debug!(message = "Couldn't send signal. Service was probably reloaded.");
                     break;
                 }
             }
