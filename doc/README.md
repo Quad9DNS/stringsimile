@@ -6,7 +6,7 @@ rules such as Levenshtein, Jaro, Soundex, IDN Confusables and more.
 
 # Usage
 
-*stringsimile* \[OPTIONS\]
+*stringsimile* \[OPTIONS\] \[<subcommand\]
 
 For more information use **\--help** option.
 
@@ -76,6 +76,10 @@ For more information use **\--help** option.
 > Set to true to always write match metadata in output, even for failed
 > matches. This can be useful for debugging rules.
 
+**\--enable-config-reload**
+
+> Set to true to enable full config reload on SIGHUP and not just rules.
+
 **-h, \--help**
 
 > Print help information for this command.
@@ -83,6 +87,12 @@ For more information use **\--help** option.
 **-V, \--version**
 
 > Print version information for this tool.
+
+## Subcommands
+
+**validate**
+
+> Validates stringsimile configuration and configured rules files.
 
 # Examples
 

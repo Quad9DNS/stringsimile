@@ -6,7 +6,7 @@ stringsimile - Take a target string in JSON-structured stream (kafka) or file fo
 
 # SYNOPSIS
 
-_stringsimile_  [OPTIONS]
+_stringsimile_  [OPTIONS] [<subcommand>]
 
 For more information use *--help* option.
 
@@ -61,11 +61,20 @@ For more information use *--help* option.
 	Set to true to always write match metadata in output, even for failed matches.
 	This can be useful for debugging rules.
 
+*--enable-config-reload*
+	Set to true to enable full config reload on SIGHUP and not just rules.
+
 *-h, --help*
 	Print help information for this command.
 
 *-V, --version*
 	Print version information for this tool.
+
+# SUBCOMMANDS
+
+- *stringsimile-validate*(1)++
+  Validates stringsimile configuration and configured rules files.++
+	_stringsimile validate_
 
 # EXAMPLES
 

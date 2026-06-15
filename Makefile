@@ -24,6 +24,7 @@ endif
 
 DOCS := $(addprefix target/man/,\
 	stringsimile.1 \
+	stringsimile-validate.1 \
 	stringsimile-config.5 \
 	stringsimile-rule-config.5 \
 	stringsimile-kafka.7 \
@@ -126,6 +127,7 @@ install: $(DOCS) target/default/release/stringsimile
 	mkdir -m755 -p $(DESTDIR)$(BINDIR) $(DESTDIR)$(MANDIR)/man1 $(DESTDIR)$(MANDIR)/man5 $(DESTDIR)$(MANDIR)/man7 $(CONFDIR) $(RULEDIR)
 	install -m755 target/stringsimile $(DESTDIR)$(BINDIR)/stringsimile
 	install -m644 target/man/stringsimile.1 $(DESTDIR)$(MANDIR)/man1/stringsimile.1
+	install -m644 target/man/stringsimile-validate.1 $(DESTDIR)$(MANDIR)/man1/stringsimile-validate.1
 	install -m644 target/man/stringsimile-config.5 $(DESTDIR)$(MANDIR)/man5/stringsimile-config.5
 	install -m644 target/man/stringsimile-rule-config.5 $(DESTDIR)$(MANDIR)/man5/stringsimile-rule-config.5
 	install -m644 target/man/stringsimile-kafka.7 $(DESTDIR)$(MANDIR)/man7/stringsimile-kafka.7
@@ -137,6 +139,7 @@ RMDIR_IF_EMPTY:=sh -c '! [ -d $$0 ] || ls -1qA $$0 | grep -q . || rmdir $$0'
 uninstall:
 	$(RM) $(DESTDIR)$(BINDIR)/stringsimile
 	$(RM) $(DESTDIR)$(MANDIR)/man1/stringsimile.1
+	$(RM) $(DESTDIR)$(MANDIR)/man1/stringsimile-validate.1
 	$(RM) $(DESTDIR)$(MANDIR)/man5/stringsimile-config.5
 	$(RM) $(DESTDIR)$(MANDIR)/man5/stringsimile-rule-config.5
 	$(RM) $(DESTDIR)$(MANDIR)/man7/stringsimile-kafka.7
