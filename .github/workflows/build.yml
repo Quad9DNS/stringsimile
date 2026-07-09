@@ -49,10 +49,10 @@ jobs:
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: Setup rust toolchain
-        uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659
+        uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
         with:
           target: ${{ matrix.target }}
 
@@ -104,7 +104,7 @@ jobs:
 
       - name: Install Hyperscan
         if: ${{ matrix.build-deb && matrix.needs-cross }}
-        uses: flier/install-hyperscan@8e7f62dc4145d293ea1266e1d973fd5ba9ef533e
+        uses: flier/install-hyperscan@8e7f62dc4145d293ea1266e1d973fd5ba9ef533e # no version, main from Dec 1, 2024
         with:
           hyperscan_version: 5.4.1
           build_static_lib: on
@@ -130,13 +130,13 @@ jobs:
           cargo generate-rpm -p bin/stringsimile-service --target-dir "target/${{ matrix.variant }}" --variant "${{ matrix.variant }}" --target "${{ matrix.target }}"
 
       - name: Upload build files
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: stringsimile-${{ matrix.variant }}-${{ matrix.output-file-name }}-${{ matrix.package }}
           path: ./target/${{ matrix.variant }}/${{ matrix.target }}/${{ matrix.target-dir }}
 
       - name: Upload build files
-        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
         if: ${{ github.event_name == 'release' }}
         with:
           files: |
