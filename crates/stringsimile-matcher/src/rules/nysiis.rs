@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     MatcherResult,
-    rule::{MatcherResultRuleMetadataExt, MatcherRule, RuleMetadata},
+    rule::{EstimationResult, MatcherResultRuleMetadataExt, MatcherRule, RuleMetadata},
 };
 
 /// Rule
@@ -53,6 +53,10 @@ impl MatcherRule for NysiisRule {
         } else {
             MatcherResult::new_no_match(metadata)
         }
+    }
+
+    fn estimate(&self, _target_str: &str) -> EstimationResult {
+        EstimationResult::linear(55, 1.0)
     }
 }
 

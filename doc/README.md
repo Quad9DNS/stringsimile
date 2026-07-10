@@ -94,6 +94,10 @@ For more information use **\--help** option.
 
 > Validates stringsimile configuration and configured rules files.
 
+**estimate**
+
+> Estimates "cost" of configured stringsimile rules. This can be useful to estimate relative resource cost of running a set of rules.
+
 # Examples
 
 Using predefined example [rule configurations](./rules-configuration.md)

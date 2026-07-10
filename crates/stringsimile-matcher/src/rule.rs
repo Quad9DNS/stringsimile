@@ -102,6 +102,107 @@ pub trait MatcherRule: 'static {
         input_str: &str,
         target_str: &str,
     ) -> MatcherResult<Self::OutputMetadata, Self::Error>;
+
+    /// Estimates the resource cost of the rule
+    fn estimate(&self, target_str: &str) -> EstimationResult;
+}
+
+/// Result of rule cost estimation.
+///
+/// Represents the expected resource cost of running the rule, as well as expected cost bounds and
+/// cost scaling with input string size.
+#[derive(Debug)]
+pub struct EstimationResult {
+    /// Represents the minimum possible cost
+    pub min: Option<usize>,
+    /// Represents the maximum possible cost
+    pub max: Option<usize>,
+    /// Represents the calculated cost
+    pub calculated: usize,
+    /// Represents the influence of the input string size to the cost
+    pub input_string_influence: InputStringInfluence,
+}
+
+impl std::ops::AddAssign for EstimationResult {
+    fn add_assign(&mut self, rhs: Self) {
+        self.min = self.min.map(|m| m + rhs.min.unwrap_or(0)).or(rhs.min);
+        self.max = if self.max.is_none() || rhs.max.is_none() {
+            None
+        } else {
+            self.max.map(|m| m + rhs.max.unwrap_or(0)).or(rhs.max)
+        };
+        self.calculated += rhs.calculated;
+        self.input_string_influence =
+            match (&self.input_string_influence, &rhs.input_string_influence) {
+                (InputStringInfluence::None, other) | (other, InputStringInfluence::None) => {
+                    other.clone()
+                }
+                (InputStringInfluence::Linear(l), InputStringInfluence::Linear(r)) => {
+                    // A bit incorrect, but ok - it is an estimate after all
+                    InputStringInfluence::Linear(l + r)
+                }
+                (InputStringInfluence::Log, other) | (other, InputStringInfluence::Log) => {
+                    other.clone()
+                }
+                (_, InputStringInfluence::Quadratic) | (InputStringInfluence::Quadratic, _) => {
+                    InputStringInfluence::Quadratic
+                }
+            }
+    }
+}
+
+/// Influence of input string on the cost.
+///
+/// Represents expected scaling of cost with size of the input string.
+#[derive(Default, Debug, Clone)]
+pub enum InputStringInfluence {
+    /// None - the input string size has none or minimal effect on the cost.
+    #[default]
+    None,
+    /// Linear cost scaling - cost scales linearly with the input string size, with the provided
+    /// factor.
+    Linear(f64),
+    /// Logarithmic cost scaling - cost scales logaritmically with the input string size.
+    Log,
+    /// Quadratic cost scaling - cost scales quadratically with the input string size.
+    Quadratic,
+}
+
+impl EstimationResult {
+    /// Helper for zero cost rule.
+    ///
+    /// Useful as a starting value when collecting multiple costs. No rule is expected to have a
+    /// zero cost.
+    pub fn zero() -> Self {
+        Self {
+            min: None,
+            max: None,
+            calculated: 0,
+            input_string_influence: InputStringInfluence::None,
+        }
+    }
+
+    /// Helper for static cost rule.
+    ///
+    /// Represents a rule that has an exact same cost (or very close to it) every time.
+    pub fn static_cost(cost: usize) -> Self {
+        Self {
+            min: Some(cost),
+            max: Some(cost),
+            calculated: cost,
+            input_string_influence: InputStringInfluence::None,
+        }
+    }
+
+    /// Helper for linear cost rule.
+    pub fn linear(cost: usize, factor: f64) -> Self {
+        Self {
+            min: None,
+            max: None,
+            calculated: cost,
+            input_string_influence: InputStringInfluence::Linear(factor),
+        }
+    }
 }
 
 /// Trait for all metadata objects for MatcherRules
@@ -135,6 +236,9 @@ pub trait GenericMatcherRule: Send + Sync + 'static {
         target_str: &str,
         full_metadata_for_all: bool,
     ) -> GenericMatcherResult;
+
+    /// Estimates the resource cost of the rule.
+    fn estimate_generic(&self, target_str: &str) -> EstimationResult;
 
     /// Clones this generic matcher
     fn clone_dyn(&self) -> Box<dyn GenericMatcherRule>;
@@ -173,6 +277,10 @@ where
                 metadata: Map::default(),
             })
         }
+    }
+
+    fn estimate_generic(&self, target_str: &str) -> EstimationResult {
+        self.estimate(target_str)
     }
 
     fn name(&self) -> &str {
@@ -214,6 +322,10 @@ impl MatcherRule for ExampleRule {
         } else {
             MatcherResult::new_no_match(())
         }
+    }
+
+    fn estimate(&self, _target_str: &str) -> EstimationResult {
+        EstimationResult::zero()
     }
 }
 

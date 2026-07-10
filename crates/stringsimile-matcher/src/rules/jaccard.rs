@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     MatcherResult,
-    rule::{MatcherResultRuleMetadataExt, MatcherRule, RuleMetadata},
+    rule::{EstimationResult, MatcherResultRuleMetadataExt, MatcherRule, RuleMetadata},
 };
 
 /// Rule
@@ -53,6 +53,10 @@ impl MatcherRule for JaccardRule {
         } else {
             MatcherResult::new_no_match(metadata)
         }
+    }
+
+    fn estimate(&self, _target_str: &str) -> EstimationResult {
+        EstimationResult::linear(10 + self.target_set.len(), 2.0)
     }
 }
 

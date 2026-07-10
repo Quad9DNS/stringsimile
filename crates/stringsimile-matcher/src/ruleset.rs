@@ -10,7 +10,7 @@ use tracing::{debug, trace_span, warn};
 use crate::{
     GenericMatchResult,
     preprocessors::{BoxedTargetWithMetadataIter, ExclusionSetContext, Preprocessor},
-    rule::GenericMatcherRule,
+    rule::{EstimationResult, GenericMatcherRule},
 };
 
 /// Rule set
@@ -290,6 +290,21 @@ impl RuleSet {
             }
         }
     }
+
+    fn estimate_cost(&self) -> EstimationResult {
+        let mut total = EstimationResult::zero();
+        let mut min = None;
+        for (common, rule) in &self.rules {
+            total += rule.estimate_generic(&self.string_match);
+            if common.exit_on_match && min.is_none() {
+                min = total.min;
+            }
+        }
+        if min.is_some() {
+            total.min = min;
+        }
+        total
+    }
 }
 
 impl StringGroup {
@@ -327,6 +342,15 @@ impl StringGroup {
         }
 
         matches
+    }
+
+    /// Estimates the resource cost of the string group
+    pub fn estimate_cost(&self) -> EstimationResult {
+        let mut total = EstimationResult::zero();
+        for rule_set in &self.rule_sets {
+            total += rule_set.estimate_cost();
+        }
+        total
     }
 }
 

@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     MatcherResult,
-    rule::{MatcherResultRuleMetadataExt, MatcherRule, RuleMetadata},
+    rule::{EstimationResult, MatcherResultRuleMetadataExt, MatcherRule, RuleMetadata},
 };
 
 /// Rule
@@ -62,6 +62,15 @@ impl MatcherRule for MatchRatingRule {
             MatcherResult::new_match(MatchRatingMetadata)
         } else {
             MatcherResult::new_no_match(MatchRatingMetadata)
+        }
+    }
+
+    fn estimate(&self, _target_str: &str) -> EstimationResult {
+        EstimationResult {
+            min: Some(5),
+            max: None,
+            calculated: 90,
+            input_string_influence: crate::rule::InputStringInfluence::Linear(3.0),
         }
     }
 }

@@ -7,7 +7,10 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     MatcherResult,
-    rule::{MatcherResultRuleMetadataExt, MatcherRule, RuleMetadata},
+    rule::{
+        EstimationResult, InputStringInfluence, MatcherResultRuleMetadataExt, MatcherRule,
+        RuleMetadata,
+    },
 };
 
 /// Rule
@@ -40,6 +43,16 @@ impl MatcherRule for RegexRule {
             MatcherResult::new_match(RegexMetadata)
         } else {
             MatcherResult::new_no_match(RegexMetadata)
+        }
+    }
+
+    fn estimate(&self, _target_str: &str) -> EstimationResult {
+        EstimationResult {
+            min: Some(1),
+            max: None,
+            // TODO: figure out regex complexity
+            calculated: 10,
+            input_string_influence: InputStringInfluence::Quadratic,
         }
     }
 }

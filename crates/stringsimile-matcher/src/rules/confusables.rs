@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     MatcherResult,
-    rule::{MatcherResultRuleMetadataExt, MatcherRule, RuleMetadata},
+    rule::{EstimationResult, MatcherResultRuleMetadataExt, MatcherRule, RuleMetadata},
 };
 
 /// Rule
@@ -34,6 +34,10 @@ impl MatcherRule for ConfusablesRule {
         } else {
             MatcherResult::new_no_match(metadata)
         }
+    }
+
+    fn estimate(&self, _target_str: &str) -> EstimationResult {
+        EstimationResult::linear(20, 1.0)
     }
 }
 

@@ -8,7 +8,8 @@ use triple_accel::rdamerau_exp;
 use crate::{
     MatcherResult,
     rule::{
-        MatcherResultRuleMetadataExt, MatcherResultRuleOptionMetadataExt, MatcherRule, RuleMetadata,
+        EstimationResult, InputStringInfluence, MatcherResultRuleMetadataExt,
+        MatcherResultRuleOptionMetadataExt, MatcherRule, RuleMetadata,
     },
 };
 
@@ -68,6 +69,23 @@ impl MatcherRule for DamerauLevenshteinRule {
             MatcherResult::new_no_match(metadata)
         }
     }
+
+    fn estimate(&self, target_str: &str) -> EstimationResult {
+        EstimationResult {
+            min: if self.ignore_mismatch_metadata {
+                Some(1)
+            } else {
+                None
+            },
+            calculated: if self.ignore_mismatch_metadata {
+                40 / self.maximum_distance as usize + target_str.len() / 5
+            } else {
+                40 + target_str.len() / 5
+            },
+            max: None,
+            input_string_influence: InputStringInfluence::Log,
+        }
+    }
 }
 
 impl MatcherRule for DamerauLevenshteinSubstringRule {
@@ -116,6 +134,17 @@ impl MatcherRule for DamerauLevenshteinSubstringRule {
             }
         } else {
             MatcherResult::new_no_match(metadata)
+        }
+    }
+
+    fn estimate(&self, target_str: &str) -> EstimationResult {
+        // TODO: align!
+        EstimationResult {
+            min: None,
+            max: None,
+            calculated: (self.maximum_distance as usize) * 40
+                + (self.maximum_distance as usize * 10).saturating_sub(target_str.len()) * 36,
+            input_string_influence: InputStringInfluence::Log,
         }
     }
 }

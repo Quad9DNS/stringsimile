@@ -8,7 +8,8 @@ use triple_accel::levenshtein_exp;
 use crate::{
     MatcherResult,
     rule::{
-        MatcherResultRuleMetadataExt, MatcherResultRuleOptionMetadataExt, MatcherRule, RuleMetadata,
+        EstimationResult, InputStringInfluence, MatcherResultRuleMetadataExt,
+        MatcherResultRuleOptionMetadataExt, MatcherRule, RuleMetadata,
     },
 };
 
@@ -68,6 +69,19 @@ impl MatcherRule for LevenshteinRule {
             MatcherResult::new_no_match(metadata)
         }
     }
+
+    fn estimate(&self, _target_str: &str) -> EstimationResult {
+        EstimationResult {
+            min: if self.ignore_mismatch_metadata {
+                Some(1)
+            } else {
+                None
+            },
+            max: None,
+            calculated: (self.maximum_distance as usize) * 38,
+            input_string_influence: crate::rule::InputStringInfluence::Log,
+        }
+    }
 }
 
 impl MatcherRule for LevenshteinSubstringRule {
@@ -116,6 +130,16 @@ impl MatcherRule for LevenshteinSubstringRule {
             }
         } else {
             MatcherResult::new_no_match(metadata)
+        }
+    }
+
+    fn estimate(&self, target_str: &str) -> EstimationResult {
+        EstimationResult {
+            min: None,
+            max: None,
+            calculated: (self.maximum_distance as usize) * 38
+                + (self.maximum_distance as usize * 10).saturating_sub(target_str.len()) * 34,
+            input_string_influence: InputStringInfluence::Log,
         }
     }
 }

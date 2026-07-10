@@ -7,7 +7,10 @@ use triple_accel::hamming;
 
 use crate::{
     MatcherResult,
-    rule::{MatcherResultRuleMetadataExt, MatcherRule, RuleMetadata},
+    rule::{
+        EstimationResult, InputStringInfluence, MatcherResultRuleMetadataExt, MatcherRule,
+        RuleMetadata,
+    },
 };
 
 /// Rule
@@ -45,6 +48,15 @@ impl MatcherRule for HammingRule {
             MatcherResult::new_match(metadata)
         } else {
             MatcherResult::new_no_match(metadata)
+        }
+    }
+
+    fn estimate(&self, target_str: &str) -> EstimationResult {
+        EstimationResult {
+            min: Some(1),
+            calculated: 5 + target_str.len() / 10,
+            max: None,
+            input_string_influence: InputStringInfluence::Linear(0.25),
         }
     }
 }

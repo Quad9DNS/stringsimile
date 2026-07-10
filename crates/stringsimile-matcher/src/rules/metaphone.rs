@@ -8,7 +8,9 @@ use snafu::Snafu;
 
 use crate::{
     MatcherResult,
-    rule::{MatcherResultExt, MatcherResultRuleMetadataExt, MatcherRule, RuleMetadata},
+    rule::{
+        EstimationResult, MatcherResultExt, MatcherResultRuleMetadataExt, MatcherRule, RuleMetadata,
+    },
 };
 
 /// Rule
@@ -126,8 +128,8 @@ impl MatcherRule for MetaphoneRule {
             }
             MetaphoneRuleType::Double => {
                 let metaphone = DoubleMetaphone::new(self.max_code_length);
-                let primary_code = metaphone.encode(input_str);
-                let alternate_code = metaphone.encode_alternate(input_str);
+                let result = metaphone.double_metaphone(input_str);
+                let (primary_code, alternate_code) = (result.primary(), result.alternate());
                 let result =
                     primary_code == self.target_primary || alternate_code == self.target_alternate;
                 (
@@ -146,6 +148,23 @@ impl MatcherRule for MetaphoneRule {
             MatcherResult::new_match(metadata)
         } else {
             MatcherResult::new_no_match(metadata)
+        }
+    }
+
+    fn estimate(&self, _target_str: &str) -> EstimationResult {
+        EstimationResult {
+            min: Some(1),
+            max: None,
+            calculated: match self.metaphone_type {
+                MetaphoneRuleType::Normal => 5,
+                MetaphoneRuleType::Double => 19,
+            },
+            input_string_influence: crate::rule::InputStringInfluence::Linear(
+                match self.metaphone_type {
+                    MetaphoneRuleType::Normal => 1.2,
+                    MetaphoneRuleType::Double => 2.4,
+                },
+            ),
         }
     }
 }
