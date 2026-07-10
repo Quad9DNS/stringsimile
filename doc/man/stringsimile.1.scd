@@ -72,9 +72,13 @@ For more information use *--help* option.
 
 # SUBCOMMANDS
 
-- *stringsimile-validate*(1)++
+- *validate*++
   Validates stringsimile configuration and configured rules files.++
-	_stringsimile validate_
+  _stringsimile validate_
+- *estimate*(1)++
+  Estimates "cost" of configured stringsimile rules. This can be useful to
+  estimate relative resource cost of running a set of rules.++
+  _stringsimile estimate_
 
 # EXAMPLES
 
