@@ -198,7 +198,8 @@ impl RuleSet {
         context: &RulesetContext,
         full_metadata_for_all: bool,
     ) -> Vec<GenericMatchResult> {
-        let _ = trace_span!("ruleset", input = name, ruleset = self.name).enter();
+        let span = trace_span!("ruleset", input = name, ruleset = self.name);
+        let _entered = span.enter();
         debug!(
             message = format!("Generating matches for rule set: {}", self.name),
             input = name,
@@ -221,6 +222,13 @@ impl RuleSet {
 
         for it in input {
             for (index, (config, rule)) in self.rules.iter().enumerate() {
+                let span = trace_span!(
+                    "ruleset_rule",
+                    input = name,
+                    ruleset = self.name,
+                    index = index
+                );
+                let _entered = span.enter();
                 let rule_metrics = context
                     .metrics
                     .get(index)
@@ -323,7 +331,8 @@ impl StringGroup {
         context: &StringGroupContext,
         full_metadata_for_all: bool,
     ) -> BTreeMap<String, Vec<GenericMatchResult>> {
-        let _ = trace_span!("string group", input = input, group = self.name).enter();
+        let span = trace_span!("string group", input = input, group = self.name);
+        let _entered = span.enter();
         debug!(message = format!("Generating matches for string group: {}", self.name), input = ?input);
         let mut matches: BTreeMap<String, Vec<GenericMatchResult>> = BTreeMap::default();
 
