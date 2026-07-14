@@ -24,7 +24,7 @@ For more information use *--help* option.
 *-q, --quiet...*
 	Decrease log verbosity. May be repeated for further decrease.
 
-*-t, --threads...*
+*-t, --threads <int>*
 	Set number of threads to use. Defaults to number of cores.
 
 *--input-file <path>*
@@ -75,10 +75,21 @@ For more information use *--help* option.
 - *validate*++
   Validates stringsimile configuration and configured rules files.++
   _stringsimile validate_
-- *estimate*(1)++
+- *estimate*++
   Estimates "cost" of configured stringsimile rules. This can be useful to
   estimate relative resource cost of running a set of rules.++
   _stringsimile estimate_
+- *evaluate*++
+  Evaluates "cost" of configured stringsimile rules by running them against
+  provided demo data set. This can be useful to get more accurate data
+  compared to estimate subcommand.++
+  _stringsimile evaluate_ [OPTIONS]++
+	*--sample-size <int>*++
+	Number if strings to take from inputs.++
+	*--iterations <int>*++
+	Number if iterations to evaluate for. Higher count should give more precise results.++
+	*--granularity [total,string-group,ruleset,rule]*++
+	Granularity at which to run the evaluation.
 
 # EXAMPLES
 

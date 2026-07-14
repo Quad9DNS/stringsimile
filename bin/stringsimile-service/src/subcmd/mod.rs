@@ -5,12 +5,14 @@ use clap::Subcommand;
 use crate::cli::CliArgs;
 
 mod estimate;
+mod evaluate;
 mod validate;
 
 #[derive(Subcommand, Clone)]
 pub enum SubCmd {
     Validate(validate::CliArgs),
     Estimate(estimate::CliArgs),
+    Evaluate(evaluate::CliArgs),
 }
 
 impl SubCmd {
@@ -18,6 +20,7 @@ impl SubCmd {
         match self {
             SubCmd::Validate(cli_args) => validate::run(args, cli_args).await,
             SubCmd::Estimate(cli_args) => estimate::run(args, cli_args).await,
+            SubCmd::Evaluate(cli_args) => evaluate::run(args, cli_args).await,
         }
     }
 }

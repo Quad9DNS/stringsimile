@@ -9,7 +9,7 @@ use tracing::warn;
 #[command(rename_all = "kebab-case")]
 pub struct CliArgs {}
 
-pub async fn run(args: cli::CliArgs, _validate_args: &CliArgs) -> ExitCode {
+pub async fn run(args: cli::CliArgs, _estimate_args: &CliArgs) -> ExitCode {
     let config = match ServiceConfig::try_from(args) {
         Ok(config) => config,
         Err(err) => {
