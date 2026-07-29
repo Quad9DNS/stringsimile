@@ -24,7 +24,7 @@ confusables = { version = "0.1.0" }
 criterion = { version = "0.5.1" }
 exitcode = { version = "1.1.2" }
 futures = { version = "0.3.31" }
-hashbrown = { version = "0.16.1" }
+hashbrown = { version = "0.17.1" }
 hyperscan = { version = "0.3.2" }
 idna = { version = "1.1.0" }
 ipnet = { version = "2.12.0" }
