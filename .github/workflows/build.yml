@@ -61,7 +61,7 @@ jobs:
 
       - name: Install librdkafka
         if: ${{ matrix.needs-librdkafka }}
-        run: sudo apt-get update -y && sudo apt-get -y install librdkafka-dev libcurl-dev
+        run: sudo apt-get update -y && sudo apt-get -y install librdkafka-dev libcurl4-openssl-dev
 
       - name: Setup rust cross
         if: ${{ matrix.needs-cross }}
