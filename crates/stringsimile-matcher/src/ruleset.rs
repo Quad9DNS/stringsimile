@@ -341,7 +341,7 @@ pub trait StringGroupMatchResult {
 
 impl StringGroupMatchResult for BTreeMap<String, Vec<GenericMatchResult>> {
     fn has_matches(&self) -> bool {
-        self.iter().flat_map(|(_name, res)| res).any(|m| m.matched)
+        self.values().flatten().any(|m| m.matched)
     }
 
     fn to_json(self) -> Value {
