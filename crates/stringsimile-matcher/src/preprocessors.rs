@@ -189,7 +189,7 @@ impl Preprocessor {
                         ExclusionSetSource::Static(_),
                         PreprocessorContext::ExclusionSet {
                             metrics: _,
-                            context: ExclusionSetContext::ExactStaticSet(_),
+                            context: _,
                         },
                     ) => {
                         // Data is already loaded in this set
@@ -494,7 +494,8 @@ mod tests {
             regex: false,
         });
 
-        let ctx = exclusion_set.build_context("test", "Test", 0);
+        let mut ctx = exclusion_set.build_context("test", "Test", 0);
+        exclusion_set.preload_context(&mut ctx).await;
         let mut result = exclusion_set.process(input, &ctx);
 
         assert_eq!(result.next().unwrap().0, "this");
@@ -515,7 +516,8 @@ mod tests {
             regex: true,
         });
 
-        let ctx = exclusion_set.build_context("test", "Test", 0);
+        let mut ctx = exclusion_set.build_context("test", "Test", 0);
+        exclusion_set.preload_context(&mut ctx).await;
         let mut result = exclusion_set.process(input, &ctx);
 
         assert_eq!(result.next().unwrap().0, "is");
