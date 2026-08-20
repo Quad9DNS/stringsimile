@@ -18,6 +18,7 @@ use crate::message::StringsimileMessage;
 use super::{InputStreamBuilder, metrics::InputMetrics};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct KafkaInputConfig {
     host: String,
     #[serde(default = "default_kafka_input_port")]

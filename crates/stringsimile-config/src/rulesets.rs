@@ -15,6 +15,7 @@ use crate::rules::RuleConfig;
 
 /// Configuration for a rule set
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct RuleSetConfig {
     name: String,
     string_match: String,
@@ -48,6 +49,7 @@ impl RuleSetConfig {
 
 /// Configuration for a string group
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct StringGroupConfig {
     name: String,
     rule_sets: Vec<RuleSetConfig>,

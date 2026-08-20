@@ -9,6 +9,7 @@ use tokio::{fs::OpenOptions, io::BufWriter, time::interval};
 use super::{MetricsExporterTaskBuilder, bufwriter::BufWriterMetricsExporter};
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct FileExporterConfig {
     pub file_path: PathBuf,
     #[serde(default = "default_file_export_interval")]

@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 use super::MetricsExporterTaskBuilder;
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct ScrapeExporterConfig {
     pub addr: SocketAddr,
 }

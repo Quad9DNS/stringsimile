@@ -17,6 +17,7 @@ use crate::{
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct FileBasedConfig {
     #[serde(default)]
     input: InputConfig,
@@ -43,6 +44,7 @@ impl FileBasedConfig {
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 struct InputConfig {
     #[serde(default)]
     file_path: Option<PathBuf>,
@@ -76,6 +78,7 @@ impl InputConfig {
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 struct OutputConfig {
     #[serde(default)]
     file_path: Option<PathBuf>,
@@ -104,6 +107,7 @@ impl OutputConfig {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 struct MetricsConfig {
     #[serde(default)]
     file: Option<FileExporterConfig>,
@@ -147,6 +151,7 @@ impl MetricsConfig {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct MatcherConfig {
     #[serde(default = "default_rules_path")]
     pub rules_path: PathBuf,
@@ -185,6 +190,7 @@ impl MatcherConfig {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct ProcessConfig {
     #[serde(default = "default_thread_count")]
     threads: usize,
