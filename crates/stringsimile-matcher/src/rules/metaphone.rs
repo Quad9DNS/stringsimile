@@ -198,4 +198,12 @@ mod tests {
         let result = double_rule.match_rule("test", "test");
         assert!(result.is_match());
     }
+
+    #[test]
+    fn non_ascii_mismatch() {
+        let rule = MetaphoneRule::new(MetaphoneRuleType::Normal, Some(4), "test");
+
+        let result = rule.match_rule("čest", "test");
+        assert!(!result.is_match());
+    }
 }
