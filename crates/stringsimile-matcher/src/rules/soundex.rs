@@ -1,13 +1,14 @@
 //! Soundex rule implementation
 
-use std::{fmt::Debug, io::Error};
+use std::fmt::Debug;
 
 use rphonetic::{Encoder, RefinedSoundex, Soundex, SoundexCommons};
 use serde::{Deserialize, Serialize};
+use snafu::Snafu;
 
 use crate::{
     MatcherResult,
-    rule::{MatcherResultRuleMetadataExt, MatcherRule, RuleMetadata},
+    rule::{MatcherResultExt, MatcherResultRuleMetadataExt, MatcherRule, RuleMetadata},
 };
 
 /// Rule
@@ -77,6 +78,18 @@ pub enum SoundexRuleType {
     Refined,
 }
 
+/// Soundex rule errors
+#[derive(Debug, Clone, Snafu)]
+#[snafu(visibility(pub))]
+pub enum SoundexError {
+    /// Used when input string is not ASCII, since it can't be used with soundex
+    #[snafu(display("Soundex matcher failed. Non-ASCII input: {}", input))]
+    NonAsciiInput {
+        /// The value of the input string
+        input: String,
+    },
+}
+
 impl SoundexRuleType {
     fn build_soundex(&self) -> BuiltSoundex {
         match self {
@@ -96,13 +109,19 @@ pub struct SoundexMetadata {
 // TODO replace with custom error
 impl MatcherRule for SoundexRule {
     type OutputMetadata = SoundexMetadata;
-    type Error = Error;
+    type Error = SoundexError;
 
     fn match_rule(
         &self,
         input_str: &str,
         _target_str: &str,
     ) -> MatcherResult<Self::OutputMetadata, Self::Error> {
+        if !input_str.is_ascii() {
+            return MatcherResult::new_error(SoundexError::NonAsciiInput {
+                input: input_str.to_string(),
+            });
+        }
+
         let mut res = 0usize;
         if !self.encoded_target.is_empty() {
             let input = self.soundex.encode(input_str);
@@ -165,5 +184,13 @@ mod tests {
 
         let result = rule.match_rule("Smythers", "Smythers");
         assert!(result.is_match());
+    }
+
+    #[test]
+    fn non_ascii_mismatch() {
+        let rule = SoundexRule::new(SoundexRuleType::Refined, 3, "test");
+
+        let result = rule.match_rule("čest", "test");
+        assert!(!result.is_match());
     }
 }

@@ -128,6 +128,12 @@ pub enum RuleConfigError {
         input_value: usize,
     },
 
+    /// Soundex rule configuration error
+    #[snafu(display(
+        "Invalid target string for Soundex rule. The string_match must be ASCII for soundex rule.",
+    ))]
+    SoundexNonAsciiTargetError,
+
     /// Metaphone rule configuration error
     #[snafu(display(
         "Invalid target string for Metaphone rule. The string_match must be ASCII for metaphone rule.",
@@ -403,6 +409,9 @@ pub struct SoundexConfig {
 
 impl SoundexConfig {
     fn build(&self, target_str: &str) -> Result<SoundexRule, Error> {
+        if !target_str.is_ascii() {
+            return Err(Box::new(RuleConfigError::SoundexNonAsciiTargetError));
+        }
         if self.soundex_type == SoundexRuleType::Normal && self.minimum_similarity > 4 {
             return Err(RuleConfigError::SoundexConfigSimilarityError {
                 input_value: self.minimum_similarity,
@@ -873,6 +882,21 @@ mod tests {
     }
 
     #[test]
+    fn test_build_soundex_non_ascii() {
+        let config = SoundexConfig {
+            minimum_similarity: 3,
+            soundex_type: SoundexRuleType::Normal,
+        };
+        let err = config
+            .build("čest")
+            .expect_err("Expected soundex build to fail due to non ascii target string");
+
+        let RuleConfigError::SoundexNonAsciiTargetError = err.downcast_ref().unwrap() else {
+            panic!("Expected soundex error to be non ascii target error");
+        };
+    }
+
+    #[test]
     fn test_parse_metaphone_normal() {
         let json = r#"
         {
@@ -980,6 +1004,18 @@ mod tests {
         };
         assert_eq!(Some(3), config.max_code_length);
         assert_eq!(MetaphoneRuleType::Double, config.metaphone_type);
+    }
+
+    #[test]
+    fn test_build_metaphone_non_ascii() {
+        let config = MetaphoneConfig::default();
+        let err = config
+            .build("čest")
+            .expect_err("Expected metaphone build to fail due to non ascii target string");
+
+        let RuleConfigError::MetaphoneNonAsciiTargetError = err.downcast_ref().unwrap() else {
+            panic!("Expected metaphone error to be non ascii target error");
+        };
     }
 
     #[test]
