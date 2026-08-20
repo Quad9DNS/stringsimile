@@ -205,7 +205,8 @@ impl StringProcessor {
         );
         let rule_loading_errors = counter!("process_errors", "type" => "rule_reload");
         let output_passing_errors = counter!("process_errors", "type" => "output_message_passing");
-        let rule_matching_errors = counter!("process_errors", "type" => "rule_matching");
+        let rule_matching_unexpected_errors =
+            counter!("process_errors", "type" => "rule_matching_unexpected");
 
         let mut inputs_done = false;
         let mut input_shutdown_tx = Some(input_shutdown_tx);
@@ -255,8 +256,8 @@ impl StringProcessor {
                         }
                         Some(Ok(None)) => (),
                         Some(Err(err)) => {
-                            rule_matching_errors.increment(1);
-                            debug!(message = "Rule matcher task failed.", error = %err);
+                            rule_matching_unexpected_errors.increment(1);
+                            error!(message = "Rule matcher task failed. This is likely a bug in stringsimile!", error = %err);
                         }
                         None => {
                             if transform_futures.is_terminated() {
