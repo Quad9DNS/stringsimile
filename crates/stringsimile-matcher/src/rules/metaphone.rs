@@ -185,4 +185,17 @@ mod tests {
         assert_eq!(metadata.primary_code, "PRN");
         assert_eq!(metadata.alternate_code, Some("PRN".to_string()));
     }
+
+    #[test]
+    fn exact_match_is_a_match() {
+        let rule = MetaphoneRule::new(MetaphoneRuleType::Normal, Some(4), "test");
+
+        let result = rule.match_rule("test", "test");
+        assert!(result.is_match());
+
+        let double_rule = MetaphoneRule::new(MetaphoneRuleType::Double, Some(4), "test");
+
+        let result = double_rule.match_rule("test", "test");
+        assert!(result.is_match());
+    }
 }

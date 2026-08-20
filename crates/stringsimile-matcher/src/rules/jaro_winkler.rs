@@ -70,4 +70,15 @@ mod tests {
         assert!(result.is_match());
         round_assert_eq(result.into_metadata().match_percent, 0.92);
     }
+
+    #[test]
+    fn exact_match_is_a_match() {
+        let rule = JaroWinklerRule {
+            match_percent: 0.85,
+        };
+
+        let result = rule.match_rule("example", "example");
+        assert!(result.is_match());
+        round_assert_eq(result.into_metadata().match_percent, 1.0);
+    }
 }

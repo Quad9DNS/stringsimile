@@ -78,4 +78,12 @@ mod tests {
         let result = rule.match_rule("𝓗℮𝐥1೦", "test");
         assert!(!result.is_match());
     }
+
+    #[test]
+    fn exact_match_is_mismatch() {
+        let rule = ConfusablesRule;
+
+        let result = rule.match_rule("test", "test");
+        assert!(!result.is_match());
+    }
 }

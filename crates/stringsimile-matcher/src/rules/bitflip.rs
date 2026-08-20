@@ -178,4 +178,12 @@ mod tests {
         let result = rule.match_rule("unrelated", "microsoft");
         assert!(!result.is_match());
     }
+
+    #[test]
+    fn exact_match_is_mismatch() {
+        let rule = BitflipRule::new_dns("test", true);
+
+        let result = rule.match_rule("test", "test");
+        assert!(!result.is_match());
+    }
 }

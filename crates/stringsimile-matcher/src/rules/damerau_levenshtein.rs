@@ -205,4 +205,16 @@ mod tests {
         let result = rule.match_rule("somecompletelyotherstring", "netflix");
         assert!(!result.is_match());
     }
+
+    #[test]
+    fn exact_match_is_a_match() {
+        let rule = DamerauLevenshteinRule {
+            maximum_distance: 2,
+            ignore_mismatch_metadata: true,
+        };
+
+        let result = rule.match_rule("test", "test");
+        assert!(result.is_match());
+        assert_eq!(result.into_metadata().unwrap().distance, 0);
+    }
 }

@@ -75,4 +75,17 @@ mod tests {
         let metadata = result.into_metadata();
         assert_eq!(metadata.encoded, "BRAN");
     }
+
+    #[test]
+    fn exact_match_is_a_match() {
+        let rule = NysiisRule::new(false, "test");
+
+        let result = rule.match_rule("test", "test");
+        assert!(result.is_match());
+
+        let strict_rule = NysiisRule::new(true, "test");
+
+        let result = strict_rule.match_rule("test", "test");
+        assert!(result.is_match());
+    }
 }

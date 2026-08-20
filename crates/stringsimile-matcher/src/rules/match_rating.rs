@@ -142,7 +142,7 @@ mod tests {
     }
 
     #[test]
-    fn exact_match_behavior() {
+    fn exact_match_is_a_match() {
         let rule = MatchRatingRule::new("Frances");
 
         let result = rule.match_rule("Frances", "Frances");

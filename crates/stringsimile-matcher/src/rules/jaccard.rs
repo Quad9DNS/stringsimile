@@ -81,4 +81,13 @@ mod tests {
         assert!(result.is_match());
         round_assert_eq(result.into_metadata().similarity, 0.83);
     }
+
+    #[test]
+    fn exact_match_is_a_match() {
+        let rule = JaccardRule::new(0.8, "example");
+
+        let result = rule.match_rule("example", "example");
+        assert!(result.is_match());
+        round_assert_eq(result.into_metadata().similarity, 1.0);
+    }
 }

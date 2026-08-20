@@ -80,4 +80,15 @@ mod tests {
         assert!(!result.is_match());
         assert_eq!(result.into_metadata().distance, None);
     }
+
+    #[test]
+    fn exact_match_is_a_match() {
+        let rule = HammingRule {
+            maximum_distance: 2,
+        };
+
+        let result = rule.match_rule("test", "test");
+        assert!(result.is_match());
+        assert_eq!(result.into_metadata().distance.unwrap(), 0);
+    }
 }

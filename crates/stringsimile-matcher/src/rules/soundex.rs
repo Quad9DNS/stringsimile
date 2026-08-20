@@ -158,4 +158,12 @@ mod tests {
         assert_eq!(metadata.similarity, 8);
         assert_eq!(metadata.soundex_type, "refined");
     }
+
+    #[test]
+    fn exact_match_is_a_match() {
+        let rule = SoundexRule::new(SoundexRuleType::Refined, 3, "Smythers");
+
+        let result = rule.match_rule("Smythers", "Smythers");
+        assert!(result.is_match());
+    }
 }
