@@ -360,7 +360,6 @@ impl PunycodeConfig {
     ) -> BoxedTargetWithMetadataIter<'a> {
         Box::new(input.flat_map(move |i| {
             let mut result = Vec::new();
-            let mut add_original = self.keep_both;
             let mut original_metadata = i.1;
             'encode: {
                 if self.encode {
@@ -392,8 +391,6 @@ impl PunycodeConfig {
                             Value::Bool(true),
                         )]));
                         result.push((Cow::from(encoded), metadata));
-                    } else {
-                        add_original = true;
                     }
                 }
             }
@@ -420,12 +417,10 @@ impl PunycodeConfig {
                             Value::Bool(false),
                         )]));
                         result.push((Cow::from(decoded), metadata));
-                    } else {
-                        add_original = true;
                     }
                 }
             }
-            if add_original {
+            if self.keep_both || result.is_empty() {
                 result.push((i.0, original_metadata));
             }
             result.into_iter()
@@ -731,5 +726,22 @@ mod tests {
         assert_eq!(eighth.0, "com");
         assert_eq!(*eighth.1.get("punycode").unwrap(), Value::Bool(false));
         assert_eq!(result.next(), None);
+    }
+
+    #[tokio::test]
+    async fn punycode_encode_decode_no_keep_both_no_conversion() {
+        let input =
+            Box::new(vec![(Cow::from("www.test.com"), Cow::Owned(Map::default()))].into_iter());
+        let punycode = Preprocessor::Punycode(PunycodeConfig {
+            encode: true,
+            decode: true,
+            keep_both: false,
+        });
+
+        let mut result = punycode.process(input, &PreprocessorContext::Empty);
+
+        let first = result.next().unwrap();
+        assert_eq!(first.0, "www.test.com");
+        assert_eq!(*first.1.get("punycode").unwrap(), Value::Bool(false));
     }
 }
