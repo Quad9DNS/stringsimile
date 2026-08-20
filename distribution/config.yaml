@@ -34,9 +34,9 @@
 
 ## Rule matcher can be configured here
 # matcher:
-  ## Path for reading rules can be defined using `rule_path`
+  ## Path for reading rules can be defined using `rules_path`
   ## It can either be a single file or a directory containing JSONL files
-  # rule_path: "/var/lib/stringsimile"
+  # rules_path: "/var/lib/stringsimile"
 
   ## Field to apply rules to from input objects. This field supports simple syntax for accessing nested objects
   ## e.g. ".domain_name" will look for "domain_name" key in root object.
