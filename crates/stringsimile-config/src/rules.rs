@@ -34,6 +34,7 @@ pub struct RuleConfig {
 
 /// Common configuration for rules
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct CommonRuleConfig {
     #[serde(default)]
     pub(crate) exit_on_match: bool,
@@ -248,6 +249,7 @@ impl RuleConfig {
 
 /// Configuration for Levenshtein rule
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct LevenshteinConfig {
     /// Maximum distance
     pub maximum_distance: u32,
@@ -264,6 +266,7 @@ impl LevenshteinConfig {
 
 /// Configuration for Levenshtein substring rule
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct LevenshteinSubstringConfig {
     /// Maximum distance
     pub maximum_distance: u32,
@@ -279,6 +282,7 @@ impl LevenshteinSubstringConfig {
 
 /// Configuration for Levenshtein rule
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct HammingConfig {
     /// Maximum distance
     pub maximum_distance: u32,
@@ -294,6 +298,7 @@ impl HammingConfig {
 
 /// Configuration for Confusables rule
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct ConfusablesConfig;
 
 impl ConfusablesConfig {
@@ -304,6 +309,7 @@ impl ConfusablesConfig {
 
 /// Configuration for Damerau Levenshtein rule
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct DamerauLevenshteinConfig {
     /// Maximum distance
     pub maximum_distance: u32,
@@ -320,6 +326,7 @@ impl DamerauLevenshteinConfig {
 
 /// Configuration for Damerau Levenshtein substring rule
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct DamerauLevenshteinSubstringConfig {
     /// Maximum distance
     pub maximum_distance: u32,
@@ -335,6 +342,7 @@ impl DamerauLevenshteinSubstringConfig {
 
 /// Configuration for Jaccard rule
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct JaccardConfig {
     /// Minimum similarity
     pub minimum_similarity: f64,
@@ -355,6 +363,7 @@ impl JaccardConfig {
 
 /// Configuration for Jaro rule
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct JaroConfig {
     /// Match percent to be considered a match
     pub match_percent_threshold: f64,
@@ -377,6 +386,7 @@ impl JaroConfig {
 
 /// Configuration for Jaro-Winkler rule
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct JaroWinklerConfig {
     /// Maximum distance
     pub match_percent_threshold: f64,
@@ -399,6 +409,7 @@ impl JaroWinklerConfig {
 
 /// Configuration for Soundex rule
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct SoundexConfig {
     /// Minimum similarity
     pub minimum_similarity: usize,
@@ -429,6 +440,7 @@ impl SoundexConfig {
 
 /// Configuration for Metaphone rule
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct MetaphoneConfig {
     /// Max length of the generated Metaphone code
     #[serde(default = "default_metaphone_max_code_length")]
@@ -466,6 +478,7 @@ impl Default for MetaphoneConfig {
 
 /// Configuration for Nysiis rule
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct NysiisConfig {
     /// Strict mode can be disabled to allow codes over 6 characters in length
     #[serde(default = "default_nysiis_strict_mode")]
@@ -492,6 +505,7 @@ impl Default for NysiisConfig {
 
 /// Configuration for Match Rating rule
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct MatchRatingConfig;
 
 impl MatchRatingConfig {
@@ -515,6 +529,7 @@ pub enum BitflipCharSubset {
 
 /// Configuration for Biflip rule
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct BitflipConfig {
     /// Predefined char subset or "custom" to use [`BitflipConfig::custom_char_subset`].
     #[serde(default)]
@@ -572,6 +587,7 @@ impl Default for BitflipConfig {
 
 /// Configuration for Regex rule
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct RegexConfig {
     /// Regex pattern to match against.
     pub pattern: String,
@@ -587,6 +603,7 @@ impl RegexConfig {
 
 /// Configuration for CIDR rule
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct CidrConfig {
     /// CIDR notation address to match against.
     pub address: String,

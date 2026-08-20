@@ -5,6 +5,7 @@ use tokio::io::{self, BufWriter};
 use super::{MetricsExporterTaskBuilder, bufwriter::BufWriterMetricsExporter};
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct StdoutExporterConfig {
     #[serde(default = "default_stdout_export_interval")]
     pub export_interval_secs: u64,
