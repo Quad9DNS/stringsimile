@@ -140,4 +140,12 @@ mod tests {
         let result = rule.match_rule("Franciszek", "Frances");
         assert!(result.is_match());
     }
+
+    #[test]
+    fn exact_match_behavior() {
+        let rule = MatchRatingRule::new("Frances");
+
+        let result = rule.match_rule("Frances", "Frances");
+        assert!(result.is_match());
+    }
 }
