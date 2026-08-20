@@ -105,6 +105,8 @@ impl RuleMetrics {
 pub struct ExclusionSetMetrics {
     /// Number of items excluded by this set
     pub exclusions: Counter,
+    /// Number of unexpected errors encountered while processing this set
+    pub unexpected_errors: Counter,
 }
 
 impl ExclusionSetMetrics {
@@ -115,11 +117,21 @@ impl ExclusionSetMetrics {
             Unit::Count,
             "Number of input objects (or parts) excluded by this set"
         );
+        describe_counter!(
+            "exclusion_set_unexpected_errors",
+            Unit::Count,
+            "Number of unexpected errors encountered while applying this set"
+        );
         Self {
             exclusions: counter!("exclusion_set_exclusions",
                 "string_group" => string_group.to_string(),
                 "rule_set" => rule_set.to_string(),
                 "preprocessor_index" => preprocessor_index.to_string(),
+            ),
+            unexpected_errors: counter!("exclusion_set_unexpected_errors",
+                    "string_group" => string_group.to_string(),
+                    "rule_set" => rule_set.to_string(),
+                    "preprocessor_index" => preprocessor_index.to_string(),
             ),
         }
     }

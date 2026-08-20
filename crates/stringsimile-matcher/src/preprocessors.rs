@@ -13,6 +13,7 @@ use std::{
 use hashbrown::HashSet;
 use hyperscan::{BlockDatabase, Builder, Matching, Pattern, Patterns};
 use serde_json::{Map, Value};
+use tracing::error;
 use xorf::{Filter, HashProxy, Xor32};
 
 use crate::ruleset::{ExclusionSetMetrics, PreprocessorContext};
@@ -281,13 +282,24 @@ impl ExclusionSetConfig {
         context: &'a PreprocessorContext,
     ) -> BoxedTargetWithMetadataIter<'a> {
         let PreprocessorContext::ExclusionSet { metrics, context } = context else {
+            error!(
+                message = "Exclusion set preprocessor missing! This likely indicates a bug in stringsimile!"
+            );
             return input;
         };
         if self.regex {
             let ExclusionSetContext::RegexSet { db } = context else {
+                metrics.unexpected_errors.increment(1);
+                error!(
+                    message = "Exclusion set is missing regex patterns! This likely indicates a bug in stringsimile!"
+                );
                 return input;
             };
             let Some(db) = db else {
+                metrics.unexpected_errors.increment(1);
+                error!(
+                    message = "Exclusion set is missing regex patterns! This likely indicates a bug in stringsimile!"
+                );
                 return input;
             };
             let scratch = db.alloc_scratch().unwrap();
@@ -307,6 +319,10 @@ impl ExclusionSetConfig {
         match &self.source {
             ExclusionSetSource::File(_) => {
                 let ExclusionSetContext::ExactFileSet { path, filter } = context else {
+                    metrics.unexpected_errors.increment(1);
+                    error!(
+                        message = "Exclusion set is missing values from the file! This likely indicates a bug in stringsimile!"
+                    );
                     return input;
                 };
                 Box::new(input.filter(move |p| {
@@ -326,6 +342,10 @@ impl ExclusionSetConfig {
             }
             ExclusionSetSource::Static(_) => {
                 let ExclusionSetContext::ExactStaticSet(set) = context else {
+                    metrics.unexpected_errors.increment(1);
+                    error!(
+                        message = "Exclusion set is missing values! This likely indicates a bug in stringsimile!"
+                    );
                     return input;
                 };
                 Box::new(input.filter(|p| {
