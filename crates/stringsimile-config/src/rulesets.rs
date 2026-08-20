@@ -2,7 +2,9 @@
 
 use std::path::PathBuf;
 
+use hashbrown::HashSet;
 use serde::{Deserialize, Serialize};
+use snafu::Snafu;
 use stringsimile_matcher::{
     Error,
     preprocessors::{
@@ -55,12 +57,46 @@ pub struct StringGroupConfig {
     rule_sets: Vec<RuleSetConfig>,
 }
 
+/// String group configuration errors
+#[derive(Debug, Clone, Snafu)]
+#[snafu(visibility(pub))]
+pub enum StringGroupConfigError {
+    /// Duplicate ruleset name found
+    #[snafu(display(
+        "Found a duplicate ruleset name (\"{}\") in string group \"{}\".",
+        name,
+        string_group_name
+    ))]
+    DuplicateRulesetName {
+        /// The name of the string group
+        string_group_name: String,
+        /// The duplicated name
+        name: String,
+    },
+    /// Duplicate string group name found
+    #[snafu(display("Found a duplicate string group name (\"{}\").", name))]
+    DuplicateStringGroupName {
+        /// The duplicated name
+        name: String,
+    },
+}
+
 impl StringGroupConfig {
     /// Convert into StringGroup that can be used for matching
     ///
     /// `ignore_mismatch_metadata` flag can be enabled to potentially speed up some rules, at the
     /// cost of missing metadata for mismatches.
     pub fn into_string_group(self, ignore_mismatch_metadata: bool) -> Result<StringGroup, Error> {
+        let mut duplicates_index = HashSet::<String>::default();
+        for rs in &self.rule_sets {
+            if duplicates_index.contains(&rs.name) {
+                return Err(Box::new(StringGroupConfigError::DuplicateRulesetName {
+                    string_group_name: self.name,
+                    name: rs.name.clone(),
+                }));
+            }
+            duplicates_index.insert(rs.name.clone());
+        }
         Ok(StringGroup::new(
             self.name,
             self.rule_sets
@@ -68,6 +104,11 @@ impl StringGroupConfig {
                 .map(|s| s.into_rule_set(ignore_mismatch_metadata))
                 .collect::<Result<Vec<_>, _>>()?,
         ))
+    }
+
+    /// Returns the name of this string group.
+    pub fn name(&self) -> &str {
+        &self.name
     }
 }
 
@@ -381,5 +422,93 @@ mod tests {
         assert!(encode);
         assert!(decode);
         assert!(keep_both);
+    }
+
+    #[test]
+    fn test_parse_duplicate_ruleset_name() {
+        let json = r#"
+            {
+                "name": "Wikimedia",
+                "rule_sets": [
+                    {
+                        "name": "test_set",
+                        "string_match": "wikipedia",
+                        "preprocessors": [
+                            {
+                                "preprocessor_type": "split_target",
+                                "ignore_tld": true
+                            },
+                            {
+                                "preprocessor_type": "split_target"
+                            },
+                            {
+                                "preprocessor_type": "exclusion_set",
+                                "exclusion_set_source": "list",
+                                "list": [ "www" ]
+                            },
+                            {
+                                "preprocessor_type": "punycode",
+                                "encode": true,
+                                "decode": false
+                            },
+                            {
+                                "preprocessor_type": "punycode"
+                            },
+                            {
+                                "preprocessor_type": "punycode",
+                                "keep_both": true
+                            }
+                        ],
+                        "match_rules": [
+                            {
+                                "rule_type": "levenshtein",
+                                "values": {
+                                    "maximum_distance": 3
+                                }
+                            },
+                            {
+                                "rule_type": "jaro",
+                                "values": {
+                                    "match_percent_threshold": 85
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "name": "test_set",
+                        "string_match": "wikipedia",
+                        "preprocessors": [ ],
+                        "match_rules": [
+                            {
+                                "rule_type": "levenshtein",
+                                "values": {
+                                    "maximum_distance": 3
+                                }
+                            },
+                            {
+                                "rule_type": "jaro",
+                                "values": {
+                                    "match_percent_threshold": 85
+                                }
+                            }
+                        ]
+                    }
+                ]
+            }
+            "#;
+
+        let test_group: StringGroupConfig = serde_json::from_str(json).unwrap();
+        let Err(error) = test_group.into_string_group(false) else {
+            panic!("Expected string group build to fail due to duplicate ruleset name");
+        };
+        let StringGroupConfigError::DuplicateRulesetName {
+            string_group_name,
+            name,
+        } = error.downcast_ref().unwrap()
+        else {
+            panic!("Expected string group build to fail due to duplicate ruleset name");
+        };
+        assert_eq!(string_group_name, "Wikimedia");
+        assert_eq!(name, "test_set");
     }
 }

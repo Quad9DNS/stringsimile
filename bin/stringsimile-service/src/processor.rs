@@ -1,4 +1,4 @@
-use hashbrown::HashMap;
+use hashbrown::{HashMap, HashSet};
 use std::{
     fs::File,
     io::{BufReader, Seek},
@@ -12,7 +12,7 @@ use futures::{StreamExt, TryFutureExt, stream::FusedStream};
 use metrics::{Unit, counter, describe_counter};
 use serde_json::{Map, Value};
 use snafu::ResultExt;
-use stringsimile_config::rulesets::StringGroupConfig;
+use stringsimile_config::rulesets::{StringGroupConfig, StringGroupConfigError};
 use stringsimile_matcher::ruleset::{StringGroup, StringGroupContext, StringGroupMatchResult};
 use tokio::{
     sync::{broadcast::Receiver, mpsc},
@@ -67,6 +67,17 @@ impl StringProcessor {
                     })?
             }
         };
+        let mut duplicates_index = HashSet::<String>::default();
+        for sg in &parsed_rules {
+            if duplicates_index.contains(sg.name()) {
+                return Err(Box::new(StringsimileServiceError::RuleParsing {
+                    source: Box::new(StringGroupConfigError::DuplicateStringGroupName {
+                        name: sg.name().to_string(),
+                    }),
+                }));
+            }
+            duplicates_index.insert(sg.name().to_string());
+        }
         Ok(parsed_rules)
     }
 
