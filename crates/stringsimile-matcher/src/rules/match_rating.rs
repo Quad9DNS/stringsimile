@@ -97,8 +97,8 @@ fn left_to_right_then_right_to_left_processing(name1: String, name2: &str) -> us
     n1.retain(|c| *c != ' ');
     n2.retain(|c| *c != ' ');
 
-    let n1len = n1.len() - 1;
-    let n2len = n2.len() - 1;
+    let n1len = n1.len().saturating_sub(1);
+    let n2len = n2.len().saturating_sub(1);
 
     for i in 0..n1.len() {
         if i >= n2.len() {
