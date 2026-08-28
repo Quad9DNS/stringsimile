@@ -1,5 +1,4 @@
 //! Configuration for rules
-use regex::Regex;
 use serde::{Deserialize, Serialize};
 use snafu::{ResultExt, Snafu};
 use stringsimile_matcher::{
@@ -155,8 +154,8 @@ pub enum RuleConfigError {
     },
 
     /// Regex rule configuration error
-    #[snafu(display("Invalid pattern for Regex rule: {}", source))]
-    RegexInvalidPattern {
+    #[snafu(display("Regex patten compilation failed for Regex rule: {}", source))]
+    RegexCompilationError {
         /// Regex error.
         source: regex::Error,
     },
@@ -595,9 +594,7 @@ pub struct RegexConfig {
 
 impl RegexConfig {
     fn build(&self) -> Result<RegexRule, Error> {
-        Ok(RegexRule::new(
-            Regex::new(&self.pattern).context(RegexInvalidPatternSnafu)?,
-        ))
+        Ok(RegexRule::new(self.pattern.clone())?)
     }
 }
 
