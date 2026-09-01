@@ -1,5 +1,4 @@
 use criterion::{Criterion, criterion_group, criterion_main};
-use regex::Regex;
 use stringsimile_matcher::{
     rule::MatcherRule,
     rules::{
