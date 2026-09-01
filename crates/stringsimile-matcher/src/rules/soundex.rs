@@ -8,7 +8,10 @@ use snafu::Snafu;
 
 use crate::{
     MatcherResult,
-    rule::{MatcherResultExt, MatcherResultRuleMetadataExt, MatcherRule, RuleMetadata},
+    rule::{
+        EstimationResult, InputStringInfluence, MatcherResultExt, MatcherResultRuleMetadataExt,
+        MatcherRule, RuleMetadata,
+    },
 };
 
 /// Rule
@@ -106,7 +109,6 @@ pub struct SoundexMetadata {
     soundex_type: &'static str,
 }
 
-// TODO replace with custom error
 impl MatcherRule for SoundexRule {
     type OutputMetadata = SoundexMetadata;
     type Error = SoundexError;
@@ -142,6 +144,19 @@ impl MatcherRule for SoundexRule {
             MatcherResult::new_match(metadata)
         } else {
             MatcherResult::new_no_match(metadata)
+        }
+    }
+
+    fn estimate(&self, _target_str: &str) -> EstimationResult {
+        EstimationResult {
+            min: if self.encoded_target.is_empty() {
+                Some(1)
+            } else {
+                None
+            },
+            max: None,
+            calculated: 35,
+            input_string_influence: InputStringInfluence::Linear(1.0),
         }
     }
 }

@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     MatcherResult,
-    rule::{MatcherResultRuleMetadataExt, MatcherRule, RuleMetadata},
+    rule::{EstimationResult, MatcherResultRuleMetadataExt, MatcherRule, RuleMetadata},
 };
 
 const BITFLIP_PATTERNS: [u8; 8] = [
@@ -117,6 +117,16 @@ impl MatcherRule for BitflipRule {
             MatcherResult::new_match(BitflipMetadata)
         } else {
             MatcherResult::new_no_match(BitflipMetadata)
+        }
+    }
+
+    fn estimate(&self, _target_str: &str) -> EstimationResult {
+        // Size of target str is irrelevant here, since we cache it all on startup
+        // But case insensitive matching is slower
+        if self.case_sensitive {
+            EstimationResult::static_cost(1)
+        } else {
+            EstimationResult::static_cost(2)
         }
     }
 }

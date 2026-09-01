@@ -20,7 +20,7 @@ rules-levenshtein = ["dep:triple_accel"]
 rules-match-rating = ["dep:rphonetic"]
 rules-metaphone = ["dep:rphonetic"]
 rules-nysiis = ["dep:rphonetic"]
-rules-regex = ["dep:regex"]
+rules-regex = ["dep:regex", "dep:regex-syntax"]
 rules-soundex = ["dep:rphonetic"]
 preprocessors-split-target = []
 preprocessors-exclusion-sets = []
@@ -37,6 +37,7 @@ ipnet = { workspace = true, optional = true }
 lazy_static = { workspace = true, optional = true }
 metrics.workspace = true
 regex = { workspace = true, optional = true }
+regex-syntax = { workspace = true, optional = true }
 rphonetic = { workspace = true, optional = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json.workspace = true

@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     MatcherResult,
-    rule::{MatcherResultRuleMetadataExt, MatcherRule, RuleMetadata},
+    rule::{EstimationResult, MatcherResultRuleMetadataExt, MatcherRule, RuleMetadata},
 };
 
 /// Rule
@@ -44,6 +44,12 @@ impl MatcherRule for CidrRule {
         } else {
             MatcherResult::new_no_match(CidrMetadata)
         }
+    }
+
+    fn estimate(&self, _target_str: &str) -> EstimationResult {
+        // Target str is unused, this has static cost, but includes parsing, so is a bit slower
+        // than 1
+        EstimationResult::static_cost(2)
     }
 }
 

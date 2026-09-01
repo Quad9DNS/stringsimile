@@ -233,7 +233,7 @@ fn all_rules(target_str: &str) -> Vec<(CommonRuleConfig, Box<dyn GenericMatcherR
         Box::new(SoundexRule::new(SoundexRuleType::Normal, 5, target_str).into_generic_matcher()),
         Box::new(SoundexRule::new(SoundexRuleType::Refined, 5, target_str).into_generic_matcher()),
         Box::new(BitflipRule::new_dns(target_str, true)),
-        Box::new(RegexRule::new(Regex::new(target_str).unwrap())),
+        Box::new(RegexRule::new(target_str.to_string()).unwrap()),
         Box::new(CidrRule::new("192.168.0.0/24".parse().unwrap())),
     ]
     .into_iter()

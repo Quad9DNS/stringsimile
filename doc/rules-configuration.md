@@ -85,7 +85,9 @@ Currently the following rules are supported:
 
 - **Regex** Matches input strings against the provided regex pattern. This
   rule ignores the target string of the ruleset and relies exclusively
-  on the configured regex pattern.
+  on the configured regex pattern. The used regex engine lacks some 
+  features of more complete engines, for the sake of performance, 
+  including look-around and backreferences.
 
 - **CIDR** Matches input strings against the provided IP address (or
   network) in CIDR notation. This rule ignores the target string of the

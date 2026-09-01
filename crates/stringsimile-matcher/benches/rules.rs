@@ -366,7 +366,7 @@ bench_rule! {
     single_match = "randomWstring_to_find";
     single_mismatch = "some different string";
     builder {
-        RegexRule::new(Regex::new("randomWstring_to_find").unwrap())
+        RegexRule::new("randomWstring_to_find".to_string()).unwrap()
     }
 }
 
@@ -375,7 +375,7 @@ bench_rule! {
     single_match = "randomWstring_to_find";
     single_mismatch = "some different string";
     builder {
-        RegexRule::new(Regex::new(r#"\w*_.*"#).unwrap())
+        RegexRule::new(r#"\w*_.*"#.to_string()).unwrap()
     }
 }
 

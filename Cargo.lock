@@ -2208,6 +2208,7 @@ dependencies = [
  "lazy_static",
  "metrics",
  "regex",
+ "regex-syntax",
  "rphonetic",
  "serde",
  "serde_json",
