@@ -102,7 +102,7 @@ impl Granularity {
                         cost.max(1)
                     );
                 }
-                println!("|{:20}|{:10?}|{:8}|", "String group", "Duration", "Cost");
+                println!("|{:20}|{:10}|{:8}|", "String group", "Duration", "Cost");
                 println!("+{:-<20}+{:-<10}+{:-<8}+", "", "", "");
                 let mut total_duration = Duration::ZERO;
                 for (sg, context) in rules_contexts {
@@ -138,7 +138,7 @@ impl Granularity {
                     );
                 }
                 println!(
-                    "|{:20}|{:20}|{:10?}|{:8}|",
+                    "|{:20}|{:20}|{:10}|{:8}|",
                     "String group", "Ruleset", "Duration", "Cost"
                 );
                 println!("+{:-<20}+{:-<20}+{:-<10}+{:-<8}+", "", "", "", "");
@@ -196,7 +196,7 @@ impl Granularity {
                     );
                 }
                 println!(
-                    "|{:20}|{:20}|{:20}|{:10?}|{:8}|",
+                    "|{:20}|{:20}|{:20}|{:10}|{:8}|",
                     "String group", "Ruleset", "Rule", "Duration", "Cost"
                 );
                 println!(
