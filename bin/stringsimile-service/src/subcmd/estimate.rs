@@ -26,24 +26,46 @@ pub async fn run(args: cli::CliArgs, _estimate_args: &CliArgs) -> ExitCode {
         }
     };
 
+    fn format_rule(sg: &str, rs: &str, rule: &str, cost: &EstimationResult) {
+        let formatted_influence = format!("{:?}", cost.input_string_influence);
+        println!(
+            "|{:20}|{:20}|{:20}|{:8}|{:8}|{:8}|{:20}|",
+            &sg[..sg.len().min(20)],
+            &rs[..rs.len().min(20)],
+            &rule[..rule.len().min(20)],
+            cost.min.map(|c| c.to_string()).unwrap_or("-".to_string()),
+            cost.max.map(|c| c.to_string()).unwrap_or("-".to_string()),
+            cost.calculated,
+            &formatted_influence[..formatted_influence.len().min(20)]
+        );
+    }
+    println!(
+        "|{:20}|{:20}|{:20}|{:8}|{:8}|{:8}|{:20}|",
+        "String group", "Ruleset", "Rule", "Min Cost", "Max Cost", "Estimate", "Input influence"
+    );
+    println!(
+        "+{:-<20}+{:-<20}+{:-<20}+{:-<8}+{:-<8}+{:-<8}+{:-<20}+",
+        "", "", "", "", "", "", ""
+    );
+
     let mut total: EstimationResult = EstimationResult::zero();
     for group in &rules {
         for rule_set in &group.rule_sets {
             for (_, rule) in &rule_set.rules {
-                println!(
-                    "------ {} rule cost: {:?}",
+                format_rule(
+                    &group.name,
+                    &rule_set.name,
                     rule.name(),
-                    rule.estimate_generic(&rule_set.string_match)
+                    &rule.estimate_generic(&rule_set.string_match),
                 );
             }
-            let cost = group.estimate_cost();
-            println!("---- Total for ruleset {}: {:?}", rule_set.name, cost);
+            format_rule(&group.name, &rule_set.name, "-", &rule_set.estimate_cost());
         }
         let cost = group.estimate_cost();
-        println!("-- Total for group {}: {:?}", group.name, cost);
+        format_rule(&group.name, "-", "-", &cost);
         total += cost;
     }
-    println!("Total costs: {:?}", total);
+    format_rule("-", "-", "-", &total);
 
     (exitcode::OK as u8).into()
 }

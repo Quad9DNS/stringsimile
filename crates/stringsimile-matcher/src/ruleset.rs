@@ -316,7 +316,8 @@ impl RuleSet {
         }
     }
 
-    fn estimate_cost(&self) -> EstimationResult {
+    /// Estimates the resource cost of the rule set
+    pub fn estimate_cost(&self) -> EstimationResult {
         let mut total = EstimationResult::zero();
         let mut min = None;
         for (common, rule) in &self.rules {
