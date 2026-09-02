@@ -107,7 +107,7 @@ impl MatcherRule for RegexRule {
             }),
             max: props
                 .maximum_len()
-                .map(|l| (l as f64 * 0.1) as usize * pattern_size),
+                .map(|l| ((l as f64 * 0.1) as usize * pattern_size).max(1)),
             // TODO: figure out regex complexity
             calculated: ((pattern_size as f64 * 0.1) as usize).max(1),
             // If literal is present, regex can be optimized to quickly locate the literal in the
