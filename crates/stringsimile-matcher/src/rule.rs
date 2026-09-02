@@ -254,13 +254,13 @@ where
         target_str: &str,
         full_metadata_for_all: bool,
     ) -> GenericMatcherResult {
-        let _ = trace_span!(
+        let span = trace_span!(
             "rule",
             input = input_str,
             target = target_str,
             rule = T::OutputMetadata::RULE_NAME
-        )
-        .enter();
+        );
+        let _entered = span.enter();
         debug!(
             message = "Matching rule",
             input = input_str,

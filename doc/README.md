@@ -98,6 +98,24 @@ For more information use **\--help** option.
 
 > Estimates "cost" of configured stringsimile rules. This can be useful to estimate relative resource cost of running a set of rules.
 
+**evaluate**
+
+> Evaluates "cost" of configured stringsimile rules by running them against provided demo data set. This can be useful to get more accurate data compared to estimate subcommand.
+
+### Options
+
+**--sample-size <int>**
+
+> Number if strings to take from inputs.
+
+**--iterations <int>**
+
+> Number if iterations to evaluate for. Higher count should give more precise results.
+
+**--granularity [total,string-group,ruleset,rule]**
+
+> Granularity at which to run the evaluation.
+
 # Examples
 
 Using predefined example [rule configurations](./rules-configuration.md)

@@ -200,17 +200,23 @@ impl StringGroupContext {
             }
         }
     }
+
+    /// Provides conext for the specified ruleset if available
+    pub fn ruleset_context(&self, ruleset: &str) -> Option<&RulesetContext> {
+        self.rulesets.get(ruleset)
+    }
 }
 
 impl RuleSet {
     /// Matches the value to this rule set and generates matches with metadata
-    fn generate_matches(
+    pub fn generate_matches(
         &self,
         name: &str,
         context: &RulesetContext,
         full_metadata_for_all: bool,
     ) -> Vec<GenericMatchResult> {
-        let _ = trace_span!("ruleset", input = name, ruleset = self.name).enter();
+        let span = trace_span!("ruleset", input = name, ruleset = self.name);
+        let _entered = span.enter();
         debug!(
             message = format!("Generating matches for rule set: {}", self.name),
             input = name,
@@ -233,6 +239,13 @@ impl RuleSet {
 
         for it in input {
             for (index, (config, rule)) in self.rules.iter().enumerate() {
+                let span = trace_span!(
+                    "ruleset_rule",
+                    input = name,
+                    ruleset = self.name,
+                    index = index
+                );
+                let _entered = span.enter();
                 let rule_metrics = context
                     .metrics
                     .get(index)
@@ -303,7 +316,8 @@ impl RuleSet {
         }
     }
 
-    fn estimate_cost(&self) -> EstimationResult {
+    /// Estimates the resource cost of the rule set
+    pub fn estimate_cost(&self) -> EstimationResult {
         let mut total = EstimationResult::zero();
         let mut min = None;
         for (common, rule) in &self.rules {
@@ -335,7 +349,8 @@ impl StringGroup {
         context: &StringGroupContext,
         full_metadata_for_all: bool,
     ) -> BTreeMap<String, Vec<GenericMatchResult>> {
-        let _ = trace_span!("string group", input = input, group = self.name).enter();
+        let span = trace_span!("string group", input = input, group = self.name);
+        let _entered = span.enter();
         debug!(message = format!("Generating matches for string group: {}", self.name), input = ?input);
         let mut matches: BTreeMap<String, Vec<GenericMatchResult>> = BTreeMap::default();
 
