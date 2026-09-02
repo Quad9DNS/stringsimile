@@ -103,13 +103,13 @@ impl MatcherRule for RegexRule {
                 props
                     .minimum_len()
                     .map(|m| m * pattern_size)
-                    .unwrap_or((pattern_size as f64 * 0.1) as usize)
+                    .unwrap_or(((pattern_size as f64 * 0.1) as usize).max(1))
             }),
             max: props
                 .maximum_len()
                 .map(|l| (l as f64 * 0.1) as usize * pattern_size),
             // TODO: figure out regex complexity
-            calculated: (pattern_size as f64 * 0.1) as usize,
+            calculated: ((pattern_size as f64 * 0.1) as usize).max(1),
             // If literal is present, regex can be optimized to quickly locate the literal in the
             // string and then after that we don't have to scan the whole string, but just as much
             // as the pattern requires
