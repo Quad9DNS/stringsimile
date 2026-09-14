@@ -35,7 +35,7 @@ metrics-util = { version = "0.20.1" }
 rdkafka = { version = "0.39.0" }
 regex = { version = "1.12.3" }
 regex-syntax = { version = "0.8.11" }
-rphonetic = { version = "3.0.3" }
+rphonetic = { version = "4.0.0" }
 serde = { version = "1.0.219" }
 serde_json = { version = "1.0.140" }
 serde_yaml = { version = "0.9.34" } # Look for replacement
