@@ -370,7 +370,7 @@ impl TryFrom<CliArgs> for ServiceConfig {
 
     fn try_from(value: CliArgs) -> crate::Result<ServiceConfig> {
         let file_config: FileBasedConfig =
-            serde_yaml::from_reader(File::open(value.config.clone()).context(FileReadSnafu)?)
+            serde_saphyr::from_reader(File::open(value.config.clone()).context(FileReadSnafu)?)
                 .context(ConfigYamlParsingSnafu)?;
         let mut base_config = file_config.build()?;
 
