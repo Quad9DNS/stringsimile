@@ -21,7 +21,7 @@ pub enum StringsimileServiceError {
     },
 
     #[snafu(display("Parsing config YAML file failed: {}", source))]
-    ConfigYamlParsing { source: serde_yaml::Error },
+    ConfigYamlParsing { source: serde_saphyr::Error },
 
     #[snafu(display("Preparing input {} has failed: {}", input_name, source))]
     InputFail { input_name: String, source: Error },
