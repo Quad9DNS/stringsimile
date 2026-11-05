@@ -71,13 +71,13 @@ impl MetricsProcessor {
         config: ServiceConfig,
         metrics_handle: PrometheusHandle,
         process_init_time: Instant,
-    ) -> Self {
-        Self {
+    ) -> crate::Result<Self> {
+        Ok(Self {
             config,
             metrics_handle,
-            sytem_metrics: SystemMetrics::new(),
+            sytem_metrics: SystemMetrics::new()?,
             process_init_time,
-        }
+        })
     }
 
     pub async fn run(self, runtime_handle: Handle, mut shutdown: Receiver<()>) {

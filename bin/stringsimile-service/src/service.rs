@@ -129,7 +129,12 @@ impl Service<InitState> {
         let signals = ServiceOsSignals::new(&runtime);
         let processor = StringProcessor::from_config(config.clone());
         let metrics_processor =
-            MetricsProcessor::from_config(config.clone(), metrics_handle, init_time);
+            MetricsProcessor::from_config(config.clone(), metrics_handle, init_time).map_err(
+                |err| {
+                    error!(message = "Metrics configuration error.", error = %err);
+                    exitcode::UNAVAILABLE
+                },
+            )?;
         Ok((
             runtime,
             Self {

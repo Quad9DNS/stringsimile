@@ -16,8 +16,8 @@ pub struct SystemMetrics {
 }
 
 impl SystemMetrics {
-    pub fn new() -> Self {
-        let mut system = System::new_all();
+    pub fn new() -> crate::Result<Self> {
+        let mut system = System::new_all().map_err(|err| format!("System metrics error: {err}"))?;
         system.refresh_all();
         let host_cpu_usages = system
             .cpus()
@@ -60,7 +60,7 @@ impl SystemMetrics {
             "CPU usage by this stringsimile instance in percentage"
         );
 
-        Self {
+        Ok(Self {
             system,
             host_total_memory: gauge!("host_total_memory"),
             host_used_memory: gauge!("host_used_memory"),
@@ -68,7 +68,7 @@ impl SystemMetrics {
             host_cpu_usages,
             service_used_memory: gauge!("service_used_memory"),
             service_cpu_usage: gauge!("service_cpu_usage"),
-        }
+        })
     }
 
     pub fn emit_system_metrics(&mut self) {
@@ -81,7 +81,7 @@ impl SystemMetrics {
 
         for cpu in self.system.cpus() {
             if let Some(usage_gauge) = self.host_cpu_usages.get(cpu.name()) {
-                usage_gauge.set(cpu.cpu_usage());
+                usage_gauge.set(cpu.usage());
             }
         }
 
